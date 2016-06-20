@@ -204,13 +204,13 @@ const updateItem = (card, data) => {
   item.tasks = data.characters.map((row, i) => ({
     data: row,
     index: i,
-    strokes: row.strokes,
+    matcher: new Matcher(row),
     missing: _.range(row.medians.length),
     mistakes: 0,
     penalties: 0,
     recording: [],
     result: null,
-    matcher: new Matcher(row),
+    strokes: row.strokes,
   }));
 }
 
