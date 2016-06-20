@@ -59,7 +59,7 @@ body {
 
   &.theme-painterly, &.theme-textured {
     > .background {
-      background-image: url("background.jpg");
+      background-image: url("graphics/background.jpg");
       background-position-y: -100px;
       background-size: cover;
     }
@@ -74,7 +74,7 @@ body {
 
   &.theme-textured {
     > .foreground {
-      background-image: url("foreground.jpg");
+      background-image: url("graphics/foreground.jpg");
       background-size: cover;
       mix-blend-mode: difference;
     }
@@ -110,7 +110,7 @@ body {
     }
 
     > .teach {
-      -webkit-mask-image: url("swash.svg");
+      -webkit-mask-image: url("graphics/swash.svg");
       -webkit-mask-position-x: 0.025 * $swash-width;
       -webkit-mask-position-y: 0.025 * $swash-height;
       -webkit-mask-repeat: no-repeat;
