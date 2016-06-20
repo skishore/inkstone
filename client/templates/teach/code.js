@@ -3,8 +3,8 @@
 import {Handwriting} from '/client/handwriting';
 import {lookupItem} from '/client/lookup';
 import {Popup} from '/client/templates/popup/code';
-import {ReportIssue} from '/client/templates/report-issue/code'
-import {Matcher} from '/lib/stroke-matcher/matcher'
+import {ReportIssue} from '/client/templates/report-issue/code';
+import {Matcher} from '/lib/matcher/matcher';
 import {Timing} from '/model/timing';
 
 let element = null;
