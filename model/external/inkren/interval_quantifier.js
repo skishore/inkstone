@@ -1,20 +1,22 @@
 // Adapted from Skritter HTML5's IntervalQuantifier class, without the
-// class boilerplate dropped and the schema of the "item" changed to our
-// "vocabulary" schema.
+// class boilerplate dropped and the schema of their "item" object changed to
+// our `Vocabulary` schema (see model/vocabulary.js). Original copyright:
 //
-// Original copyright and license found in the LICENSE file in this directory.
+//  Copyright (c) 2015 Inkren Inc
+//
+// See the LICENSE file in this directory for more information.
 
 const kOneDay = 24 * 60 * 60;
 const kInitialIntervals = [28 * kOneDay, 7 * kOneDay, kOneDay, 600];
 const kIntervalFactors = [3.5, 2.2, 0.9, 0.25];
 const kRandomFactor = 0.15;
 
-const getNextInterval = (vocab, result, last) => {
-  if (!vocab.last) {
+const getNextInterval = (item, result, last) => {
+  if (!item.last) {
     return randomizeInterval(kInitialIntervals[result]);
   }
-  const actual = last - vocab.last;
-  const intended = vocab.next - vocab.last;
+  const actual = last - item.last;
+  const intended = item.next - item.last;
   const success = result < 3;
   let factor = kIntervalFactors[result];
   // Adjust the factor based on readiness.
@@ -22,8 +24,8 @@ const getNextInterval = (vocab, result, last) => {
     factor = ((factor - 1) * actual / intended) + 1;
   }
   // Compute the number of successes and attempts with the new result.
-  const attempts = vocab.attempts + 1;
-  const successes = vocab.successes + (success ? 1 : 0);
+  const attempts = item.attempts + 1;
+  const successes = item.successes + (success ? 1 : 0);
   const correct = successes / attempts;
   // Accelerate new items that appear to be known.
   if (attempts < 5 && correct === 1) {

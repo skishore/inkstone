@@ -11,7 +11,7 @@
 // The "updateItem" model method takes a "result" argument which should be a
 // value in the set {0, 1, 2, 3}, with higher numbers indicating that the
 // user made more errors.
-import {getNextInterval} from '/model/external/interval_quantifier';
+import {getNextInterval} from '/model/external/inkren/interval_quantifier';
 import {Model} from '/model/model';
 
 const kLocalStorageKey = 'bespoke.vocabulary';

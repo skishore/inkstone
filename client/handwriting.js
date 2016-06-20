@@ -1,4 +1,4 @@
-import Sketch from '/client/external/sketch';
+import Sketch from '/client/external/soulwire/sketch';
 import {Settings} from '/model/settings';
 
 const kCanvasSize = 512;
