@@ -1,3 +1,5 @@
+const fs = Npm.require('fs');
+
 const Issues = new Meteor.Collection('issues');
 
 const Tuple = (...args) => {
@@ -16,6 +18,13 @@ const Character = Match.Where((x) => {
 const Stroke = [Tuple(Number, Number)];
 
 Meteor.methods({
+  getCharacter: (character) => {
+    const codepoint = character.codePointAt(0);
+    const directory = 'cordova-build-override/www/assets/characters';
+    const filename = `${process.env.PWD}/${directory}/${codepoint}`;
+    const readFileSync = Meteor.wrapAsync(fs.readFile, fs);
+    return JSON.parse(readFileSync(filename));
+  },
   reportIssue: (issue) => {
     // TODO(zhaizhai): Maybe do further validation of character_data here.
     // TODO(skishore): Maybe pass other data about the character, such as the

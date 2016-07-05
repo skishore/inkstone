@@ -1,16 +1,27 @@
 const kListColumns = ['word', '', '', 'pinyin', 'definition'];
 
-const lookupCharacter = (character) => {
-  const part = Math.floor(character.charCodeAt(0) / 256);
+const lookupAsset = (name) => {
   return new Promise((resolve, reject) => {
-    $.get(`characters/part-${part}.txt`, (data, code) => {
-      if (code !== 'success') reject(new Error(code));
-      for (let row of JSON.parse(data)) {
-        if (row.character === character) {
-          resolve(row);
-        }
-      }
-      reject(new Error(`Character not found: ${character}`));
+    const filename = cordova.file.applicationDirectory + 'www/assets/' + name;
+    window.resolveLocalFileSystemURL(filename, (entry) => {
+      entry.file((file) => {
+        const reader = new FileReader;
+        reader.onloadend = () => resolve(reader.result);
+        reader.readAsText(file);
+      }, reject);
+    }, reject);
+  });
+}
+
+const lookupCharacter = (character) => {
+  if (!character) return Promise.reject('No character provided.');
+  if (Meteor.isCordova) {
+    const asset = `characters/${character.codePointAt(0)}`;
+    return lookupAsset(asset).then(JSON.parse);
+  }
+  return new Promise((resolve, reject) => {
+    Meteor.call('getCharacter', character, (error, data) => {
+      error ? reject(error) : resolve(data);
     });
   });
 }

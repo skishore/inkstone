@@ -6,24 +6,24 @@ const fs = require('fs');
 const readline = require('readline');
 
 const kDelimiter = 'BREAK';
+const kDirectory = 'cordova-build-override/www/assets/characters';
 
-const dumpParts = (parts, rows) => {
-  for (const part in parts) {
-    parts[part].map((row) => {
-      row.dependencies = {};
-      Array.from(row.decomposition).map((character) => {
-        const data = rows[character];
-        if (data) {
-          let value = data.definition || '(unknown)';
-          if (data.pinyin.length > 0) {
-            value = data.pinyin.join(', ') + ' - ' + value;
-          }
-          row.dependencies[character] = value;
+const dumpCharacters = (all, rows) => {
+  for (let character of all) {
+    const row = rows[character];
+    row.dependencies = {};
+    Array.from(row.decomposition).map((character) => {
+      const data = rows[character];
+      if (data) {
+        let value = data.definition || '(unknown)';
+        if (data.pinyin.length > 0) {
+          value = data.pinyin.join(', ') + ' - ' + value;
         }
-      });
+        row.dependencies[character] = value;
+      }
     });
-    const data = JSON.stringify(parts[part]);
-    fs.writeFileSync(`public/characters/part-${part}.txt`, data);
+    const filename = `${kDirectory}/${row.character.charCodeAt(0)}`
+    fs.writeFileSync(filename, JSON.stringify(row));
   }
 }
 
@@ -55,14 +55,10 @@ const main = () => {
   console.log('Reading...');
   const input = fs.createReadStream('makemeahanzi.txt');
   const reader = readline.createInterface({input: input});
-  const parts = {};
   const rows = {};
   const all = [];
   reader.on('line', (line) => {
     const row = parseLine(line, kDelimiter);
-    const part = Math.floor(row.character.charCodeAt(0) / 256);
-    parts[part] = parts[part] || [];
-    parts[part].push(row);
     rows[row.character] = row;
     all.push(row.character);
   });
@@ -70,8 +66,8 @@ const main = () => {
   // Dump each part into a characters/part-xxx file, then compress them all.
   reader.on('close', () => {
     console.log('Dumping...');
-    dumpParts(parts, rows);
-    fs.writeFileSync('public/characters/all.txt', all.join(''));
+    dumpCharacters(all, rows);
+    fs.writeFileSync('public/characters.txt', all.join(''));
     console.log('Cleaning up...');
     child_process.execSync('rm makemeahanzi.txt', () => 0);
     console.log('Done!');

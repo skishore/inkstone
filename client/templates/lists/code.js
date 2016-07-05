@@ -54,10 +54,9 @@ const toggleListState = (list) => {
 
 // Meteor template helpers and one-time functions to prepare data follow.
 
-$.get('characters/all.txt', (data, code) => {
-  if (code !== 'success') throw new Error(code);
+$.ajax({url: 'characters.txt'}).then((data) => {
   for (let character of data) characters[character] = true;
-});
+}).fail((x) => console.error(x));
 
 groups.map((x) => x.lists.map((y) => y.variable = `lists.${y.list}`));
 
