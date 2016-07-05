@@ -3,7 +3,8 @@ const kListColumns = ['word', '', '', 'pinyin', 'definition'];
 const lookupCharacter = (character) => {
   const part = Math.floor(character.charCodeAt(0) / 256);
   return new Promise((resolve, reject) => {
-    $.get(`characters/part-${part}.txt`, (data, error) => {
+    $.get(`characters/part-${part}.txt`, (data, code) => {
+      if (code !== 'success') reject(new Error(code));
       for (let row of JSON.parse(data)) {
         if (row.character === character) {
           resolve(row);
@@ -33,7 +34,7 @@ const lookupItem = (item, callback) => {
 const lookupList = (list) => {
   return new Promise((resolve, reject) => {
     $.get(`lists/${list}.list`, (data, code) => {
-      if (code !== 'success') throw new Error(code);
+      if (code !== 'success') reject(new Error(code));
       const result = [];
       data.split('\n').map((line) => {
         const values = line.split('\t');
