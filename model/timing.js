@@ -2,6 +2,7 @@
 // Inkstone session and supports queries like:
 //  - How many flash cards are left in this session?
 //  - What is the next flash card?
+import {assert} from '/lib/base';
 import {Model} from '/model/model';
 import {Settings} from '/model/settings';
 import {Vocabulary} from '/model/vocabulary';
@@ -67,26 +68,9 @@ const buildErrorCard = (counts, extra) => {
 }
 
 const draw = (deck, ts) => {
-  let count = 0;
-  let earliest = null;
-  let result = null;
-  getters[deck](ts).forEach((card) => {
-    const next = card.next || Infinity;
-    if (!result || next < earliest) {
-      count = 1;
-      earliest = next;
-      result = card;
-    } else if (next === earliest) {
-      count += 1;
-      if (count * Math.random() < 1) {
-        result = card;
-      }
-    }
-  });
-  if (!result) {
-    throw new Error(`Drew from empty deck: ${deck}`);
-  }
-  return {data: result, deck: deck};
+  const data = getters[deck](ts).next();
+  assert(data, `Drew from empty deck: ${deck}`);
+  return {data: data, deck: deck};
 }
 
 const getters = {

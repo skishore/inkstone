@@ -62,8 +62,24 @@ class Cursor {
   fetch() {
     return this._list.map(materialize);
   }
-  forEach(callback) {
-    this.fetch().forEach(callback);
+  next() {
+    let count = 0;
+    let first = null;
+    let result = null;
+    for (let entry of this._list) {
+      const next = entry[kColumns.next] || Infinity;
+      if (!result || next < first) {
+        count = 1;
+        first = next;
+        result = entry;
+      } else if (next === first) {
+        count += 1;
+        if (count * Math.random() < 1) {
+          result = entry;
+        }
+      }
+    }
+    return result && materialize(result);
   }
 }
 
