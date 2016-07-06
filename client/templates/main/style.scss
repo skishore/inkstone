@@ -101,7 +101,8 @@ body {
       font-family: anke-calligraphic;
       font-size: 4 * $font-size;
       line-height: 4 * $font-size;
-      margin-bottom: 20%;
+      margin-bottom: 24%;
+      transform: translateY(4vw);
     }
 
     > .teach, > .options > .option {
