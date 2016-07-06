@@ -1,9 +1,7 @@
-// Schema: settings is a key-value store with records containing:
-//  - key: string
-//  - value: any
-import {Model} from '/model/model';
+// Schema: settings is a simple key-value store with some defaults.
+import {Table} from '/model/table';
 
-const settings = Model.collection('settings');
+const settings = new Table('settings');
 
 const defaults = {
   'settings.double_tap_speed': 500,
@@ -17,11 +15,11 @@ const defaults = {
 
 class Settings {
   static get(key) {
-    const record = settings.findOne({key: key});
-    return record ? record.value : defaults[key];
+    const value = settings.getItem(key);
+    return value === undefined ? defaults[key] : value;
   }
   static set(key, value) {
-    settings.upsert({key: key}, {$set: {key: key, value: value}});
+    settings.setItem(key, value);
   }
 }
 
