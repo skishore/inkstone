@@ -2,17 +2,15 @@
 // Inkstone session and supports queries like:
 //  - How many flash cards are left in this session?
 //  - What is the next flash card?
+import {Settings} from '/client/model/settings';
+import {Table} from '/client/model/table';
+import {Vocabulary} from '/client/model/vocabulary';
 import {assert} from '/lib/base';
-import {Model} from '/model/model';
-import {Settings} from '/model/settings';
-import {Vocabulary} from '/model/vocabulary';
 
 // Timing state tier 1: a Ground collection storing a single record with raw
 // counts for usage in this session and a timestamp of when the session began.
 
 const kSessionDuration = 12 * 60 * 60;
-
-const mCounts = Model.collection('counts');
 
 const newCounts = (ts) => ({
   adds: 0,
@@ -22,20 +20,33 @@ const newCounts = (ts) => ({
   ts: ts,
 });
 
+const timing = new Table('timing');
+
+timing.get = () => timing.getItem('counts');
+
+timing.set = (value) => timing.setItem('counts', value);
+
+timing.update = (ts, update) => {
+  const counts = timing.get();
+  if (!counts || counts.ts !== ts) return false;
+  timing.set(update(counts));
+  return true;
+}
+
 const updateTimestamp = () => {
-  const now = Model.timestamp();
-  const counts = mCounts.findOne() || {ts: -Infinity};
+  const now = Date.timestamp();
+  const counts = timing.get() || {ts: -Infinity};
   const wait = counts.ts + kSessionDuration - now;
   if (wait > 0) {
     time_left.set(wait);
   } else {
-    mCounts.upsert({}, newCounts(now));
+    timing.set(newCounts(now));
     time_left.set(kSessionDuration);
   }
   requestAnimationFrame(updateTimestamp);
 }
 
-Model.startup(updateTimestamp);
+Meteor.startup(updateTimestamp);
 
 // Timing state tier 2: reactive variables built on top of the session counts
 // that track what the next card is and how many cards of different classes
@@ -70,7 +81,7 @@ const buildErrorCard = (counts, extra) => {
 const draw = (deck, ts) => {
   const data = getters[deck](ts).next();
   assert(data, `Drew from empty deck: ${deck}`);
-  return {data: data, deck: deck};
+  return {data: data, deck: deck, ts: ts};
 }
 
 const getters = {
@@ -90,7 +101,7 @@ const mapDecks = (callback) => {
 }
 
 const shuffle = () => {
-  const counts = mCounts.findOne();
+  const counts = timing.get();
   const left = remainder.get();
   if (!counts || !left) return;
 
@@ -111,14 +122,14 @@ const shuffle = () => {
   }
 }
 
-Model.autorun(() => {
+Meteor.autorun(() => {
   const value = mapDecks((k) => Settings.get(`settings.max_${k}`));
   value.failures = Settings.get('settings.revisit_failures') ? Infinity : 0;
   maxes.set(value);
 });
 
-Model.autorun(() => {
-  const counts = mCounts.findOne();
+Meteor.autorun(() => {
+  const counts = timing.get();
   if (!counts || !maxes.get()) return;
   const value = mapDecks((k) => {
     const limit = maxes.get()[k] - counts[k];
@@ -136,28 +147,25 @@ Model.autorun(() => {
   remainder.set(value);
 });
 
-Model.autorun(shuffle);
+Meteor.autorun(shuffle);
 
 // Timing state tier 3: code executed when a user completes a given flashcard.
 
 const addExtraCards = (extra) => {
-  mCounts.update({ts: extra.ts}, {$set: {min_cards: extra.min_cards}});
+  const update = (x) => { x.min_cards = extra.min_cards; return x; };
+  timing.update(extra.ts, update);
 }
 
-const build = (k, v) => { const x = {}; x[k] = v; return x; }
-
 const completeCard = (card, result) => {
-  const selector = build(card.deck, {$exists: true});
-  const update = {$inc: build(card.deck, 1)};
-  if (mCounts.update(selector, update)) {
-    if (card.deck === 'failures') {
-      Vocabulary.clearFailed(card.data);
-    } else {
-      Vocabulary.updateItem(card.data, result);
-    }
-  } else {
+  const update = (x) => { x[card.deck] += 1; return x; };
+  if (!timing.update(card.ts, update)) {
     console.error('Failed to update card:', card, 'with result:', result);
-    shuffle();
+    return;
+  }
+  if (card.deck === 'failures') {
+    Vocabulary.clearFailed(card.data);
+  } else {
+    Vocabulary.updateItem(card.data, result);
   }
 }
 

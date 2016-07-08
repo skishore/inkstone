@@ -2,10 +2,10 @@
 // off of the straight segments where strokes intersects.
 import {Handwriting} from '/client/handwriting';
 import {lookupItem} from '/client/lookup';
+import {Timing} from '/client/model/timing';
 import {Popup} from '/client/templates/popup/code';
 import {ReportIssue} from '/client/templates/report-issue/code';
 import {Matcher} from '/lib/matcher/matcher';
-import {Timing} from '/model/timing';
 
 let element = null;
 let handwriting = null;

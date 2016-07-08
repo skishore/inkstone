@@ -1,7 +1,7 @@
 import {Backdrop} from '/client/backdrop';
 import {lookupList} from '/client/lookup';
-import {Settings} from '/model/settings';
-import {Vocabulary} from '/model/vocabulary';
+import {Settings} from '/client/model/settings';
+import {Vocabulary} from '/client/model/vocabulary';
 
 const kBackdropTimeout = 500;
 

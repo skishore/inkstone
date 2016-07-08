@@ -1,13 +1,13 @@
+const backing = localStorage;
+
 class Table {
   constructor(name) {
     this._name = name;
     this._cache = {};
     this._dirty = {};
     this._sentinel = new ReactiveDict();
-    if (Meteor.isClient) {
-      this._load(localStorage);
-      Meteor.autorun(() => this._save(localStorage));
-    }
+    this._load();
+    Meteor.autorun(() => this._save());
   }
   depend() {
     this._sentinel.allDeps.depend();
@@ -26,14 +26,14 @@ class Table {
     this._dirty[key] = true;
     this._sentinel.set(key, !this._sentinel.get(key));
   }
-  _load(backing) {
+  _load() {
     const prefix = `table.${this._name}.`;
     const ids = Object.keys(backing).filter((id) => id.startsWith(prefix));
     ids.forEach((id) => this.setItem(
         id.substr(prefix.length), JSON.parse(backing.getItem(id))));
     this._dirty = {};
   }
-  _save(backing) {
+  _save() {
     this.depend();
     Meteor.defer(() => {
       Object.keys(this._dirty).forEach((key) => {

@@ -1,5 +1,5 @@
 // Schema: settings is a simple key-value store with some defaults.
-import {Table} from '/model/table';
+import {Table} from '/client/model/table';
 
 const settings = new Table('settings');
 

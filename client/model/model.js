@@ -8,8 +8,7 @@ const loaded = {};
 
 class Model {
   static autorun(callback) {
-    Meteor.startup(() => Tracker.autorun(() =>
-        Meteor.isClient && ready.get() && callback()));
+    Meteor.startup(() => Tracker.autorun(() => ready.get() && callback()));
   }
   static collection(name) {
     collections[name] = new Ground.Collection(name, {connection: null});
@@ -24,14 +23,12 @@ class Model {
   }
 }
 
-// On the client, expose all registered collections for easy debugging and
-// set the ready bit when all collections are loaded from localStorage.
-if (Meteor.isClient) {
-  Ground.addListener(['loaded'], (event) => {
-    loaded[event.collection] = true;
-    ready.set(_.all(_.keys(collections).map((x) => loaded[x])));
-  });
-  window.collections = collections;
-}
+// Expose all registered collections for easy debugging and set the ready bit
+// when all collections are loaded from localStorage.
+Ground.addListener(['loaded'], (event) => {
+  loaded[event.collection] = true;
+  ready.set(_.all(_.keys(collections).map((x) => loaded[x])));
+});
+window.collections = collections;
 
 export {Model}
