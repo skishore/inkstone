@@ -189,6 +189,7 @@ const updateCard = () => {
   const card = Timing.getNextCard();
   if (!card || !card.data) return;
   handwriting && handwriting.clear();
+  helpers.set('deck', card.deck);
   if (card.deck === 'errors') {
     onErrorCard(card);
   } else {
