@@ -90,6 +90,7 @@ const onRegrade = (result) => {
   handwriting._stage.update();
   helpers.set('grading', false);
   element.find('#grading').remove();
+  element.find('.icon.report-issue').remove();
   maybeAdvance();
 }
 
