@@ -1,12 +1,7 @@
+// TODO(skishore): Make it possible to mock out persistence for demo mode.
 const backing = localStorage;
 
-// TODO(skishore): Rename this class to PersistentReactiveDict.
-// TODO(skishore): Add a PersistentReactiveVar class and use it for Timing.
-// TODO(skishore): Make it possible to mock out persistence for demo mode.
-// TODO(skishore): Make Lists into another model file.
-// TODO(skishore): Investigate the behavior of the "depend" method. Does it
-// cause invalidation when a key that has no dependencies is queried?
-class Table {
+class PersistentDict {
   constructor(name) {
     this._name = name;
     this._cache = {};
@@ -15,19 +10,19 @@ class Table {
     this._load();
     Meteor.autorun(() => this._save());
   }
-  depend() {
-    this._sentinel.allDeps.depend();
-  }
-  getItem(key) {
-    this._sentinel.get(key);
-    return this._cache[key];
-  }
-  removeItem(key, value) {
+  delete(key) {
     delete this._cache[key];
     this._dirty[key] = true;
     this._sentinel.set(key, !this._sentinel.get(key));
   }
-  setItem(key, value) {
+  depend() {
+    this._sentinel.allDeps.depend();
+  }
+  get(key) {
+    this._sentinel.get(key);
+    return this._cache[key];
+  }
+  set(key, value) {
     this._cache[key] = value;
     this._dirty[key] = true;
     this._sentinel.set(key, !this._sentinel.get(key));
@@ -35,7 +30,7 @@ class Table {
   _load() {
     const prefix = `table.${this._name}.`;
     const ids = Object.keys(backing).filter((id) => id.startsWith(prefix));
-    ids.forEach((id) => this.setItem(
+    ids.forEach((id) => this.set(
         id.substr(prefix.length), JSON.parse(backing.getItem(id))));
     this._dirty = {};
   }
@@ -55,4 +50,17 @@ class Table {
   }
 }
 
-export {Table};
+class PersistentVar {
+  constructor(name) {
+    this._dict = new PersistentDict(name);
+  }
+  get() {
+    return this._dict.get('value');
+  }
+  set(value) {
+    const clear = value === undefined;
+    clear ? this._dict.delete('value') : this._dict.set('value', value);
+  }
+}
+
+export {PersistentDict, PersistentVar};

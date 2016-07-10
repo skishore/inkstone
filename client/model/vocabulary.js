@@ -12,14 +12,14 @@
 // value in the set {0, 1, 2, 3}, with higher numbers indicating that the
 // user made more errors.
 import {getNextInterval} from '/client/external/inkren/interval_quantifier';
-import {Table} from '/client/model/table';
+import {PersistentDict} from '/client/model/persistence';
 
 const kNumChunks = 16;
 const kColumns = 'word last next lists attempts successes failed'.split(' ');
 const kIndices = {};
 kColumns.forEach((x, i) => kIndices[x] = i);
 
-const table = new Table('vocabulary');
+const table = new PersistentDict('vocabulary');
 const vocabulary = {active: [], chunks: [], index: {}};
 
 const chunk = (word) => vocabulary.chunks[Math.abs(word.hash()) % kNumChunks];
@@ -27,7 +27,7 @@ const chunk = (word) => vocabulary.chunks[Math.abs(word.hash()) % kNumChunks];
 const dirty = (word) => {
   const keys = word ? [Math.abs(word.hash()) % kNumChunks]
                     : _.range(kNumChunks);
-  keys.forEach((key) => table.setItem(key, vocabulary.chunks[key]));
+  keys.forEach((key) => table.set(key, vocabulary.chunks[key]));
 }
 
 const materialize = (entry) => {
@@ -144,7 +144,7 @@ class Vocabulary {
 }
 
 _.range(kNumChunks).forEach((i) => {
-  vocabulary.chunks.push(table.getItem(i) || []);
+  vocabulary.chunks.push(table.get(i) || []);
   vocabulary.chunks[i].forEach((entry) => {
     vocabulary.index[entry[kIndices.word]] = entry;
     if (entry[kIndices.lists].length > 0) vocabulary.active.push(entry);

@@ -1,7 +1,7 @@
 // Schema: settings is a simple key-value store with some defaults.
-import {Table} from '/client/model/table';
+import {PersistentDict} from '/client/model/persistence';
 
-const settings = new Table('settings');
+const settings = new PersistentDict('settings');
 
 const defaults = {
   'settings.double_tap_speed': 500,
@@ -15,11 +15,11 @@ const defaults = {
 
 class Settings {
   static get(key) {
-    const value = settings.getItem(key);
+    const value = settings.get(key);
     return value === undefined ? defaults[key] : value;
   }
   static set(key, value) {
-    settings.setItem(key, value);
+    settings.set(key, value);
   }
 }
 

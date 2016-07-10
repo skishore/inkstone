@@ -2,15 +2,25 @@
 // Inkstone session and supports queries like:
 //  - How many flash cards are left in this session?
 //  - What is the next flash card?
+import {PersistentVar} from '/client/model/persistence';
 import {Settings} from '/client/model/settings';
-import {Table} from '/client/model/table';
 import {Vocabulary} from '/client/model/vocabulary';
 import {assert} from '/lib/base';
 
-// Timing state tier 1: a Ground collection storing a single record with raw
-// counts for usage in this session and a timestamp of when the session began.
+// Timing state tier 1: a persistent variable, timing, which stores a list of
+// card counts for the current session and the timestamp at which it began.
+// On each frame, we check whether the current session is over.
 
 const kSessionDuration = 12 * 60 * 60;
+
+const timing = new PersistentVar('timing');
+
+timing.update = (ts, update) => {
+  const counts = timing.get();
+  if (!counts || counts.ts !== ts) return false;
+  timing.set(update(counts));
+  return true;
+}
 
 const newCounts = (ts) => ({
   adds: 0,
@@ -19,19 +29,6 @@ const newCounts = (ts) => ({
   min_cards: 0,
   ts: ts,
 });
-
-const timing = new Table('timing');
-
-timing.get = () => timing.getItem('counts');
-
-timing.set = (value) => timing.setItem('counts', value);
-
-timing.update = (ts, update) => {
-  const counts = timing.get();
-  if (!counts || counts.ts !== ts) return false;
-  timing.set(update(counts));
-  return true;
-}
 
 const updateTimestamp = () => {
   const now = Date.timestamp();
