@@ -15,19 +15,20 @@ import {getNextInterval} from '/client/external/inkren/interval_quantifier';
 import {PersistentDict} from '/client/model/persistence';
 
 const kNumChunks = 16;
+
 const kColumns = 'word last next lists attempts successes failed'.split(' ');
 const kIndices = {};
 kColumns.forEach((x, i) => kIndices[x] = i);
 
-const table = new PersistentDict('vocabulary');
-const vocabulary = {active: [], chunks: [], index: {}};
+const cache  = {active: [], chunks: [], index: {}};
+const vocabulary = new PersistentDict('vocabulary');
 
-const chunk = (word) => vocabulary.chunks[Math.abs(word.hash()) % kNumChunks];
+const chunk = (word) => cache.chunks[Math.abs(word.hash()) % kNumChunks];
 
 const dirty = (word) => {
   const keys = word ? [Math.abs(word.hash()) % kNumChunks]
                     : _.range(kNumChunks);
-  keys.forEach((key) => table.set(key, vocabulary.chunks[key]));
+  keys.forEach((key) => vocabulary.set(key, cache.chunks[key]));
 }
 
 const materialize = (entry) => {
@@ -38,8 +39,8 @@ const materialize = (entry) => {
 
 class Cursor {
   constructor(filter) {
-    table.depend();
-    this._list = vocabulary.active.filter(filter);
+    vocabulary.depend();
+    this._list = cache.active.filter(filter);
   }
   count() {
     return this._list.length;
@@ -70,40 +71,40 @@ class Cursor {
 
 class Vocabulary {
   static addItem(word, list) {
-    if (!vocabulary.index[word]) {
+    if (!cache.index[word]) {
       const entry = [word, null, null, [], 0, 0, false];
       if (entry.length !== kColumns.length) throw new Error(entry);
       chunk(word).push(entry);
-      vocabulary.index[word] = entry;
+      cache.index[word] = entry;
     }
-    const entry = vocabulary.index[word];
+    const entry = cache.index[word];
     const lists = entry[kIndices.lists];
     if (lists.indexOf(list) < 0) {
       lists.push(list);
-      if (lists.length === 1) vocabulary.active.push(entry);
+      if (lists.length === 1) cache.active.push(entry);
     }
     dirty(word);
   }
   static clearFailed(item) {
-    const entry = vocabulary.index[item.word];
+    const entry = cache.index[item.word];
     if (entry) entry[kIndices.failed] = false;
     dirty(item.word);
   }
   static dropList(list) {
     const updated = {active: [], chunks: []};
     _.range(kNumChunks).forEach(() => updated.chunks.push([]));
-    vocabulary.chunks.forEach((chunk, i) => chunk.forEach((entry) => {
+    cache.chunks.forEach((chunk, i) => chunk.forEach((entry) => {
       const lists = entry[kIndices.lists].filter((x) => x !== list);
       if (lists.length + entry[kIndices.attempts] > 0) {
         entry[kIndices.lists] = lists;
         updated.chunks[i].push(entry);
         if (lists.length > 0) updated.active.push(entry);
       } else {
-        delete vocabulary.index[entry[kIndices.word]];
+        delete cache.index[entry[kIndices.word]];
       }
     }));
-    vocabulary.active = updated.active;
-    vocabulary.chunks = updated.chunks;
+    cache.active = updated.active;
+    cache.chunks = updated.chunks;
     dirty();
   }
   static getExtraItems(last) {
@@ -128,7 +129,7 @@ class Vocabulary {
     return new Cursor((entry) => entry[kIndices.attempts] === 0);
   }
   static updateItem(item, result) {
-    const entry = vocabulary.index[item.word];
+    const entry = cache.index[item.word];
     if (!entry || entry[kIndices.attempts] !== item.attempts) return;
 
     const last = Date.timestamp();
@@ -144,10 +145,10 @@ class Vocabulary {
 }
 
 _.range(kNumChunks).forEach((i) => {
-  vocabulary.chunks.push(table.get(i) || []);
-  vocabulary.chunks[i].forEach((entry) => {
-    vocabulary.index[entry[kIndices.word]] = entry;
-    if (entry[kIndices.lists].length > 0) vocabulary.active.push(entry);
+  cache.chunks.push(vocabulary.get(i) || []);
+  cache.chunks[i].forEach((entry) => {
+    cache.index[entry[kIndices.word]] = entry;
+    if (entry[kIndices.lists].length > 0) cache.active.push(entry);
   });
 });
 
