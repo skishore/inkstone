@@ -12,37 +12,22 @@
 // value in the set {0, 1, 2, 3}, with higher numbers indicating that the
 // user made more errors.
 import {getNextInterval} from '/client/external/inkren/interval_quantifier';
-import {Model} from '/client/model/model';
+import {Table} from '/client/model/table';
 
-const kLocalStorageKey = 'bespoke.vocabulary';
 const kNumChunks = 16;
-
 const kColumns = 'word last next lists attempts successes failed'.split(' ');
 const kIndices = {};
 kColumns.forEach((x, i) => kIndices[x] = i);
 
-const sentinel = new ReactiveVar();
+const table = new Table('vocabulary');
 const vocabulary = {active: [], chunks: [], index: {}};
-_.range(kNumChunks).forEach(() => vocabulary.chunks.push([]));
 
-const chunk = (word) => vocabulary.chunks[Math.abs(hash(word)) % kNumChunks];
+const chunk = (word) => vocabulary.chunks[Math.abs(word.hash()) % kNumChunks];
 
 const dirty = (word) => {
-  if (word) {
-    chunk(word).dirty = true;
-  } else {
-    vocabulary.chunks.forEach((x) => x.dirty = true);
-  }
-  sentinel.set(sentinel.get() + 1);
-}
-
-const hash = (word) => {
-  let result = 0;
-  for (let i = 0; i < word.length; i++) {
-    result = (result << 5) - result + word.charCodeAt(i);
-    result = result & result;
-  }
-  return result;
+  const keys = word ? [Math.abs(word.hash()) % kNumChunks]
+                    : _.range(kNumChunks);
+  keys.forEach((key) => table.setItem(key, vocabulary.chunks[key]));
 }
 
 const materialize = (entry) => {
@@ -53,7 +38,7 @@ const materialize = (entry) => {
 
 class Cursor {
   constructor(filter) {
-    sentinel.get();
+    table.depend();
     this._list = vocabulary.active.filter(filter);
   }
   count() {
@@ -146,7 +131,7 @@ class Vocabulary {
     const entry = vocabulary.index[item.word];
     if (!entry || entry[kIndices.attempts] !== item.attempts) return;
 
-    const last = Model.timestamp();
+    const last = Date.timestamp();
     entry[kIndices.last] = last;
     entry[kIndices.next] = last + getNextInterval(item, result, last);
 
@@ -158,31 +143,12 @@ class Vocabulary {
   }
 }
 
-if (Meteor.isClient) {
-  Meteor.startup(() => {
-    _.range(kNumChunks).forEach((i) => {
-      const value = localStorage.getItem(`${kLocalStorageKey}.${i}`);
-      if (value) {
-        vocabulary.chunks[i] = JSON.parse(value);
-        vocabulary.chunks[i].forEach((entry) => {
-          vocabulary.index[entry[kIndices.word]] = entry;
-          if (entry[kIndices.lists].length > 0) vocabulary.active.push(entry);
-        });
-      }
-    });
-    dirty();
-    Meteor.autorun(() => {
-      sentinel.get();
-      Meteor.defer(() => {
-        vocabulary.chunks.forEach((chunk, i) => {
-          if (!chunk.dirty) return;
-          delete chunk.dirty;
-          localStorage.setItem(`${kLocalStorageKey}.${i}`,
-                               JSON.stringify(chunk));
-        });
-      });
-    });
+_.range(kNumChunks).forEach((i) => {
+  vocabulary.chunks.push(table.getItem(i) || []);
+  vocabulary.chunks[i].forEach((entry) => {
+    vocabulary.index[entry[kIndices.word]] = entry;
+    if (entry[kIndices.lists].length > 0) vocabulary.active.push(entry);
   });
-}
+});
 
 export {Vocabulary};
