@@ -1,5 +1,11 @@
 const backing = localStorage;
 
+// TODO(skishore): Rename this class to PersistentReactiveDict.
+// TODO(skishore): Add a PersistentReactiveVar class and use it for Timing.
+// TODO(skishore): Make it possible to mock out persistence for demo mode.
+// TODO(skishore): Make Lists into another model file.
+// TODO(skishore): Investigate the behavior of the "depend" method. Does it
+// cause invalidation when a key that has no dependencies is queried?
 class Table {
   constructor(name) {
     this._name = name;
