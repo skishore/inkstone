@@ -1,31 +1,43 @@
 const kListColumns = ['word', '', '', 'pinyin', 'definition'];
 
-const lookupAsset = (name) => {
+// Input: a path to an asset in cordova-build-overrides/www/assets
+// Output: a Promise that resolves to the String contents of that file
+const lookupAsset = (path) => {
   return new Promise((resolve, reject) => {
-    const filename = cordova.file.applicationDirectory + 'www/assets/' + name;
-    window.resolveLocalFileSystemURL(filename, (entry) => {
-      entry.file((file) => {
-        const reader = new FileReader;
-        reader.onloadend = () => resolve(reader.result);
-        reader.readAsText(file);
+    if (Meteor.isCordova) {
+      const url = `${cordova.file.applicationDirectory}www/assets/${path}`;
+      window.resolveLocalFileSystemURL(url, (entry) => {
+        entry.file((file) => {
+          const reader = new FileReader;
+          reader.onloadend = () => resolve(reader.result);
+          reader.readAsText(file);
+        }, reject);
       }, reject);
-    }, reject);
+    } else {
+      Meteor.call('lookupAsset', path, (error, data) => {
+        error ? reject(error) : resolve(data);
+      });
+    }
   });
 }
 
+// Input: a single Chinese character
+// Output: a Promise that resolves to that character's data, with keys:
+//   - character: the character
+//   - medians: a list of stroke medians, each of which is a list of points
+//   - strokes: a list of SVG strokes comprising that character
 const lookupCharacter = (character) => {
   if (!character) return Promise.reject('No character provided.');
-  if (Meteor.isCordova) {
-    const asset = `characters/${character.codePointAt(0)}`;
-    return lookupAsset(asset).then(JSON.parse);
-  }
-  return new Promise((resolve, reject) => {
-    Meteor.call('getCharacter', character, (error, data) => {
-      error ? reject(error) : resolve(data);
-    });
-  });
+  const path = `characters/${character.codePointAt(0)}`;
+  return lookupAsset(path).then(JSON.parse);
 }
 
+// Input: an item, which includes a word and a list of lists it appears in
+// Output: a Promise that resolves to the item data Object for that item:
+//   - characters: a list of character data Objects for each of its characters
+//   - definition: the definition of this word
+//   - pinyin: the pronunciation of this word
+//   - word: the word
 const lookupItem = (item, callback) => {
   if (!item || !item.word || item.lists.length === 0) {
     return Promise.reject(new Error(item));
@@ -42,6 +54,9 @@ const lookupItem = (item, callback) => {
   });
 }
 
+// Input: the name of a list
+// Output: a Promise that resolves to a list of items that appear in the list,
+//         each with all the data returned by lookupItem except characters
 const lookupList = (list) => {
   return new Promise((resolve, reject) => {
     $.get(`lists/${list}.list`, (data, code) => {
