@@ -58,21 +58,18 @@ const lookupItem = (item, callback) => {
 // Output: a Promise that resolves to a list of items that appear in the list,
 //         each with all the data returned by lookupItem except characters
 const lookupList = (list) => {
-  return new Promise((resolve, reject) => {
-    $.get(`lists/${list}.list`, (data, code) => {
-      if (code !== 'success') reject(new Error(code));
-      const result = [];
-      data.split('\n').map((line) => {
-        const values = line.split('\t');
-        if (values.length != kListColumns.length) return;
-        const row = {};
-        kListColumns.map((column, i) => {
-          if (column !== '') row[column] = values[i];
-        });
-        result.push(row);
+  return lookupAsset(`lists/${list}.list`).then((data) => {
+    const result = [];
+    data.split('\n').map((line) => {
+      const values = line.split('\t');
+      if (values.length != kListColumns.length) return;
+      const row = {};
+      kListColumns.map((column, i) => {
+        if (column !== '') row[column] = values[i];
       });
-      resolve(result);
+      result.push(row);
     });
+    return result;
   });
 }
 
