@@ -1,6 +1,6 @@
 import {Backdrop} from '/client/backdrop';
 import {lookupList} from '/client/lookup';
-import {Settings} from '/client/model/settings';
+import {Lists} from '/client/model/lists';
 import {Vocabulary} from '/client/model/vocabulary';
 
 const kBackdropTimeout = 500;
@@ -44,13 +44,11 @@ const enableList = (list, callback) => {
 }
 
 const toggleListState = (list) => {
-  const key = `lists.${list}`;
-  const state = Settings.get(key);
-  if (state) {
+  if (Lists.get(list)) {
     Vocabulary.dropList(list);
-    Settings.set(key, false);
+    Lists.delete(list);
   } else {
-    enableList(list, () => Settings.set(key, true));
+    enableList(list, () => Lists.set(list, true));
   }
 }
 

@@ -120,8 +120,8 @@ const shuffle = () => {
 }
 
 Meteor.autorun(() => {
-  const value = mapDecks((k) => Settings.get(`settings.max_${k}`));
-  value.failures = Settings.get('settings.revisit_failures') ? Infinity : 0;
+  const value = mapDecks((k) => Settings.get(`max_${k}`));
+  value.failures = Settings.get('revisit_failures') ? Infinity : 0;
   maxes.set(value);
 });
 

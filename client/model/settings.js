@@ -4,13 +4,13 @@ import {PersistentDict} from '/client/model/persistence';
 const settings = new PersistentDict('settings');
 
 const defaults = {
-  'settings.double_tap_speed': 500,
-  'settings.max_adds': 50,
-  'settings.max_reviews': 100,
-  'settings.paper_filter': true,
-  'settings.reveal_order': true,
-  'settings.revisit_failures': true,
-  'settings.snap_strokes': true,
+  double_tap_speed: 500,
+  max_adds: 50,
+  max_reviews: 100,
+  paper_filter: true,
+  reveal_order: true,
+  revisit_failures: true,
+  snap_strokes: true,
 };
 
 class Settings {

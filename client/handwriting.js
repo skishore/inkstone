@@ -203,7 +203,7 @@ class Handwriting {
 
     this._settings = {};
     ['double_tap_speed', 'reveal_order', 'snap_strokes'].forEach(
-        (x) => this._settings[x] = Settings.get(`settings.${x}`));
+        (x) => this._settings[x] = Settings.get(x));
 
     this._zoom = createSketch(element, this);
     this._stage = new createjs.Stage(element.find('canvas')[0]);

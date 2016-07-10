@@ -37,13 +37,13 @@ Template.layout.helpers({
   remainder: () => {
     const x = Timing.getRemainder();
     let left = '' + (x ? x.adds + x.extras + x.reviews : '?');
-    if (Settings.get('settings.revisit_failures')) {
+    if (Settings.get('revisit_failures')) {
       left += ' + ' + (x ? x.failures : '?');
     }
     return left;
   },
   theme: () => {
-    return Settings.get('settings.paper_filter') ? 'textured' : 'painterly';
+    return Settings.get('paper_filter') ? 'textured' : 'painterly';
   },
   time: () => {
     const time = Timing.getTimeLeft();
