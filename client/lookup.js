@@ -73,4 +73,4 @@ const lookupList = (list) => {
   });
 }
 
-export {lookupCharacter, lookupItem, lookupList};
+export {lookupAsset, lookupCharacter, lookupItem, lookupList};

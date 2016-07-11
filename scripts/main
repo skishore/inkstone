@@ -22,9 +22,10 @@ const dumpCharacters = (all, rows) => {
         row.dependencies[character] = value;
       }
     });
-    const filename = `${kDirectory}/${row.character.charCodeAt(0)}`
+    const filename = `${kDirectory}/${row.character.charCodeAt(0)}`;
     fs.writeFileSync(filename, JSON.stringify(row));
   }
+  fs.writeFileSync(`${kDirectory}/all.txt`, all.join(''));
 }
 
 const parseLine = (line, delimiter) => {
@@ -67,7 +68,6 @@ const main = () => {
   reader.on('close', () => {
     console.log('Dumping...');
     dumpCharacters(all, rows);
-    fs.writeFileSync('public/characters.txt', all.join(''));
     console.log('Cleaning up...');
     child_process.execSync('rm makemeahanzi.txt', () => 0);
     console.log('Done!');

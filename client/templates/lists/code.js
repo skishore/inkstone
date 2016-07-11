@@ -1,5 +1,5 @@
 import {Backdrop} from '/client/backdrop';
-import {lookupList} from '/client/lookup';
+import {lookupAsset, lookupList} from '/client/lookup';
 import {Lists} from '/client/model/lists';
 import {Vocabulary} from '/client/model/vocabulary';
 
@@ -54,9 +54,9 @@ const toggleListState = (list) => {
 
 // Meteor template helpers and one-time functions to prepare data follow.
 
-$.ajax({url: 'characters.txt'}).then((data) => {
+lookupAsset('characters/all.txt').then((data) => {
   for (let character of data) characters[character] = true;
-}).fail((x) => console.error(x));
+}).catch((error) => console.error(error));
 
 groups.map((x) => x.lists.map((y) => y.variable = `lists.${y.list}`));
 
