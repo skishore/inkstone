@@ -106,12 +106,12 @@ const shuffle = () => {
     const index = Math.random() * (left.adds + left.reviews);
     const deck = index < left.adds ? 'adds' : 'reviews';
     next_card.set(draw(deck, counts.ts));
-  } else if (left.failures > 0) {
-    next_card.set(draw('failures', counts.ts));
   } else if (left.extras > 0) {
     const card = draw('extras', counts.ts);
     card.deck = card.data.attempts === 0 ? 'adds' : 'reviews';
     next_card.set(card);
+  } else if (left.failures > 0) {
+    next_card.set(draw('failures', counts.ts));
   } else {
     const max = maxes.get() ? maxes.get().adds : 0;
     const extra = Math.min(getters.extras(counts.ts).count(), max);
