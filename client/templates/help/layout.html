@@ -1,0 +1,42 @@
+<template name="help">
+  {{#ionic}}
+    {{#contentFor "headerButtonLeft"}}
+      {{> ionNavBackButton text="Done"}}
+    {{/contentFor}}
+    {{#contentFor "headerTitle"}}
+      <h1 class="title">Help</h1>
+    {{/contentFor}}
+    {{#ionList}}
+      <div class="block">
+        {{#ionItem class="item-divider"}}
+          How do I...
+        {{/ionItem}}
+        {{#ionItem class="help-item" help="practice_writing"}}
+          Practice writing?
+        {{/ionItem}}
+        {{#ionItem class="help-item" help="tweak_scheduling"}}
+          Tweak scheduling?
+        {{/ionItem}}
+      </div>
+      <div class="block">
+        {{#ionItem class="item-divider"}}
+          Advanced Features
+        {{/ionItem}}
+        {{#ionItem class="help-item" help="add_custom_word_lists"}}
+          Add custom word lists
+        {{/ionItem}}
+        {{#ionItem class="help-item" help="turn_off_snap_strokes"}}
+          Turn off "Snap Strokes"
+        {{/ionItem}}
+      </div>
+    {{/ionList}}
+  {{/ionic}}
+</template>
+
+<template name="demo">
+  <div id="demo" style="transform: {{transform}}">
+    {{#if params}}
+      <iframe src="/?demo&{{params}}"></iframe>
+    {{/if}}
+  </div>
+</template>

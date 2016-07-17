@@ -1,0 +1,15 @@
+@import 'client/style.scss';
+
+#demo {
+  background-color: #444;
+  transform: translateY(100%); 
+  transition: transform 0.3s;
+  z-index: 9999;
+  @include full-size;
+
+  > iframe {
+    height: 100%;
+    width: 100%;
+    @include full-size;
+  }
+}
