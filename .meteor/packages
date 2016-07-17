@@ -17,7 +17,6 @@ ecmascript              # Enable ECMAScript2015+ syntax in app code
 
 reactive-var
 check
-mrt:modernizr-meteor
 iron:router
 ccorcos:transitioner
 standard-minifier-css
@@ -25,6 +24,5 @@ standard-minifier-js
 modules
 meteoric:ionic
 meteoric:ionic-sass
-meteoric:autoform-ionic
 crosswalk
 reactive-dict
