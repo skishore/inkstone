@@ -30,7 +30,7 @@ const newCounts = (ts) => ({
   ts: ts,
 });
 
-const updateTimestamp = () => {
+const tick = () => {
   const now = Date.timestamp();
   const counts = timing.get() || {ts: -Infinity};
   const wait = counts.ts + kSessionDuration - now;
@@ -40,10 +40,9 @@ const updateTimestamp = () => {
     timing.set(newCounts(now));
     time_left.set(kSessionDuration);
   }
-  requestAnimationFrame(updateTimestamp);
 }
 
-Meteor.startup(updateTimestamp);
+Meteor.startup(() => createjs.Ticker.addEventListener('tick', tick));
 
 // Timing state tier 2: reactive variables built on top of the session counts
 // that track what the next card is and how many cards of different classes
