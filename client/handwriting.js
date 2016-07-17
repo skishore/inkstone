@@ -87,7 +87,7 @@ const distance = (xs) => {
 }
 
 const dottedLine = (width, x1, y1, x2, y2) => {
-  const result = new createjs.Shape;
+  const result = new createjs.Shape();
   result.graphics.setStrokeDash([width, width], 0);
   result.graphics.setStrokeStyle(width)
   result.graphics.beginStroke('#ccc');
@@ -102,7 +102,7 @@ const midpoint = (point1, point2) => {
 
 const pathToShape = (path, size, color, uncached) => {
   const scale = 1024 / size;
-  const result = new createjs.Shape;
+  const result = new createjs.Shape();
   const graphics = result.graphics;
   result.graphics.beginFill(color);
   result.graphics.beginStroke(color);
@@ -151,7 +151,7 @@ class BasicBrush {
     this._color = options.color || kBrushColor;
     this._width = options.width || 1;
 
-    this._shape = new createjs.Shape;
+    this._shape = new createjs.Shape();
     this._endpoint = point;
     this._midpoint = null;
     container.addChild(this._shape);
@@ -211,7 +211,7 @@ class Handwriting {
 
     this._layers = [];
     for (let i = 0; i < Layer.ALL; i++) {
-      const layer = new createjs.Container;
+      const layer = new createjs.Container();
       this._layers.push(layer);
       this._stage.addChild(layer);
     }
@@ -282,7 +282,7 @@ class Handwriting {
   }
   moveToCorner() {
     const children = this._layers[Layer.COMPLETE].children.slice();
-    const container = new createjs.Container;
+    const container = new createjs.Container();
     children.forEach((child) => container.addChild(child));
     [Layer.WATERMARK, Layer.COMPLETE].forEach(
         (layer) => this._layers[layer].removeAllChildren());
@@ -296,7 +296,7 @@ class Handwriting {
   reveal(paths) {
     const layer = this._layers[Layer.WATERMARK];
     if (layer.children.length > 0) return;
-    const container = new createjs.Container;
+    const container = new createjs.Container();
     for (let path of paths) {
       const child = pathToShape(
           path, this._size, kRevealColor, true /* uncached */);
