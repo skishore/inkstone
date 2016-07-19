@@ -1,4 +1,5 @@
 import {Backdrop} from '/client/backdrop';
+import {Lists} from '/client/model/lists';
 import {Overlay} from '/client/templates/overlay/code';
 
 const highlight = (selector, caption) => () => {
@@ -17,9 +18,11 @@ const demo = [
   highlight('.lists', 'First, enable a word list. ' +
                       'From the main menu, tap "Lists".'),
   waitOnUrl('lists'),
-  highlight('.back-button', 'Great! Go back to the main menu.'),
+  highlight('.block:first-child', 'Use the toggle to enable the list.'),
+  () => Lists.get('100cr'),
+  highlight('.back-button', 'Now, go back to the main menu.'),
   waitOnUrl(''),
-  highlight('.teach', 'Now, tap "Write" to start studying.'),
+  highlight('.teach', 'Tap "Write" to start studying.'),
   waitOnUrl('teach'),
 ];
 
@@ -49,6 +52,8 @@ Template.help.events({
   'click .item.help-item': function(event) {
     params.clear();
     params.set('topic', this.topic);
+    window.mockLocalStorage = {};
+    window.mockLocalStorage['table.settings.paper_filter'] = false;
     Backdrop.show();
   },
 });

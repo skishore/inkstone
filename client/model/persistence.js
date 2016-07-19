@@ -1,5 +1,5 @@
 const demo = location.search.indexOf('demo') >= 0;
-const storage = demo ? null : localStorage;
+const storage = demo ? parent.mockLocalStorage : localStorage;
 
 class PersistentDict {
   constructor(name) {
@@ -7,10 +7,8 @@ class PersistentDict {
     this._cache = {};
     this._dirty = {};
     this._sentinel = new ReactiveDict();
-    if (storage) {
-      this._load();
-      Meteor.autorun(() => this._save());
-    }
+    this._load();
+    Meteor.autorun(() => this._save());
   }
   delete(key) {
     delete this._cache[key];
@@ -33,7 +31,7 @@ class PersistentDict {
     const prefix = `table.${this._name}.`;
     const ids = Object.keys(storage).filter((id) => id.startsWith(prefix));
     ids.forEach((id) => this.set(
-        id.substr(prefix.length), JSON.parse(storage.getItem(id))));
+        id.substr(prefix.length), JSON.parse(storage[id])));
     this._dirty = {};
   }
   _save() {
@@ -42,9 +40,9 @@ class PersistentDict {
       Object.keys(this._dirty).forEach((key) => {
         const id = `table.${this._name}.${key}`;
         if (this._cache.hasOwnProperty(key)) {
-          storage.setItem(id, JSON.stringify(this._cache[key]));
+          storage[id] = JSON.stringify(this._cache[key]);
         } else {
-          storage.removeItem(id);
+          delete storage[id];
         }
       });
       this._dirty = {};
