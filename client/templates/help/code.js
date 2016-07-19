@@ -1,6 +1,39 @@
 import {Backdrop} from '/client/backdrop';
 import {Overlay} from '/client/templates/overlay/code';
 
+const highlight = (selector, caption) => () => {
+  const elements = $(selector);
+  if (elements.length === 0) return false;
+  Overlay.show(elements);
+  console.log(caption);
+  return true;
+}
+
+const waitOnUrl = (url) => () => {
+  return window.location.pathname.substr(1) === url;
+}
+
+const demo = [
+  highlight('.lists', 'First, enable a word list. ' +
+                      'From the main menu, tap "Lists".'),
+  waitOnUrl('lists'),
+  highlight('.back-button', 'Great! Go back to the main menu.'),
+  waitOnUrl(''),
+  highlight('.teach', 'Now, tap "Write" to start studying.'),
+  waitOnUrl('teach'),
+];
+
+const run = (demo) => {
+  if (demo.length === 0) return Overlay.hide();
+  const step = demo[0];
+  const ticker = createjs.Ticker.addEventListener('tick', () => {
+    if (demo[0]()) {
+      createjs.Ticker.removeEventListener('tick', ticker);
+      run(demo.slice(1));
+    }
+  });
+}
+
 const kSelectors = {
   add_custom_word_lists: '.lists',
   practice_writing: '.teach',

@@ -8,6 +8,7 @@
   > .focus {
     box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.8);
     opacity: 0;
+    pointer-events: none;
     position: absolute;
     transition: opacity 0.3s, top 0.3s, left 0.3s, width 0.3s, height 0.3s;
   }
