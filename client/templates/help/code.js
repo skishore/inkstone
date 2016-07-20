@@ -2,11 +2,10 @@ import {Backdrop} from '/client/backdrop';
 import {Lists} from '/client/model/lists';
 import {Overlay} from '/client/templates/overlay/code';
 
-const highlight = (selector, caption) => () => {
+const highlight = (selector, label) => () => {
   const elements = $(selector);
   if (elements.length === 0) return false;
-  Overlay.show(elements);
-  console.log(caption);
+  Overlay.show(elements, label);
   return true;
 }
 

@@ -18,4 +18,12 @@
     height: 100vh;
     width: 100vw;
   }
+
+  > .label {
+    background-color: black;
+    color: white;
+    position: fixed;
+    padding: 4% 0;
+    width: 100%;
+  }
 }

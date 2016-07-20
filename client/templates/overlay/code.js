@@ -1,5 +1,4 @@
 let overlay = null;
-let target = null;
 
 const buildOverlay = () => {
   const container = $('<div>').attr('id', 'overlay');
@@ -11,8 +10,17 @@ const buildOverlay = () => {
     container.append(guard);
     guards.push(guard);
   }
+  const label = $('<div>').addClass('label');
+  container.append(label);
   $('body').append(container);
-  return {container: container, focus: focus, guards: guards};
+  return {container: container, focus: focus, guards: guards, label: label};
+}
+
+const computeLabelStyle = (target) => {
+  if (2 * target.top + target.height < window.innerHeight) {
+    return {top: 'auto', bottom: 0};
+  }
+  return {top: 0, bottom: 'auto'};
 }
 
 const computeTarget = (element) => {
@@ -47,14 +55,17 @@ class Overlay {
   static hide() {
     overlay && overlay.container.remove();
     overlay = null;
-    target = null;
   }
-  static show(element) {
+  static show(element, label) {
     overlay = overlay || buildOverlay();
-    target = computeTarget(element);
     overlay.focus.css({opacity: 1});
+    const target = computeTarget(element);
     repositionElement(overlay.focus, target);
     repositionGuards(overlay.guards, target);
+    if (label) {
+      overlay.label.css(computeLabelStyle(target));
+      overlay.label.text(label);
+    }
   }
 }
 
