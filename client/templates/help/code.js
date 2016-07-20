@@ -3,6 +3,7 @@ import {Lists} from '/client/model/lists';
 import {Overlay} from '/client/templates/overlay/code';
 
 const highlight = (selector, label) => () => {
+  Overlay.blockInput();
   const elements = $(selector);
   if (elements.length === 0) return false;
   Overlay.show(elements, label);

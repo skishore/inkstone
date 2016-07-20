@@ -52,6 +52,10 @@ const repositionGuards = (guards, target) => {
 }
 
 class Overlay {
+  static blockInput() {
+    overlay = overlay || buildOverlay();
+    overlay.container.addClass('block');
+  }
   static hide() {
     overlay && overlay.container.remove();
     overlay = null;
@@ -59,6 +63,7 @@ class Overlay {
   static show(element, label) {
     // Animate the fade-in of the overlay.
     overlay = overlay || buildOverlay();
+    overlay.container.removeClass('block');
     Meteor.defer(() => overlay.focus.css({opacity: 1}));
     // Bring up guards to prevent clicks on non-highlighted areas.
     const target = computeTarget(element);
