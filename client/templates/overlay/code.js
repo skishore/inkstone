@@ -18,9 +18,9 @@ const buildOverlay = () => {
 
 const computeLabelStyle = (target) => {
   if (2 * target.top + target.height < window.innerHeight) {
-    return {top: 'auto', bottom: 0};
+    return {top: 'auto', bottom: 0, display: 'block'};
   }
-  return {top: 0, bottom: 'auto'};
+  return {top: 0, bottom: 'auto', display: 'block'};
 }
 
 const computeTarget = (element) => {

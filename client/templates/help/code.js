@@ -10,6 +10,19 @@ const highlight = (selector, label) => () => {
   return true;
 }
 
+const sleep = (timeout) => {
+  let done = false;
+  let started = false;
+  return () => {
+    if (!started) {
+      Overlay.blockInput();
+      Meteor.setTimeout(() => done = true, timeout);
+      started = true;
+    }
+    return done;
+  };
+}
+
 const waitOnUrl = (url) => () => {
   return window.location.pathname.substr(1) === url;
 }
@@ -57,7 +70,7 @@ Meteor.startup(() => {
   Template.layout.onRendered(() => {
     parent.postMessage('Demo iframe loaded.', '*');
     const topic = window.location.search.substr(index + 5);
-    Meteor.setTimeout((() => runDemo(kDemos[topic] || [])), 600);
+    runDemo([sleep(600)].concat(kDemos[topic] || []));
   });
 });
 
