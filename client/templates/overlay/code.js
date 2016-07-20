@@ -57,15 +57,16 @@ class Overlay {
     overlay = null;
   }
   static show(element, label) {
+    // Animate the fade-in of the overlay.
     overlay = overlay || buildOverlay();
-    overlay.focus.css({opacity: 1});
+    Meteor.defer(() => overlay.focus.css({opacity: 1}));
+    // Bring up guards to prevent clicks on non-highlighted areas.
     const target = computeTarget(element);
     repositionElement(overlay.focus, target);
     repositionGuards(overlay.guards, target);
-    if (label) {
-      overlay.label.css(computeLabelStyle(target));
-      overlay.label.text(label);
-    }
+    // Show a label explaining the highlighted element.
+    overlay.label.css(computeLabelStyle(target));
+    overlay.label.text(label);
   }
 }
 

@@ -1,5 +1,5 @@
 const demo = location.search.indexOf('demo') >= 0;
-const storage = demo ? parent.mockLocalStorage : localStorage;
+const storage = demo ? {} : localStorage;
 
 class PersistentDict {
   constructor(name) {
