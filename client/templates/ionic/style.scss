@@ -43,6 +43,15 @@ $toggle-height:                   31px !default;
     box-shadow: $box-shadow-size rgba(0, 0, 0, 0.2);
 
     .back-button {
+      border: none;
+      max-height: none;
+      padding: 0 2%;
+      position: absolute;
+
+      bottom: 0;
+      left: 0;
+      top: 0;
+
       &:hover {
         color: #00c0ff;
       }
@@ -53,7 +62,7 @@ $toggle-height:                   31px !default;
       }
     }
 
-    .back-text, .button, .title {
+    .back-button, .back-text, .title {
       transition-property: none;
     }
   }
