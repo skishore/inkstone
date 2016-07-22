@@ -1,5 +1,6 @@
 import {Backdrop} from '/client/backdrop';
 import {Lists} from '/client/model/lists';
+import {Settings} from '/client/model/settings';
 import {Overlay} from '/client/templates/overlay/code';
 
 const highlight = (selector, label) => () => {
@@ -38,6 +39,14 @@ const runDemo = (demo) => {
   });
 }
 
+const kDemoInitializer = [
+  () => {
+    Settings.set('paper_filter', false);
+    return true;
+  },
+  sleep(600),
+];
+
 const kDemos = {
   practice_writing: [
     highlight('.lists', 'First, enable a word list. ' +
@@ -45,6 +54,7 @@ const kDemos = {
     waitOnUrl('lists'),
     highlight('.block:first-child', 'Use the toggle to enable the list.'),
     () => Lists.get('100cr'),
+    sleep(500),
     highlight('.back-button', 'Now, go back to the main menu.'),
     waitOnUrl(''),
     highlight('.teach', 'Tap "Write" to start studying.'),
@@ -70,7 +80,7 @@ Meteor.startup(() => {
   Template.layout.onRendered(() => {
     parent.postMessage('Demo iframe loaded.', '*');
     const topic = window.location.search.substr(index + 5);
-    runDemo([sleep(600)].concat(kDemos[topic] || []));
+    runDemo(kDemoInitializer.concat(kDemos[topic] || []));
   });
 });
 
