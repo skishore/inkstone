@@ -64,7 +64,7 @@ class Overlay {
     // Animate the fade-in of the overlay.
     overlay = overlay || buildOverlay();
     overlay.container.removeClass('block');
-    Meteor.defer(() => overlay.focus.css({opacity: 1}));
+    Meteor.defer(() => overlay && overlay.focus.css({opacity: 1}));
     // Bring up guards to prevent clicks on non-highlighted areas.
     const target = computeTarget(element);
     repositionElement(overlay.focus, target);

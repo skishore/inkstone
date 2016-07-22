@@ -24,6 +24,19 @@ const sleep = (timeout) => {
   };
 }
 
+const waitOnTap = () => {
+  let done = false;
+  let started = false;
+  return () => {
+    if (!started) {
+      Overlay.blockInput();
+      $(window).one('click', () => done = true);
+      started = true;
+    }
+    return done;
+  }
+}
+
 const waitOnUrl = (url) => () => {
   return window.location.pathname.substr(1) === url;
 }
@@ -59,6 +72,45 @@ const kDemos = {
     waitOnUrl(''),
     highlight('.teach', 'Tap "Write" to start studying.'),
     waitOnUrl('teach'),
+    highlight('.prompt', "At the top of this page, you'll see " +
+                         'the pinyin and definition of a word.'),
+    waitOnTap(),
+    highlight('.flashcard', 'Your goal is to write that word character-by-' +
+                            'character. Remember that stroke order matters.'),
+    waitOnTap(),
+    highlight('.flashcard', 'The first character of Zhōngwén ("Chinese") ' +
+                            'is 中. Try writing it now!'),
+    waitOnTap(), // waitUntilCharacterComplete
+    highlight('.flashcard', 'Inkstone automatically grades your writing. ' +
+                            'Swipe up to change your grade, ' +
+                            'or tap to move on.'),
+    waitOnTap(), // waitUntilNextCharacter
+    highlight('.flashcard', 'Now, write the second character of Zhōngwén. ' +
+                            'Tap for a hint. Double-tap for the answer.'),
+    waitOnTap(), // waitUntilNextCharacter
+    highlight('.flashcard', 'Great job! Tap to move ' +
+                            'on to the next flashcard.'),
+    waitOnTap(), // waitUntilNextCharacter
+    highlight('.info.right', 'The number of cards remaining is shown ' +
+                             'in the top right corner.'),
+    waitOnTap(),
+    () => {
+      Settings.set('max_adds', 0);
+      Settings.set('max_reviews', 0);
+      Settings.set('revisit_failures', false);
+      return true;
+    },
+    highlight('.flashcard.errors', 'After completing all cards scheduled ' +
+                                   'for the day, you have the option to ' +
+                                   'add some extra cards.'),
+    waitOnTap(),
+    highlight('.control.right', 'While studying, use the "learn" button to ' +
+                                'find out more about characters in the ' +
+                                'current word.'),
+    waitOnTap(),
+    highlight('.control.left', 'Use the "home" button to go ' +
+                               'back to the main menu.'),
+    waitOnTap(),
   ],
 };
 
