@@ -3,6 +3,19 @@ import {Lists} from '/client/model/lists';
 import {Settings} from '/client/model/settings';
 import {Overlay} from '/client/templates/overlay/code';
 
+const block = (executor) => {
+  let done = false;
+  let started = false;
+  return () => {
+    if (!started) {
+      Overlay.blockInput();
+      executor(() => done = true);
+      started = true;
+    }
+    return done;
+  }
+}
+
 const highlight = (selector, label) => () => {
   Overlay.blockInput();
   const elements = $(selector);
@@ -11,31 +24,9 @@ const highlight = (selector, label) => () => {
   return true;
 }
 
-const sleep = (timeout) => {
-  let done = false;
-  let started = false;
-  return () => {
-    if (!started) {
-      Overlay.blockInput();
-      Meteor.setTimeout(() => done = true, timeout);
-      started = true;
-    }
-    return done;
-  };
-}
+const sleep = (timeout) => block((done) => Meteor.setTimeout(done, timeout));
 
-const waitOnTap = () => {
-  let done = false;
-  let started = false;
-  return () => {
-    if (!started) {
-      Overlay.blockInput();
-      $(window).one('click', () => done = true);
-      started = true;
-    }
-    return done;
-  }
-}
+const waitOnTap = () => block((done) => $(window).one('click', done));
 
 const waitOnUrl = (url) => () => {
   return window.location.pathname.substr(1) === url;
