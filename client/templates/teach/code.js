@@ -120,7 +120,7 @@ const onStroke = (stroke) => {
   const result = task.matcher.match(stroke, task.missing);
   const index = result.index;
   task.recording.push({index: index, stroke: stroke});
-6
+
   // The user's input does not match any of the character's strokes.
   if (index < 0) {
     task.mistakes += 1;
