@@ -3,12 +3,14 @@ import {Lists} from '/client/model/lists';
 import {Settings} from '/client/model/settings';
 import {Overlay} from '/client/templates/overlay/code';
 
-const block = (executor) => {
+const allow = (executor) => block(executor, /*allow_input=*/true);
+
+const block = (executor, allow_input) => {
   let done = false;
   let started = false;
   return () => {
     if (!started) {
-      Overlay.blockInput();
+      if (!allow_input) Overlay.blockInput();
       executor(() => done = true);
       started = true;
     }
@@ -25,6 +27,8 @@ const highlight = (selector, label) => () => {
 }
 
 const sleep = (timeout) => block((done) => Meteor.setTimeout(done, timeout));
+
+const waitOnEvent = (name) => allow((done) => $(window).one(name, done));
 
 const waitOnTap = () => block((done) => $(window).one('click', done));
 
@@ -71,17 +75,17 @@ const kDemos = {
     waitOnTap(),
     highlight('.flashcard', 'The first character of Zhōngwén ("Chinese") ' +
                             'is 中. Try writing it now!'),
-    waitOnTap(), // waitUntilCharacterComplete
+    waitOnEvent('makemeahanzi-character-complete'),
     highlight('.flashcard', 'Inkstone automatically grades your writing. ' +
                             'Swipe up to change your grade, ' +
                             'or tap to move on.'),
-    waitOnTap(), // waitUntilNextCharacter
+    waitOnEvent('makemeahanzi-next-character'),
     highlight('.flashcard', 'Now, write the second character of Zhōngwén. ' +
                             'Tap for a hint. Double-tap for the answer.'),
-    waitOnTap(), // waitUntilNextCharacter
+    waitOnEvent('makemeahanzi-character-complete'),
     highlight('.flashcard', 'Great job! Tap to move ' +
                             'on to the next flashcard.'),
-    waitOnTap(), // waitUntilNextCharacter
+    waitOnEvent('makemeahanzi-next-character'),
     highlight('.info.right', 'The number of cards remaining is shown ' +
                              'in the top right corner.'),
     waitOnTap(),

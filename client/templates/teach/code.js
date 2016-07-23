@@ -37,6 +37,7 @@ const maybeAdvance = () => {
   }
   item.index += 1;
 
+  $(window).trigger('makemeahanzi-next-character');
   if (item.index < item.tasks.length) {
     handwriting.moveToCorner();
   } else {
@@ -151,6 +152,7 @@ const onStroke = (stroke) => {
     handwriting.warn(result.warning);
   }
   if (task.missing.length === 0) {
+    $(window).trigger('makemeahanzi-character-complete');
     task.result = getResult(task.penalties);
     handwriting.glow(task.result);
   } else if (task.missing[0] < index) {
