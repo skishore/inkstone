@@ -70,11 +70,9 @@ const kDemos = {
     highlight('.prompt', "At the top of this page, you'll see " +
                          'the pinyin and definition of a word.'),
     waitOnTap(),
-    highlight('.flashcard', 'Your goal is to write that word character-by-' +
-                            'character. Remember that stroke order matters.'),
-    waitOnTap(),
-    highlight('.flashcard', 'The first character of Zhōngwén ("Chinese") ' +
-                            'is 中. Try writing it now!'),
+    highlight('.flashcard', 'The first character of this word is 中. ' +
+                            'Try writing it now - remember that stroke ' +
+                            'order matters!'),
     waitOnEvent('makemeahanzi-character-complete'),
     highlight('.flashcard', 'Inkstone automatically grades your writing. ' +
                             'Swipe up to change your grade, ' +
@@ -97,7 +95,7 @@ const kDemos = {
     },
     highlight('.flashcard.errors', 'After completing all cards scheduled ' +
                                    'for the day, you have the option to ' +
-                                   'add some extra cards.'),
+                                   'add extra cards.'),
     waitOnTap(),
     highlight('.control.right', 'While studying, use the "learn" button to ' +
                                 'find out more about characters in the ' +
