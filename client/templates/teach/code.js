@@ -196,6 +196,7 @@ const updateCard = () => {
     onErrorCard(card);
   } else {
     defer(() => lookupItem(card.data).then(onItemData).catch((error) => {
+      if (window.isInkstoneDemo) return;
       console.error('Card data request error:', error);
       defer(Timing.shuffle);
     }));

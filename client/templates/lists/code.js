@@ -27,7 +27,7 @@ const enableList = (list) => {
   });
 }
 
-const setListState = (list, on) => (on ? enableList : disableList)(list);
+const setListStatus = (list, on) => (on ? enableList : disableList)(list);
 
 const toListTemplate = (lists) => {
   const render = (y) => _.extend({variable: `lists.${y.list}`}, y);
@@ -42,4 +42,4 @@ lookupAsset('characters/all.txt').then((data) => {
 
 Template.lists.helpers({groups: () => toListTemplate(Lists.getAllLists())});
 
-export {setListState};
+export {setListStatus};

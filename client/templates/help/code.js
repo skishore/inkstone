@@ -1,7 +1,9 @@
 import {Backdrop} from '/client/backdrop';
 import {Lists} from '/client/model/lists';
 import {Settings} from '/client/model/settings';
+import {Vocabulary} from '/client/model/vocabulary';
 import {Overlay} from '/client/templates/overlay/code';
+import {assert} from '/lib/base';
 
 const allow = (executor) => block(executor, /*allow_input=*/true);
 
@@ -56,6 +58,12 @@ const kDemoInitializer = [
 ];
 
 const kDemos = {
+  add_custom_word_lists: [
+    highlight('.lists', "Custom lists aren't implemented yet, but when " +
+                        "they are, they'll be accessible from the " +
+                        '"Lists" page.'),
+    waitOnTap(),
+  ],
   practice_writing: [
     () => {
       Lists.setAllLists([{
@@ -115,6 +123,94 @@ const kDemos = {
                          'Tap to go back to the help page.'),
     waitOnTap(),
   ],
+  turn_off_snap_strokes: [
+    () => {
+      Vocabulary.addItem('中文', 'demo');
+      return true;
+    },
+    highlight('.settings', 'For an extra challenge, you can turn off ' +
+                           "Inkstone's writing assistance. To do so, " +
+                           'go to the "Settings" page.'),
+    waitOnUrl('settings'),
+    highlight('.item:contains("Snap Strokes")',
+              'Turn writing assistance off here.'),
+    () => !Settings.get('snap_strokes'),
+    () => Router.go('teach') || true,
+    highlight('.flashcard', 'Try writing the word 中文 below. Before ' +
+                            'finishing each character, you will only get ' +
+                            'to see your own strokes!'),
+    waitOnEvent('makemeahanzi-next-character'),
+    waitOnEvent('makemeahanzi-next-character'),
+    highlight('.flashcard', 'Nice job! Note that you must still use proper ' +
+                            'stroke order in this mode, and that you can ' +
+                            'still tap for a hint.'),
+    waitOnTap(),
+    highlight('.flashcard', 'Turning off writing assistance is ' +
+                            'the best way to test your knowledge!'),
+    waitOnTap(),
+  ],
+  tweak_scheduling: [
+    () => {
+      const cjk = 19968;
+      const adds = 200;
+      const failures = 7;
+      const reviews = 200;
+      _.range(adds + failures + reviews).forEach((i) => {
+        const character = String.fromCharCode(cjk + i);
+        Vocabulary.addItem(character, 'demo');
+      });
+      const ts = Date.timestamp();
+      const items = Vocabulary.getNewItems().fetch();
+      assert(items.length === adds + failures + reviews);
+      items.forEach((item, i) => {
+        if (i < failures) {
+          Vocabulary.updateItem(item, 3, ts);
+        } else if (i < failures + reviews) {
+          Vocabulary.updateItem(item, 0, ts - 365 * 86400);
+        }
+      });
+      return true;
+    },
+    highlight('#header', 'Before changing scheduling settings, ' +
+                         'take a look at the status bar.'),
+    waitOnTap(),
+    highlight('.info.left', 'The amount of time left in the current ' +
+                            'session is shown on the left.'),
+    waitOnTap(),
+    highlight('.info.right', 'The total number of flashcards remaining is ' +
+                             'shown on the right: regularly-scheduled ' +
+                             'cards plus mistakes to review.'),
+    waitOnTap(),
+    highlight('.settings', 'Now, go to the "Settings" page to ' +
+                           'change scheduling settings.'),
+    waitOnUrl('settings'),
+    highlight('.item:contains("Revisit Failures")',
+              'When you get a flashcard wrong, it is scheduled again ' +
+              'for review that day. Try disabling this option now.'),
+    () => !Settings.get('revisit_failures'),
+    highlight('.info.right', 'Note that mistakes are no longer ' +
+                             'included in the flashcard count.'),
+    waitOnTap(),
+    () => {
+      $('.ionic-body .content').scrollTop(window.innerHeight);
+      return true;
+    },
+    highlight('.block:contains("Reviews Per Day")',
+              'Reviews are flashcards that you have seen before. ' +
+              'This setting bounds the number of reviews per day. ' +
+              'Try setting it to 50.'),
+    () => Settings.get('max_reviews') === 50,
+    sleep(300),
+    highlight('.block:contains("New Cards Per Day")',
+              'Great! The next setting places a limit on the number ' +
+              'of new cards added per day. Try setting it to 25.'),
+    () => Settings.get('max_adds') === 25,
+    sleep(300),
+    highlight('.info.right', 'As with the "Revisit Failures" setting, ' +
+                             'changes to these settings are immediately ' +
+                             'reflected in the count.'),
+    waitOnTap(),
+  ],
 };
 
 const params = new ReactiveDict();
@@ -132,6 +228,7 @@ Template.help.events({
 Meteor.startup(() => {
   const index = window.location.search.indexOf('demo=');
   if (index < 0) return;
+  window.isInkstoneDemo = true;
   Template.layout.onRendered(() => {
     parent.postMessage('Demo started.', '*');
     const topic = window.location.search.substr(index + 5);

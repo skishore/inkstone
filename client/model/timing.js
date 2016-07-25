@@ -161,7 +161,7 @@ const completeCard = (card, result) => {
   if (card.deck === 'failures') {
     Vocabulary.clearFailed(card.data);
   } else {
-    Vocabulary.updateItem(card.data, result);
+    Vocabulary.updateItem(card.data, result, Date.timestamp());
   }
 }
 

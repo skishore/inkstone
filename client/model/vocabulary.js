@@ -128,13 +128,12 @@ class Vocabulary {
   static getNewItems() {
     return new Cursor((entry) => entry[kIndices.attempts] === 0);
   }
-  static updateItem(item, result) {
+  static updateItem(item, result, ts) {
     const entry = cache.index[item.word];
     if (!entry || entry[kIndices.attempts] !== item.attempts) return;
 
-    const last = Date.timestamp();
-    entry[kIndices.last] = last;
-    entry[kIndices.next] = last + getNextInterval(item, result, last);
+    entry[kIndices.last] = ts;
+    entry[kIndices.next] = ts + getNextInterval(item, result, ts);
 
     const success = result < 3;
     entry[kIndices.attempts] = item.attempts + 1;

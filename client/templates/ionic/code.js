@@ -1,6 +1,6 @@
 import {Lists} from '/client/model/lists';
 import {Settings} from '/client/model/settings';
-import {setListState} from '/client/templates/lists/code';
+import {setListStatus} from '/client/templates/lists/code';
 import {assert} from '/lib/base';
 
 const get = (variable) => {
@@ -12,7 +12,7 @@ const get = (variable) => {
 const set = (variable, value) => {
   const pair = variable.split('.');
   assert(pair.length === 2);
-  (pair[0] === 'lists' ? setListState : Settings.set)(pair[1], value);
+  (pair[0] === 'lists' ? setListStatus : Settings.set)(pair[1], value);
 }
 
 Template.ionRange.events({
