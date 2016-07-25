@@ -37,7 +37,7 @@ const waitOnUrl = (url) => () => {
 }
 
 const runDemo = (demo) => {
-  if (demo.length === 0) return Overlay.hide();
+  if (demo.length === 0) return parent.postMessage('Demo complete.', '*');
   if (demo[0]()) return runDemo(demo.slice(1));
   const ticker = createjs.Ticker.addEventListener('tick', () => {
     if (demo[0]()) {
@@ -111,6 +111,9 @@ const kDemos = {
     highlight('.control.left', 'Use the "home" button to go ' +
                                'back to the main menu.'),
     waitOnTap(),
+    highlight('#layout', "That's the end of the tutorial! " +
+                         'Tap to go back to the help page.'),
+    waitOnTap(),
   ],
 };
 
@@ -130,15 +133,17 @@ Meteor.startup(() => {
   const index = window.location.search.indexOf('demo=');
   if (index < 0) return;
   Template.layout.onRendered(() => {
-    parent.postMessage('Demo iframe loaded.', '*');
+    parent.postMessage('Demo started.', '*');
     const topic = window.location.search.substr(index + 5);
     runDemo(kDemoInitializer.concat(kDemos[topic] || []));
   });
 });
 
 window.addEventListener('message', (event) => {
-  if (event.data === 'Demo iframe loaded.') {
+  if (event.data === 'Demo started.') {
     params.set('transform', 'translateY(0)');
     Backdrop.hide();
+  } else if (event.data === 'Demo complete.') {
+    params.clear();
   }
 });
