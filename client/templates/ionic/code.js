@@ -1,24 +1,18 @@
 import {Lists} from '/client/model/lists';
 import {Settings} from '/client/model/settings';
-import {toggleListState} from '/client/templates/lists/code';
+import {setListState} from '/client/templates/lists/code';
 import {assert} from '/lib/base';
-
-const backing = {lists: Lists, settings: Settings};
 
 const get = (variable) => {
   const pair = variable.split('.');
   assert(pair.length === 2);
-  return backing[pair[0]].get(pair[1]);
+  return (pair[0] === 'lists' ? Lists.enabled : Settings.get)(pair[1]);
 }
 
 const set = (variable, value) => {
   const pair = variable.split('.');
   assert(pair.length === 2);
-  if (pair[0] === 'lists') {
-    toggleListState(pair[1]);
-  } else {
-    backing[pair[0]].set(pair[1], value);
-  }
+  (pair[0] === 'lists' ? setListState : Settings.set)(pair[1], value);
 }
 
 Template.ionRange.events({

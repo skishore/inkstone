@@ -57,11 +57,18 @@ const kDemoInitializer = [
 
 const kDemos = {
   practice_writing: [
+    () => {
+      Lists.setAllLists([{
+        label: 'General',
+        lists: [{label: 'Demo Words', list: 'demo'}],
+      }]);
+      return true;
+    },
     highlight('.lists', 'First, enable a word list. ' +
                         'From the main menu, tap "Lists".'),
     waitOnUrl('lists'),
     highlight('.block:first-child', 'Use the toggle to enable the list.'),
-    () => Lists.get('100cr'),
+    () => Lists.enabled('demo'),
     sleep(500),
     highlight('.back-button', 'Now, go back to the main menu.'),
     waitOnUrl(''),

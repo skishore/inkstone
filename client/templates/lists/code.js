@@ -7,49 +7,31 @@ const kBackdropTimeout = 500;
 
 const characters = {};
 
-// TODO(skishore): The list metadata should go in the model, not here.
-const groups = [
-  {
-    label: 'General',
-    lists: [
-      {label: '100 Common Radicals', list: '100cr'},
-    ],
-  },
-  {
-    label: 'Hanyu Shuiping Kaoshi',
-    lists: [
-      {label: 'HSK Level 1', list: 'nhsk1'},
-      {label: 'HSK Level 2', list: 'nhsk2'},
-      {label: 'HSK Level 3', list: 'nhsk3'},
-      {label: 'HSK Level 4', list: 'nhsk4'},
-      {label: 'HSK Level 5', list: 'nhsk5'},
-      {label: 'HSK Level 6', list: 'nhsk6'},
-    ],
-  },
-];
+const disableList = (list) => {
+  Vocabulary.dropList(list);
+  Lists.disable(list);
+}
 
-const enableList = (list, callback) => {
+const enableList = (list) => {
   Backdrop.show();
   lookupList(list).then((rows) => {
-    rows.map((row) => {
+    rows.forEach((row) => {
       if (!_.all(row.word, (x) => characters[x])) return;
       Vocabulary.addItem(row.word, list);
     });
+    Lists.enable(list);
     Backdrop.hide(kBackdropTimeout);
-    callback();
   }).catch((error) => {
-    Backdrop.hide(kBackdropTimeout);
     console.error(error);
+    Backdrop.hide(kBackdropTimeout);
   });
 }
 
-const toggleListState = (list) => {
-  if (Lists.get(list)) {
-    Vocabulary.dropList(list);
-    Lists.delete(list);
-  } else {
-    enableList(list, () => Lists.set(list, true));
-  }
+const setListState = (list, on) => (on ? enableList : disableList)(list);
+
+const toListTemplate = (lists) => {
+  const render = (y) => _.extend({variable: `lists.${y.list}`}, y);
+  return lists.map((x) => ({label: x.label, lists: x.lists.map(render)}));
 }
 
 // Meteor template helpers and one-time functions to prepare data follow.
@@ -58,8 +40,6 @@ lookupAsset('characters/all.txt').then((data) => {
   for (let character of data) characters[character] = true;
 }).catch((error) => console.error(error));
 
-groups.map((x) => x.lists.map((y) => y.variable = `lists.${y.list}`));
+Template.lists.helpers({groups: () => toListTemplate(Lists.getAllLists())});
 
-Template.lists.helpers({groups: () => groups});
-
-export {toggleListState};
+export {setListState};
