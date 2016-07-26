@@ -1,25 +1,25 @@
 $base-background-color: #e4e4e4;
-$box-shadow-size: 4px 4px 16px;
-$loading-icon-size: 80px;
+$box-shadow-size: 1vw 1vw 4vw;
+$loading-icon-size: 20vw;
 
 $font-family-base:                Georgia, serif !default;
-$font-size-base:                  20px !default;
-$font-size-large:                 24px !default;
-$font-size-small:                 16px !default;
+$font-size-base:                  5vw !default;
+$font-size-large:                 6vw !default;
+$font-size-small:                 4vw !default;
 
-$button-height:                   52px !default;
+$button-height:                   13vw !default;
 
-$bar-height:                      54px !default;
-$bar-title-font-size:             24px !default;
+$bar-height:                      13.5vw !default;
+$bar-title-font-size:             6vw !default;
 
-$item-font-size:                  20px !default;
-$item-padding:                    12px !default;
-$item-button-font-size:           20px !default;
+$item-font-size:                  5vw !default;
+$item-padding:                    3vw !default;
+$item-button-font-size:           5vw !default;
 
-$toggle-width:                    52px !default;
-$toggle-height:                   31px !default;
+$toggle-width:                    13vw !default;
+$toggle-height:                   7.75vw !default;
 
-@import '.meteor/local/build/programs/server/assets/packages/meteoric_ionic-sass/_ionic';
+@import 'ionic';
 
 @keyframes spin {
   from {
@@ -31,10 +31,10 @@ $toggle-height:                   31px !default;
 }
 
 .platform-ios.platform-cordova:not(.fullscreen) {
-  .has-header { top: 54px }
+  .has-header { top: 13.5vw }
   .bar-header:not(.bar-subheader) {
-    height: 54px;
-    > * { margin-top: 0px; }
+    height: 13.5vw;
+    > * { margin-top: 0; }
   }
 }
 
@@ -77,12 +77,12 @@ $toggle-height:                   31px !default;
 
       > .item {
         &.item-divider {
-          border-width: 1px 0 0 0;
+          border-width: 0.25vw 0 0 0;
           background-color: white;
           color: $dark;
           font-weight: bold;
           margin: 0;
-          padding: 8px 12px;
+          padding: 2vw 3vw;
 
           &:first-child {
             border-width: 0;
@@ -94,7 +94,7 @@ $toggle-height:                   31px !default;
         }
 
         &.item-toggle > .toggle {
-          top: 10px;
+          top: 2.5vw;
         }
       }
     }
