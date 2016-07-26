@@ -5,14 +5,18 @@ const kListColumns = ['word', '', '', 'pinyin', 'definition'];
 const lookupAsset = (path) => {
   return new Promise((resolve, reject) => {
     if (Meteor.isCordova) {
-      const url = `${cordova.file.applicationDirectory}www/assets/${path}`;
-      window.resolveLocalFileSystemURL(url, (entry) => {
-        entry.file((file) => {
-          const reader = new FileReader;
-          reader.onloadend = () => resolve(reader.result);
-          reader.readAsText(file);
+      try {
+        const url = `${cordova.file.applicationDirectory}www/assets/${path}`;
+        window.resolveLocalFileSystemURL(url, (entry) => {
+          entry.file((file) => {
+            const reader = new FileReader;
+            reader.onloadend = () => resolve(reader.result);
+            reader.readAsText(file);
+          }, reject);
         }, reject);
-      }, reject);
+      } catch (e) {
+        reject(e);
+      }
     } else {
       Meteor.call('lookupAsset', path, (error, data) => {
         error ? reject(error) : resolve(data);
