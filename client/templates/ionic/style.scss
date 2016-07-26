@@ -101,14 +101,13 @@ $toggle-height:                   7.75vw !default;
   }
 }
 
-.ion-loading-d {
-  &::before{
-    animation: spin 1s infinite linear;
-    content: "\f29c";
-    display: inline-block;
-    font-family: "Ionicons";
-    font-size: $loading-icon-size;
-    line-height: $loading-icon-size;
-    width: $loading-icon-size;
-  }
+.ion-loading-d::before{
+  animation: spin 1s infinite linear;
+  content: "\f29c";
+  display: inline-block;
+  font-family: "Ionicons";
+  font-size: $loading-icon-size;
+  line-height: $loading-icon-size;
+  vertical-align: top;
+  width: $loading-icon-size;
 }
