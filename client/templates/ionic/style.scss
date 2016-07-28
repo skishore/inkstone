@@ -19,7 +19,7 @@ $item-button-font-size:           5vw !default;
 $toggle-width:                    13vw !default;
 $toggle-height:                   7.75vw !default;
 
-@import 'ionic';
+@import '{}/client/external/meteoric/_ionic.sass';
 
 @keyframes spin {
   from {
