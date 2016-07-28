@@ -20,8 +20,21 @@ const kColumns = 'word last next lists attempts successes failed'.split(' ');
 const kIndices = {};
 kColumns.forEach((x, i) => kIndices[x] = i);
 
+const onload = (value) => {
+  cache.active = [];
+  cache.chunks = [];
+  cache.index = {};
+  _.range(kNumChunks).forEach((i) => {
+    cache.chunks.push(value[i] || []);
+    cache.chunks[i].forEach((entry) => {
+      cache.index[entry[kIndices.word]] = entry;
+      if (entry[kIndices.lists].length > 0) cache.active.push(entry);
+    });
+  });
+}
+
 const cache  = {active: [], chunks: [], index: {}};
-const vocabulary = new PersistentDict('vocabulary');
+const vocabulary = new PersistentDict('vocabulary', onload);
 
 const chunk = (word) => cache.chunks[Math.abs(word.hash()) % kNumChunks];
 
@@ -142,13 +155,5 @@ class Vocabulary {
     dirty(item.word);
   }
 }
-
-_.range(kNumChunks).forEach((i) => {
-  cache.chunks.push(vocabulary.get(i) || []);
-  cache.chunks[i].forEach((entry) => {
-    cache.index[entry[kIndices.word]] = entry;
-    if (entry[kIndices.lists].length > 0) cache.active.push(entry);
-  });
-});
 
 export {Vocabulary};

@@ -1,14 +1,28 @@
-const demo = location.search.indexOf('demo') >= 0;
-const storage = demo ? {} : localStorage;
+import {assert} from '/lib/base';
+
+const registry = {};
+let storage = localStorage;
+
+const mockPersistenceLayer = (replacement) => {
+  Tracker.flush();
+  storage = replacement;
+  Object.keys(registry).map((key) => registry[key]._load());
+}
 
 class PersistentDict {
-  constructor(name) {
+  constructor(name, onload) {
     this._name = name;
+    this._onload = onload;
     this._cache = {};
     this._dirty = {};
     this._sentinel = new ReactiveDict();
     this._load();
     Meteor.autorun(() => this._save());
+    assert(!registry[name]);
+    registry[name] = this;
+  }
+  clear() {
+    Object.keys(this._cache).map(this.delete.bind(this));
   }
   delete(key) {
     delete this._cache[key];
@@ -28,10 +42,12 @@ class PersistentDict {
     this._sentinel.set(key, !this._sentinel.get(key));
   }
   _load() {
+    this.clear();
     const prefix = `table.${this._name}.`;
     const ids = Object.keys(storage).filter((id) => id.startsWith(prefix));
     ids.forEach((id) => this.set(
         id.substr(prefix.length), JSON.parse(storage[id])));
+    this._onload && this._onload(this._cache);
     this._dirty = {};
   }
   _save() {
@@ -63,4 +79,4 @@ class PersistentVar {
   }
 }
 
-export {PersistentDict, PersistentVar};
+export {mockPersistenceLayer, PersistentDict, PersistentVar};

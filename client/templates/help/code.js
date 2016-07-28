@@ -1,5 +1,6 @@
 import {Backdrop} from '/client/backdrop';
 import {Lists} from '/client/model/lists';
+import {mockPersistenceLayer} from '/client/model/persistence';
 import {Settings} from '/client/model/settings';
 import {Vocabulary} from '/client/model/vocabulary';
 import {Overlay} from '/client/templates/overlay/code';
@@ -39,7 +40,7 @@ const waitOnUrl = (url) => () => {
 }
 
 const runDemo = (demo) => {
-  if (demo.length === 0) return parent.postMessage('Demo complete.', '*');
+  if (demo.length === 0) return;
   if (demo[0]()) return runDemo(demo.slice(1));
   const ticker = createjs.Ticker.addEventListener('tick', () => {
     if (demo[0]()) {
@@ -49,22 +50,33 @@ const runDemo = (demo) => {
   });
 }
 
-const kDemoInitializer = [
+const kDemoPrefix = [
   () => {
-    Settings.set('paper_filter', false);
+    mockPersistenceLayer({});
+    Router.go('index');
+    Settings.set('demo_mode', true);
     return true;
   },
-  sleep(600),
+  sleep(0),
+];
+
+const kDemoSuffix = [
+  () => {
+    mockPersistenceLayer(localStorage);
+    Router.go('help');
+    Overlay.hide();
+    return true;
+  },
 ];
 
 const kDemos = {
-  add_custom_word_lists: [
+  add_custom_word_lists: () => [
     highlight('.lists', "Custom lists aren't implemented yet, but when " +
                         "they are, they'll be accessible from the " +
                         '"Lists" page.'),
     waitOnTap(),
   ],
-  practice_writing: [
+  practice_writing: () => [
     () => {
       Lists.setAllLists([{
         label: 'General',
@@ -123,7 +135,7 @@ const kDemos = {
                          'Tap to go back to the help page.'),
     waitOnTap(),
   ],
-  turn_off_snap_strokes: [
+  turn_off_snap_strokes: () => [
     () => {
       Vocabulary.addItem('中文', 'demo');
       return true;
@@ -141,6 +153,7 @@ const kDemos = {
                             'to see your own strokes!'),
     waitOnEvent('makemeahanzi-next-character'),
     waitOnEvent('makemeahanzi-next-character'),
+    sleep(0),
     highlight('.flashcard', 'Nice job! Note that you must still use proper ' +
                             'stroke order in this mode, and that you can ' +
                             'still tap for a hint.'),
@@ -149,7 +162,7 @@ const kDemos = {
                             'the best way to test your knowledge!'),
     waitOnTap(),
   ],
-  tweak_scheduling: [
+  tweak_scheduling: () => [
     () => {
       const cjk = 19968;
       const adds = 200;
@@ -188,6 +201,7 @@ const kDemos = {
               'When you get a flashcard wrong, it is scheduled again ' +
               'for review that day. Try disabling this option now.'),
     () => !Settings.get('revisit_failures'),
+    sleep(50),
     highlight('.info.right', 'Note that mistakes are no longer ' +
                              'included in the flashcard count.'),
     waitOnTap(),
@@ -213,34 +227,8 @@ const kDemos = {
   ],
 };
 
-const params = new ReactiveDict();
-
-Template.demo.helpers({get: (key) => params.get(key)});
-
 Template.help.events({
   'click .item.help-item': function(event) {
-    params.clear();
-    params.set('topic', this.topic);
-    Backdrop.show();
+    runDemo(kDemoPrefix.concat(kDemos[this.topic]()).concat(kDemoSuffix));
   },
-});
-
-Meteor.startup(() => {
-  const index = window.location.search.indexOf('demo=');
-  if (index < 0) return;
-  window.isInkstoneDemo = true;
-  Template.layout.onRendered(() => {
-    parent.postMessage('Demo started.', '*');
-    const topic = window.location.search.substr(index + 5);
-    runDemo(kDemoInitializer.concat(kDemos[topic] || []));
-  });
-});
-
-window.addEventListener('message', (event) => {
-  if (event.data === 'Demo started.') {
-    params.set('transform', 'translateY(0)');
-    Backdrop.hide();
-  } else if (event.data === 'Demo complete.') {
-    params.clear();
-  }
 });

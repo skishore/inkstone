@@ -2,6 +2,7 @@
 // off of the straight segments where strokes intersects.
 import {Handwriting} from '/client/handwriting';
 import {lookupItem} from '/client/lookup';
+import {Settings} from '/client/model/settings';
 import {Timing} from '/client/model/timing';
 import {Popup} from '/client/templates/popup/code';
 import {ReportIssue} from '/client/templates/report-issue/code';
@@ -196,7 +197,7 @@ const updateCard = () => {
     onErrorCard(card);
   } else {
     defer(() => lookupItem(card.data).then(onItemData).catch((error) => {
-      if (window.isInkstoneDemo) return;
+      if (Settings.get('demo_mode')) return;
       console.error('Card data request error:', error);
       defer(Timing.shuffle);
     }));
