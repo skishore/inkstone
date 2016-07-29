@@ -60,15 +60,15 @@ const runDemo = (demo) => {
 
 const kDemoPrefix = () => {
   if (Settings.get('demo_mode')) return;
-  mockPersistenceLayer({});
   Router.go('index');
+  mockPersistenceLayer({});
   Settings.set('demo_mode', true);
 }
 
 const kDemoSuffix = () => {
   if (!Settings.get('demo_mode')) return;
-  mockPersistenceLayer(localStorage);
   Router.go('help');
+  mockPersistenceLayer(localStorage);
   Overlay.hide();
 }
 
@@ -191,7 +191,6 @@ const kDemos = {
     },
     highlight('#header', 'Before changing scheduling settings, ' +
                          'take a look at the status bar.'),
-    sleep(400),
     waitOnTap(),
     highlight('.info.left', 'The amount of time left in the current ' +
                             'session is shown on the left.'),
@@ -247,6 +246,6 @@ Iron.Location.onPopState(() => {
 Template.help.events({
   'click .item.help-item': function(event) {
     kDemoPrefix();
-    runDemo(kDemos[this.topic]());
+    runDemo([sleep(300)].concat(kDemos[this.topic]()));
   },
 });
