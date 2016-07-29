@@ -42,13 +42,14 @@ const waitOnUrl = (url) => () => {
 }
 
 const runDemo = (demo) => {
+  // Don't run any demo logic if the demo is over.
   if (!Settings.get('demo_mode') || demo.length === 0) {
     return kDemoSuffix();
-  }
-  if (demo[0]()) {
+  } else if (demo[0]()) {
     return runDemo(demo.slice(1));
   }
   const ticker = createjs.Ticker.addEventListener('tick', () => {
+    // Again, in each frame, don't run any demo logic if the demo is over.
     if (!Settings.get('demo_mode')) {
       createjs.Ticker.removeEventListener('tick', ticker);
     } else if (demo[0]()) {
@@ -67,8 +68,13 @@ const kDemoPrefix = () => {
 
 const kDemoSuffix = () => {
   if (!Settings.get('demo_mode')) return;
+  // Ensure that no matter what page we were on, we'll end up on the help page
+  // and that hitting back once will return us to the main menu.
   history.pushState(undefined, undefined, '/');
   history.pushState(undefined, undefined, '/help');
+  // We call Router.go here before mockPersistenceLayer because the latter
+  // function calls Tracker.flush(), which triggers the UI refresh. If we
+  // weren't already on the help page, we would see a flash of another page.
   Router.go('help', undefined, {replaceState: true});
   mockPersistenceLayer(localStorage);
   Overlay.hide();
@@ -238,6 +244,8 @@ const kDemos = {
 };
 
 Iron.Location.onPopState(() => {
+  // Normally, pressing a back button immediately terminates any running demo.
+  // However, there are cases when a demo instructs the user to press back.
   if (allow_back_button) {
     allow_back_button = false;
   } else {
