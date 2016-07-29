@@ -51,9 +51,10 @@ const maybeAdvance = () => {
 
 const maybeRecordResult = () => {
   if (!item.card) return;
+  const card = item.card;
   const result = _.reduce(item.tasks.map((x) => x.result),
                           (x, y) => Math.max(x, y), 0);
-  defer(() => Timing.completeCard(item.card, result));
+  defer(() => Timing.completeCard(card, result));
 }
 
 const transition = () => {
