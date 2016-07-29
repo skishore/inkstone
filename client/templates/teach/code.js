@@ -66,7 +66,9 @@ const transition = () => {
       element.find('canvas')[0], 0, 0);
   wrapper.children().slice(1).remove();
   wrapper.append(clone);
-  scroller.velocity({left: '100%'}, 0).velocity({left: 0}, 300);
+  $.Velocity.animate(scroller, {left: '100%'}, 0).then(() =>
+      $.Velocity.animate(scroller, {left: 0}, 300).then(() =>
+          $(window).trigger('makemeahanzi-flashcard-slide')));
 }
 
 // Event handlers for touch interactions on the handwriting canvas.

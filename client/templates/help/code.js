@@ -23,6 +23,8 @@ const block = (executor, allow_input) => {
   }
 }
 
+const blockOnEvent = (name) => block((done) => $(window).one(name, done));
+
 const highlight = (selector, label) => () => {
   Overlay.blockInput();
   const elements = $(selector);
@@ -132,7 +134,7 @@ const kDemos = {
       Settings.set('revisit_failures', false);
       return true;
     },
-    sleep(400),
+    blockOnEvent('makemeahanzi-flashcard-slide'),
     highlight('.flashcard.errors', 'After completing all cards scheduled ' +
                                    'for the day, you have the option to ' +
                                    'add extra cards.'),
@@ -169,7 +171,7 @@ const kDemos = {
       Settings.set('revisit_failures', false);
       return true;
     },
-    sleep(400),
+    blockOnEvent('makemeahanzi-flashcard-slide'),
     highlight('.flashcard', 'Nice job! Note that you must still use proper ' +
                             'stroke order in this mode, and that you can ' +
                             'still tap for a hint.'),
