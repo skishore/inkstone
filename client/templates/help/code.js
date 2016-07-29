@@ -6,6 +6,8 @@ import {Vocabulary} from '/client/model/vocabulary';
 import {Overlay} from '/client/templates/overlay/code';
 import {assert} from '/lib/base';
 
+let allow_back_button = false;
+
 const allow = (executor) => block(executor, /*allow_input=*/true);
 
 const block = (executor, allow_input) => {
@@ -91,6 +93,10 @@ const kDemos = {
     highlight('.block:first-child', 'Use the toggle to enable the list.'),
     () => Lists.enabled('demo'),
     sleep(500),
+    () => {
+      allow_back_button = true;
+      return true;
+    },
     highlight('.back-button', 'Now, go back to the main menu.'),
     waitOnUrl(''),
     highlight('.teach', 'Tap "Write" to start studying.'),
@@ -230,7 +236,13 @@ const kDemos = {
   ],
 };
 
-Iron.Location.onPopState(() => Meteor.defer(kDemoSuffix));
+Iron.Location.onPopState(() => {
+  if (allow_back_button) {
+    allow_back_button = false;
+  } else {
+    Meteor.defer(kDemoSuffix);
+  }
+});
 
 Template.help.events({
   'click .item.help-item': function(event) {
