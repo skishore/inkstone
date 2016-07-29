@@ -57,7 +57,6 @@ const kDemoPrefix = [
     Settings.set('demo_mode', true);
     return true;
   },
-  sleep(0),
 ];
 
 const kDemoSuffix = [
@@ -111,15 +110,13 @@ const kDemos = {
     highlight('.flashcard', 'Great job! Tap to move ' +
                             'on to the next flashcard.'),
     waitOnEvent('makemeahanzi-next-character'),
-    highlight('.info.right', 'The number of cards remaining is shown ' +
-                             'in the top right corner.'),
-    waitOnTap(),
     () => {
       Settings.set('max_adds', 0);
       Settings.set('max_reviews', 0);
       Settings.set('revisit_failures', false);
       return true;
     },
+    sleep(400),
     highlight('.flashcard.errors', 'After completing all cards scheduled ' +
                                    'for the day, you have the option to ' +
                                    'add extra cards.'),
@@ -128,11 +125,8 @@ const kDemos = {
                                 'find out more about characters in the ' +
                                 'current word.'),
     waitOnTap(),
-    highlight('.control.left', 'Use the "home" button to go ' +
-                               'back to the main menu.'),
-    waitOnTap(),
-    highlight('#layout', "That's the end of the tutorial! " +
-                         'Tap to go back to the help page.'),
+    highlight('.control.left', "When you're done, use the " +
+                               '"home" button to return to the main menu.'),
     waitOnTap(),
   ],
   turn_off_snap_strokes: () => [
@@ -153,13 +147,16 @@ const kDemos = {
                             'to see your own strokes!'),
     waitOnEvent('makemeahanzi-next-character'),
     waitOnEvent('makemeahanzi-next-character'),
-    sleep(0),
+    () => {
+      Settings.set('max_adds', 0);
+      Settings.set('max_reviews', 0);
+      Settings.set('revisit_failures', false);
+      return true;
+    },
+    sleep(400),
     highlight('.flashcard', 'Nice job! Note that you must still use proper ' +
                             'stroke order in this mode, and that you can ' +
                             'still tap for a hint.'),
-    waitOnTap(),
-    highlight('.flashcard', 'Turning off writing assistance is ' +
-                            'the best way to test your knowledge!'),
     waitOnTap(),
   ],
   tweak_scheduling: () => [
@@ -186,6 +183,7 @@ const kDemos = {
     },
     highlight('#header', 'Before changing scheduling settings, ' +
                          'take a look at the status bar.'),
+    sleep(400),
     waitOnTap(),
     highlight('.info.left', 'The amount of time left in the current ' +
                             'session is shown on the left.'),
@@ -214,16 +212,19 @@ const kDemos = {
               'This setting bounds the number of reviews per day. ' +
               'Try setting it to 50.'),
     () => Settings.get('max_reviews') === 50,
-    sleep(300),
     highlight('.block:contains("New Cards Per Day")',
               'Great! The next setting places a limit on the number ' +
               'of new cards added per day. Try setting it to 25.'),
     () => Settings.get('max_adds') === 25,
-    sleep(300),
+    sleep(50),
     highlight('.info.right', 'As with the "Revisit Failures" setting, ' +
                              'changes to these settings are immediately ' +
                              'reflected in the count.'),
     waitOnTap(),
+    () => {
+      $('.ionic-body .content').scrollTop(0);
+      return true;
+    },
   ],
 };
 

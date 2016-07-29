@@ -65,6 +65,11 @@ $toggle-height:                   7.75vw !default;
     .back-button, .back-text, .title {
       transition-property: none;
     }
+
+    .title.title-center {
+      left: 0 !important;
+      right: 0 !important;
+    }
   }
 
   .view {
