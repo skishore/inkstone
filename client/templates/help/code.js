@@ -67,7 +67,9 @@ const kDemoPrefix = () => {
 
 const kDemoSuffix = () => {
   if (!Settings.get('demo_mode')) return;
-  Router.go('help');
+  history.pushState(undefined, undefined, '/');
+  history.pushState(undefined, undefined, '/help');
+  Router.go('help', undefined, {replaceState: true});
   mockPersistenceLayer(localStorage);
   Overlay.hide();
 }
