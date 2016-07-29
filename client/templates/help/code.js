@@ -40,33 +40,35 @@ const waitOnUrl = (url) => () => {
 }
 
 const runDemo = (demo) => {
-  if (demo.length === 0) return;
-  if (demo[0]()) return runDemo(demo.slice(1));
+  if (!Settings.get('demo_mode') || demo.length === 0) {
+    return kDemoSuffix();
+  }
+  if (demo[0]()) {
+    return runDemo(demo.slice(1));
+  }
   const ticker = createjs.Ticker.addEventListener('tick', () => {
-    if (demo[0]()) {
+    if (!Settings.get('demo_mode')) {
+      createjs.Ticker.removeEventListener('tick', ticker);
+    } else if (demo[0]()) {
       createjs.Ticker.removeEventListener('tick', ticker);
       runDemo(demo.slice(1));
     }
   });
 }
 
-const kDemoPrefix = [
-  () => {
-    mockPersistenceLayer({});
-    Router.go('index');
-    Settings.set('demo_mode', true);
-    return true;
-  },
-];
+const kDemoPrefix = () => {
+  if (Settings.get('demo_mode')) return;
+  mockPersistenceLayer({});
+  Router.go('index');
+  Settings.set('demo_mode', true);
+}
 
-const kDemoSuffix = [
-  () => {
-    mockPersistenceLayer(localStorage);
-    Router.go('help');
-    Overlay.hide();
-    return true;
-  },
-];
+const kDemoSuffix = () => {
+  if (!Settings.get('demo_mode')) return;
+  mockPersistenceLayer(localStorage);
+  Router.go('help');
+  Overlay.hide();
+}
 
 const kDemos = {
   add_custom_word_lists: () => [
@@ -228,8 +230,11 @@ const kDemos = {
   ],
 };
 
+Iron.Location.onPopState(() => Meteor.defer(kDemoSuffix));
+
 Template.help.events({
   'click .item.help-item': function(event) {
-    runDemo(kDemoPrefix.concat(kDemos[this.topic]()).concat(kDemoSuffix));
+    kDemoPrefix();
+    runDemo(kDemos[this.topic]());
   },
 });
