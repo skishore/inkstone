@@ -1,0 +1,12 @@
+- Add GPLv3 license file
+- Add ability to save and load a database snapshot to a file
+- Add themed vocab lists for foods, family, etc.
+- Add vocab lists from New Practical Chinese Reader
+- Append "rad. 20" or similar to the definition for radicals
+- Create flashcards for character -> [definition|pinyin|tone]
+- On adding a word to vocab, also add its constituent characters
+- Relax angle feature for dot strokes
+- Support custom word lists w/ online UI
+- Support some shortcuts in stroke matching (女, 了, 子, 纟, 糹, 糸, 系, 辶)
+- Support traditional characters (with PRC stroke order)
+- Support Taiwanese stroke order
