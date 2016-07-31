@@ -1,5 +1,8 @@
 const kListColumns = ['word', '', '', 'pinyin', 'definition'];
 
+const characters = {};
+const radicals = {};
+
 // Input: a path to an asset in cordova-build-overrides/www/assets
 // Output: a Promise that resolves to the String contents of that file
 const lookupAsset = (path) => {
@@ -54,6 +57,11 @@ const lookupItem = (item, callback) => {
     if (entries.length === 0) throw new Error(`Entry not found: ${item.word}`);
     const entry = entries[0];
     entry.characters = data[1];
+    const radical = radicals[item.word];
+    if (radical && entry.characters.length === 1) {
+      const base = entry.definition || entry.characters[0].definition || '';
+      entry.definition = `${base}${base ? '; ' : ''}radical ${radical}`;
+    }
     return entry;
   });
 }
@@ -71,10 +79,19 @@ const lookupList = (list) => {
       kListColumns.map((column, i) => {
         if (column !== '') row[column] = values[i];
       });
+      if (!_.all(row.word, (x) => characters[x])) return;
       result.push(row);
     });
     return result;
   });
 }
 
-export {lookupAsset, lookupCharacter, lookupItem, lookupList};
+lookupAsset('characters/all.txt').then((data) => {
+  for (let character of data) characters[character] = true;
+});
+
+lookupAsset('radicals.json').then((data) => {
+  _.extend(radicals, JSON.parse(data).radical_to_index_map);
+});
+
+export {lookupCharacter, lookupItem, lookupList};

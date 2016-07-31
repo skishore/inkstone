@@ -2,7 +2,6 @@
 - Add ability to save and load a database snapshot to a file
 - Add themed vocab lists for foods, family, etc.
 - Add vocab lists from New Practical Chinese Reader
-- Append "rad. 20" or similar to the definition for radicals
 - Create flashcards for character -> [definition|pinyin|tone]
 - On adding a word to vocab, also add its constituent characters
 - Relax angle feature for dot strokes
