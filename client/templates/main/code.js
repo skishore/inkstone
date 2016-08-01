@@ -1,18 +1,5 @@
-// Simple helpers for interacting with reactive variables.
 import {Settings} from '/client/model/settings';
 import {Timing} from '/client/model/timing';
-
-ReactiveVar.prototype.pop = function() {
-  const value = this.get();
-  value.pop();
-  this.set(value);
-}
-
-ReactiveVar.prototype.push = function(element) {
-  const value = this.get();
-  value.push(element);
-  this.set(value);
-}
 
 // Set up the routing table and transitioner.
 
