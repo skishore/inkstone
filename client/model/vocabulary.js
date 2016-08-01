@@ -85,7 +85,7 @@ class Cursor {
     let first = null;
     let result = null;
     for (let entry of this._list) {
-      const next = entry[kColumns.next] || Infinity;
+      const next = entry[kIndices.next] || Infinity;
       if (!result || next < first) {
         count = 1;
         first = next;
