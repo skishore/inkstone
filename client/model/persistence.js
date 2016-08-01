@@ -55,6 +55,10 @@ class PersistentDict {
     this._sentinel.get(key);
     return this._cache[key];
   }
+  keys() {
+    this.depend();
+    return _.keys(this._cache);
+  }
   set(key, value) {
     this._cache[key] = value;
     this._dirty[key] = true;

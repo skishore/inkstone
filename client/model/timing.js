@@ -22,6 +22,7 @@
 //  - How many flash cards are left in this session?
 //  - What is the next flash card?
 import {PersistentVar} from '/client/model/persistence';
+import {Lists} from '/client/model/lists';
 import {Settings} from '/client/model/settings';
 import {Vocabulary} from '/client/model/vocabulary';
 import {assert} from '/lib/base';
@@ -73,6 +74,13 @@ const remainder = new ReactiveVar();
 const time_left = new ReactiveVar();
 
 const buildErrorCard = (counts, extra) => {
+  if (!Lists.anyListEnabled()) {
+    const data = {
+      error: 'You have no lists enabled!',
+      options: [{link: 'lists', text: 'Enable a word list.'}],
+    };
+    return {data: data, deck: 'errors'};
+  }
   const error = "You're done for the day!";
   const options = [{
     link: 'settings',

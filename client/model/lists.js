@@ -45,6 +45,9 @@ const kLists = [
 const lists = new PersistentDict('lists');
 
 class Lists {
+  static anyListEnabled() {
+    return lists.keys().filter((key) => key.startsWith('status.')).length > 0;
+  }
   static disable(list) {
     return lists.delete(`status.${list}`);
   }
