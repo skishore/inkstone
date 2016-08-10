@@ -238,7 +238,7 @@ class Handwriting {
 
     createjs.Ticker.timingMode = createjs.Ticker.RAF;
     createjs.Ticker.removeEventListener('tick', ticker);
-    ticker = createjs.Ticker.addEventListener('tick', this.tick.bind(this));
+    ticker = createjs.Ticker.addEventListener('tick', this._tick.bind(this));
 
     this.clear();
   }
@@ -323,13 +323,6 @@ class Handwriting {
     }
     container.cache(0, 0, this._size, this._size);
     layer.addChild(container);
-  }
-  tick(event) {
-    if (this._running_animations) {
-      this._stage.update(event);
-      this._running_animations -= this._pending_animations;
-      this._pending_animations = 0;
-    }
   }
   undo() {
     this._layers[Layer.STROKE].children.pop();
@@ -424,6 +417,13 @@ class Handwriting {
     this._brush = null;
     this._stroke = [];
     this._stage.update();
+  }
+  _tick(event) {
+    if (this._running_animations) {
+      this._stage.update(event);
+      this._running_animations -= this._pending_animations;
+      this._pending_animations = 0;
+    }
   }
 }
 
