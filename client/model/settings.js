@@ -24,8 +24,8 @@ const settings = new PersistentDict('settings');
 
 const defaults = {
   double_tap_speed: 500,
-  max_adds: 50,
-  max_reviews: 100,
+  max_adds: 20,
+  max_reviews: 200,
   paper_filter: true,
   reveal_order: true,
   revisit_failures: true,

@@ -246,12 +246,12 @@ const kDemos = {
     highlight('.block:contains("Reviews Per Day")',
               'Reviews are flashcards that you have seen before. ' +
               'This setting bounds the number of reviews per day. ' +
-              'Try setting it to 50.'),
-    () => Settings.get('max_reviews') === 50,
+              'Try setting it to 100.'),
+    () => Settings.get('max_reviews') === 100,
     highlight('.block:contains("New Cards Per Day")',
               'Great! The next setting places a limit on the number ' +
-              'of new cards added per day. Try setting it to 25.'),
-    () => Settings.get('max_adds') === 25,
+              'of new cards added per day. Try setting it to 10.'),
+    () => Settings.get('max_adds') === 10,
     sleep(50),
     highlight('.info.right', 'As with the "Revisit Failures" setting, ' +
                              'changes to these settings are immediately ' +
