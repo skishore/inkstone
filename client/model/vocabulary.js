@@ -141,7 +141,7 @@ class Vocabulary {
   }
   static getExtraItems(last) {
     return new Cursor((entry) => {
-      return entry[kIndices.attempts] === 0 || entry[kIndices.last] < last;
+      return entry[kIndices.attempts] === 0 || entry[kIndices.next] < last;
     });
   }
   static getFailuresInRange(start, end) {
