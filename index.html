@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html>
+
+  <head>
+    <meta charset='utf-8'>
+    <meta http-equiv="X-UA-Compatible" content="chrome=1">
+    <meta name="description" content="Inkstone : Learn Chinese on the go - no Internet connection required!">
+
+    <link rel="stylesheet" type="text/css" media="screen" href="stylesheets/stylesheet.css">
+
+    <title>Inkstone</title>
+  </head>
+
+  <body>
+
+    <!-- HEADER -->
+    <div id="header_wrap" class="outer">
+        <header class="inner">
+          <a id="forkme_banner" href="https://github.com/skishore/inkstone">View on GitHub</a>
+
+          <h1 id="project_title">Inkstone</h1>
+          <h2 id="project_tagline">Learn Chinese on the go - no Internet connection required!</h2>
+
+            <section id="downloads">
+              <a class="zip_download_link" href="https://github.com/skishore/inkstone/zipball/master">Download this project as a .zip file</a>
+              <a class="tar_download_link" href="https://github.com/skishore/inkstone/tarball/master">Download this project as a tar.gz file</a>
+            </section>
+        </header>
+    </div>
+
+    <!-- MAIN CONTENT -->
+    <div id="main_content_wrap" class="outer">
+      <section id="main_content" class="inner">
+        <p><img src="http://i.imgur.com/FetiXVc.gif" alt="Inkstone in action"></p>
+
+<h3>
+<a id="introduction" class="anchor" href="#introduction" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Introduction</h3>
+
+<p>Inkstone is a mobile app for English-speakers who want to learn to read
+and write Mandarin. To build this app,
+<a href="https://www.meteor.com/install">install the latest version of Meteor.js</a>,
+then check out this repository and run:</p>
+
+<pre><code>$ meteor build output --server localhost:3785
+</code></pre>
+
+<p>The <code>--server</code> parameter in this build command is a dummy: this app is an
+entirely client-side app. That means that you can study Chinese on the go
+without any Internet connection!</p>
+
+<h3>
+<a id="supported-platforms" class="anchor" href="#supported-platforms" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Supported platforms</h3>
+
+<p>This app is currently Android-only. After running the build command
+above, you'll find two .apk files in the output directory, one for armv7
+phones and the other for x86 phones. Look for the files in:</p>
+
+<pre><code>output/inkstone/android/project/build/outputs/apk/
+</code></pre>
+
+<p>In theory, the code in this repository can be used to build an iOS app,
+too, as follows:</p>
+
+<pre><code>$ meteor add-platform ios
+$ meteor build output --server localhost:3785
+</code></pre>
+
+<p>However, I can't test or debug the iOS build because I don't have an
+iPhone. If people are interested, I'd love to buy one and try it out!
+Apple devices are expensive, though, as are Apple developer licenses...</p>
+
+<h3>
+<a id="pre-built-binaries" class="anchor" href="#pre-built-binaries" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Pre-built binaries</h3>
+
+<p>I've uploaded copies of the Android binaries to Dropbox. Only use these
+binaries if you trust me and Dropbox! The legal disclaimers in the
+<code>LICENSE</code> file apply to these binaries as well: <strong>there is no warranty
+for this program, to the extent permitted by applicable law</strong>. See that
+file for full details. With those caveats stated, the pre-built
+binaries are here:</p>
+
+<ul>
+<li><a href="https://www.dropbox.com/s/z2avjvqclmj2snd/inkstone-armv7.apk?dl=0">Inkstone for Android armv7</a></li>
+<li><a href="https://www.dropbox.com/s/ucm7zrwuwmeioy6/inkstone-x86.apk?dl=0">Inkstone for Android x86</a></li>
+</ul>
+
+<h3>
+<a id="upcoming-features" class="anchor" href="#upcoming-features" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Upcoming features</h3>
+
+<p>Right now, Inkstone only supports simplified characters. Adding an option
+to study traditional characters is on the roadmap, as are a number of
+other significant new features - see <code>todo.txt</code> for a list. If there's
+something you'd like to see added that's not in that file, open an issue
+or drop me an email at <code>kshaunak "at" gmail.com</code>.</p>
+      </section>
+    </div>
+
+    <!-- FOOTER  -->
+    <div id="footer_wrap" class="outer">
+      <footer class="inner">
+        <p class="copyright">Inkstone maintained by <a href="https://github.com/skishore">skishore</a></p>
+        <p>Published with <a href="https://pages.github.com">GitHub Pages</a></p>
+      </footer>
+    </div>
+
+    
+
+  </body>
+</html>
