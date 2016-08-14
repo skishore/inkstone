@@ -18,9 +18,11 @@
  */
 
 import {Backdrop} from '/client/backdrop';
+import md5 from '/client/external/blueimp/md5';
 import {lookupList} from '/client/lookup';
 import {Lists} from '/client/model/lists';
 import {Vocabulary} from '/client/model/vocabulary';
+import {Popup} from '/client/templates/popup/code';
 
 const kBackdropTimeout = 500;
 
@@ -47,6 +49,73 @@ const toListTemplate = (lists) => {
   const render = (y) => _.extend({variable: `lists.${y.list}`}, y);
   return lists.map((x) => ({label: x.label, lists: x.lists.map(render)}));
 }
+
+// Handlers specific to the import-saved-list template.
+
+const saveList = (category, name, data) => {
+  category = category.trim();
+  name = name.trim();
+  if (category.length === 0 || name.length === 0) return;
+  const padding = Math.max(category.length, name.length) -
+                  Math.min(category.length, name.length);
+  const key = `${category}${new Array(padding).join(' ')}${name}`;
+  const list = `s/${md5(key)}`;
+  console.log(`Adding ${name} under ${category}, with list name ${list}.`);
+  //return saveList(list, data).then(() => Lists.add(category, name, list));
+}
+
+const submitLocalList = () => {
+  const errors = [];
+  const fields = ['category', 'file', 'name'];
+  const submission = {};
+  for (let field of fields) {
+    const element = $(`.popup input[name="${field}"]`);
+    const val = field === 'file' ? element[0].files[0] : element.val().trim();
+    if (val) {
+      element.removeClass('error');
+      submission[field] = val;
+    } else {
+      element.addClass('error');
+      errors.push(`You must provide a ${field}.`);
+    }
+  }
+  if (errors.length > 0) return;
+
+  Popup.hide();
+  Backdrop.show();
+  const reader = new FileReader;
+  reader.onloadend = () => {
+    saveList(submission.category, submission.name, reader.result);
+    Backdrop.hide(kBackdropTimeout);
+  }
+  reader.readAsText(submission.file);
+}
+
+// Meteor template and event bindings follow.
+
+Template.imports.events({
+  'click .option.github': () => {
+    Popup.hide(50);
+  },
+  'click .option.saved': () => {
+    const buttons = [
+      {label: 'Cancel'},
+      {callback: submitLocalList, class: 'bold', label: 'Submit'},
+    ];
+    Popup.show({
+      buttons: buttons,
+      template: 'import_saved_list',
+      title: 'Import a saved list',
+    });
+  },
+});
+
+Template.lists.events({
+  'click .delete': () => console.log('Deleted lists.'),
+  'click .import': () => {
+    Popup.show({title: 'Import a word list', template: 'imports'});
+  },
+});
 
 Template.lists.helpers({groups: () => toListTemplate(Lists.getAllLists())});
 

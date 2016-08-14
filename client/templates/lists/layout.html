@@ -26,8 +26,19 @@
       <h1 class="title">Lists</h1>
     {{/contentFor}}
     {{#ionList}}
+      <div class="block">
+        {{#ionItem class="item-divider"}}
+          Customization
+        {{/ionItem}}
+        {{#ionItem class="customization-option import"}}
+          Import a word list
+        {{/ionItem}}
+        {{#ionItem class="customization-option delete"}}
+          Delete existing lists
+        {{/ionItem}}
+      </div>
       {{#each groups}}
-        <div class="block">
+        <div class="block group">
           {{#ionItem class="item-divider"}}
             {{label}}
           {{/ionItem}}
@@ -38,4 +49,19 @@
       {{/each}}
     {{/ionList}}
   {{/ionic}}
+</template>
+
+<template name="imports">
+  <div id="imports">
+    <div class="option github">Download from GitHub</div>
+    <div class="option saved">Import a saved list</div>
+  </div>
+</template>
+
+<template name="import_saved_list">
+  <div id="import-saved-list">
+    <input name="category" placeholder="Category" type="text">
+    <input name="name" placeholder="Name" type="text">
+    <input name="file" type="file">
+  </div>
 </template>

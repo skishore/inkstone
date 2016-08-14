@@ -119,7 +119,7 @@ const kDemos = {
     highlight('.lists', 'First, enable a word list. ' +
                         'From the main menu, tap "Lists".'),
     waitOnUrl('lists'),
-    highlight('.block:first-child', 'Use the toggle to enable the list.'),
+    highlight('.block.group', 'Use the toggle to enable the list.'),
     () => Lists.enabled('demo'),
     sleep(500),
     () => {
