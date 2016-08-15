@@ -19,8 +19,8 @@
 
 // TODO(skishore): Do some kind of smoothing to avoid giving users hints based
 // off of the straight segments where strokes intersects.
+import {readItem} from '/client/assets';
 import {Handwriting} from '/client/handwriting';
-import {lookupItem} from '/client/lookup';
 import {Settings} from '/client/model/settings';
 import {Timing} from '/client/model/timing';
 import {Popup} from '/client/templates/popup/code';
@@ -218,7 +218,7 @@ const updateCard = () => {
   if (card.deck === 'errors') {
     onErrorCard(card);
   } else {
-    defer(() => lookupItem(card.data).then(onItemData).catch((error) => {
+    defer(() => readItem(card.data).then(onItemData).catch((error) => {
       if (Settings.get('demo_mode')) return;
       console.error('Card data request error:', error);
       defer(Timing.shuffle);

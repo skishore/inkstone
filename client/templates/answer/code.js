@@ -17,7 +17,7 @@
  *  along with Inkstone.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-import {lookupCharacter} from '/client/lookup';
+import {readCharacter} from '/client/assets';
 import {getAnimationData} from '/lib/animation';
 import {Decomposition} from '/lib/decomposition';
 
@@ -139,7 +139,7 @@ const onHashChange = () => {
     // HACK: We clear the SVG animation when the user changes character to
     // make the transition smoother. The Meteor render loop is a bit slow.
     stroke_order.set();
-    lookupCharacter(next).then(show);
+    readCharacter(next).then(show);
   }
 }
 

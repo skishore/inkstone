@@ -17,9 +17,9 @@
  *  along with Inkstone.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+import {readList} from '/client/assets';
 import {Backdrop} from '/client/backdrop';
 import md5 from '/client/external/blueimp/md5';
-import {lookupList} from '/client/lookup';
 import {Lists} from '/client/model/lists';
 import {Vocabulary} from '/client/model/vocabulary';
 import {Popup} from '/client/templates/popup/code';
@@ -33,7 +33,7 @@ const disableList = (list) => {
 
 const enableList = (list) => {
   Backdrop.show();
-  lookupList(list).then((rows) => {
+  readList(list).then((rows) => {
     rows.forEach((row) => Vocabulary.addItem(row.word, list));
     Lists.enable(list);
     Backdrop.hide(kBackdropTimeout);

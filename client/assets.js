@@ -24,7 +24,7 @@ const radicals = {};
 
 // Input: a path to an asset in cordova-build-overrides/www/assets
 // Output: a Promise that resolves to the String contents of that file
-const lookupAsset = (path) => {
+const readAsset = (path) => {
   return new Promise((resolve, reject) => {
     if (Meteor.isCordova) {
       try {
@@ -41,7 +41,7 @@ const lookupAsset = (path) => {
         reject(e);
       }
     } else {
-      Meteor.call('lookupAsset', path, (error, data) => {
+      Meteor.call('readAsset', path, (error, data) => {
         error ? reject(error) : resolve(data);
       });
     }
@@ -53,10 +53,10 @@ const lookupAsset = (path) => {
 //   - character: the character
 //   - medians: a list of stroke medians, each of which is a list of points
 //   - strokes: a list of SVG strokes comprising that character
-const lookupCharacter = (character) => {
+const readCharacter = (character) => {
   if (!character) return Promise.reject('No character provided.');
   const path = `characters/${character.codePointAt(0)}`;
-  return lookupAsset(path).then(JSON.parse);
+  return readAsset(path).then(JSON.parse);
 }
 
 // Input: an item, which includes a word and a list of lists it appears in
@@ -65,13 +65,13 @@ const lookupCharacter = (character) => {
 //   - definition: the definition of this word
 //   - pinyin: the pronunciation of this word
 //   - word: the word
-const lookupItem = (item, callback) => {
+const readItem = (item, callback) => {
   if (!item || !item.word || item.lists.length === 0) {
     return Promise.reject(new Error(item));
   }
   return Promise.all([
-    lookupList(item.lists[0]),
-    Promise.all(Array.from(item.word).map(lookupCharacter)),
+    readList(item.lists[0]),
+    Promise.all(Array.from(item.word).map(readCharacter)),
   ]).then((data) => {
     const entries = data[0].filter((x) => x.word === item.word);
     if (entries.length === 0) throw new Error(`Entry not found: ${item.word}`);
@@ -88,9 +88,9 @@ const lookupItem = (item, callback) => {
 
 // Input: the name of a list
 // Output: a Promise that resolves to a list of items that appear in the list,
-//         each with all the data returned by lookupItem except characters
-const lookupList = (list) => {
-  return lookupAsset(`lists/${list}.list`).then((data) => {
+//         each with all the data returned by readItem except characters
+const readList = (list) => {
+  return readAsset(`lists/${list}.list`).then((data) => {
     const result = [];
     data.split('\n').map((line) => {
       const values = line.split('\t');
@@ -136,12 +136,12 @@ const writeAsset = (path, data) => {
   });
 }
 
-lookupAsset('characters/all.txt').then((data) => {
+readAsset('characters/all.txt').then((data) => {
   for (let character of data) characters[character] = true;
 });
 
-lookupAsset('radicals.json').then((data) => {
+readAsset('radicals.json').then((data) => {
   _.extend(radicals, JSON.parse(data).radical_to_index_map);
 });
 
-export {lookupCharacter, lookupItem, lookupList};
+export {readCharacter, readItem, readList};
