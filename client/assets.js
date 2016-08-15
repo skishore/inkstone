@@ -165,4 +165,4 @@ readAsset('radicals.json').then((data) => {
   _.extend(radicals, JSON.parse(data).radical_to_index_map);
 });
 
-export {readCharacter, readItem, readList};
+export {readCharacter, readItem, readList, writeList};

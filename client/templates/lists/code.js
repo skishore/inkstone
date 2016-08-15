@@ -17,12 +17,13 @@
  *  along with Inkstone.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-import {readList} from '/client/assets';
+import {readList, writeList} from '/client/assets';
 import {Backdrop} from '/client/backdrop';
 import md5 from '/client/external/blueimp/md5';
 import {Lists} from '/client/model/lists';
 import {Vocabulary} from '/client/model/vocabulary';
 import {Popup} from '/client/templates/popup/code';
+import {numbersToTones} from '/lib/pinyin';
 
 const kBackdropTimeout = 500;
 
@@ -53,6 +54,9 @@ const toListTemplate = (lists) => {
 // Handlers specific to the import-saved-list template.
 
 const saveList = (category, name, data) => {
+  // Compute a name for the new list. This name is a function of its category
+  // and its label within that category, so that if we import this list again,
+  // it will overwrite the old data.
   category = category.trim();
   name = name.trim();
   if (category.length === 0 || name.length === 0) return;
@@ -60,8 +64,27 @@ const saveList = (category, name, data) => {
                   Math.min(category.length, name.length);
   const key = `${category}${new Array(padding).join(' ')}${name}`;
   const list = `s/${md5(key)}`;
-  console.log(`Adding ${name} under ${category}, with list name ${list}.`);
-  //return saveList(list, data).then(() => Lists.add(category, name, list));
+  // Do error checking and coerce the new list's data from the import format
+  // (a tab-separated file with columns `simplified`, `traditional`,
+  // `numbered`, and `definition`) into the list-object format used
+  // by readList and writeList.
+  const rows = [];
+  for (let row of data.trim().split('\n')) {
+    row = row.replace('\r', '').split('\t');
+    const columns = ['word', 'traditional', 'numbered', 'definition'];
+    if (row.length !== columns.length) {
+      return Promise.reject(`Malformatted row: ${row.join(', ')}`);
+    }
+    const item = {};
+    columns.map((column, i) => item[column] = row[i]);
+    const pinyin = numbersToTones(item.numbered);
+    if (pinyin.error) {
+      return Promise.reject(`Error parsing ${item.numbered}: ${pinyin.error}`);
+    }
+    item.pinyin = pinyin.result;
+    rows.push(item);
+  }
+  return writeList(list, rows); //.then(() => Lists.add(category, name, list));
 }
 
 const submitLocalList = () => {
@@ -85,7 +108,9 @@ const submitLocalList = () => {
   Backdrop.show();
   const reader = new FileReader;
   reader.onloadend = () => {
-    saveList(submission.category, submission.name, reader.result);
+    saveList(submission.category, submission.name, reader.result)
+        .then(() => console.log('Wrote list:', submission))
+        .catch((error) => console.error(error));
     Backdrop.hide(kBackdropTimeout);
   }
   reader.readAsText(submission.file);
