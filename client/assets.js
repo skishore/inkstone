@@ -17,7 +17,8 @@
  *  along with Inkstone.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-const kListColumns = ['word', '', '', 'pinyin', 'definition'];
+const kListColumns = [
+  'word', 'traditional', 'numbered', 'pinyin', 'definition'];
 
 const characters = {};
 const radicals = {};
@@ -63,7 +64,9 @@ const readCharacter = (character) => {
 // Output: a Promise that resolves to the item data Object for that item:
 //   - characters: a list of character data Objects for each of its characters
 //   - definition: the definition of this word
+//   - numbered: the pronunciation of this word in the form `Zhong1wen2`.
 //   - pinyin: the pronunciation of this word
+//   - traditional: the word in traditional characters
 //   - word: the word
 const readItem = (item, callback) => {
   if (!item || !item.word || item.lists.length === 0) {
@@ -96,9 +99,7 @@ const readList = (list) => {
       const values = line.split('\t');
       if (values.length != kListColumns.length) return;
       const row = {};
-      kListColumns.map((column, i) => {
-        if (column !== '') row[column] = values[i];
-      });
+      kListColumns.forEach((column, i) => row[column] = values[i]);
       if (!_.all(row.word, (x) => characters[x])) return;
       result.push(row);
     });
@@ -134,6 +135,26 @@ const writeAsset = (path, data) => {
       });
     }
   });
+}
+
+// Input: a list of list-item objects with all the list column keys
+// Output: a promise that resolves to true if the write is successful
+const writeList = (list, rows) => {
+  const data = [];
+  for (let row of rows) {
+    const fields = kListColumns.map((column) => row[column]);
+    const missing = kListColumns.filter((column) => !row[column]);
+    if (missing.length > 0) {
+      return Promise.reject(`Malformatted row: ${fields.join(', ')}. ` +
+                            `Missing data for: ${missing.join(', ')}.`);
+    }
+    const line = fields.join('\t');
+    if (line.split('\t').length !== fields.length) {
+      return Promise.reject(`Row contains tabs: ${fields.join(', ')}.`);
+    }
+    data.push(line);
+  }
+  return writeAsset(`lists/${list}.list`, data.join('\n'));
 }
 
 readAsset('characters/all.txt').then((data) => {
