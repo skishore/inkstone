@@ -37,11 +37,14 @@ const Character = Match.Where((x) => {
 
 const Stroke = [Tuple(Number, Number)];
 
+const asset = (path) => {
+  const directory = 'cordova-build-override/www/assets';
+  return `${process.env.PWD}/${directory}/${path}`;
+}
+
 Meteor.methods({
   lookupAsset: (path) => {
-    const directory = 'cordova-build-override/www/assets';
-    const filename = `${process.env.PWD}/${directory}/${path}`;
-    return Meteor.wrapAsync(fs.readFile, fs)(filename, 'utf8');
+    return Meteor.wrapAsync(fs.readFile, fs)(asset(path), 'utf8');
   },
   reportIssue: (issue) => {
     // TODO(zhaizhai): Maybe do further validation of character_data here.
@@ -58,5 +61,8 @@ Meteor.methods({
     });
     check(issue.character_data.character, Character);
     Issues.insert(issue);
+  },
+  writeAsset: (path, data) => {
+    return Meteor.wrapAsync(fs.writeFile, fs)(asset(path), data, 'utf8');
   },
 });

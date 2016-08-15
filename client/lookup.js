@@ -32,6 +32,7 @@ const lookupAsset = (path) => {
         window.resolveLocalFileSystemURL(url, (entry) => {
           entry.file((file) => {
             const reader = new FileReader;
+            reader.onerror = reject;
             reader.onloadend = () => resolve(reader.result);
             reader.readAsText(file);
           }, reject);
@@ -102,6 +103,36 @@ const lookupList = (list) => {
       result.push(row);
     });
     return result;
+  });
+}
+
+// Input: a path to an asset in cordova-build-overrides/www/assets, and data
+//        to write to the asset at that path.
+// Output: a Promise that resolves to true if the write is successful.
+const writeAsset = (path, data) => {
+  return new Promise((resolve, reject) => {
+    if (Meteor.isCordova) {
+      try {
+        const url = `${cordova.file.applicationDirectory}www/assets/${path}`;
+        const index = url.lastIndexOf('/');
+        const directory = url.substr(0, index);
+        window.resolveLocalFileSystemURL(directory, (entry) => {
+          entry.getFile(url.substr(index + 1), {create: true}, (file) => {
+            file.createWriter((writer) => {
+              writer.onerror = reject;
+              writer.onwriteend = () => resolve(true);
+              writer.write(new Blob([data]), {type: 'text/plain'});
+            }, reject);
+          }, reject);
+        }, reject);
+      } catch (e) {
+        reject(e);
+      }
+    } else {
+      Meteor.call('writeAsset', path, data, (error) => {
+        error ? reject(error) : resolve(true);
+      });
+    }
   });
 }
 
