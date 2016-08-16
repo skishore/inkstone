@@ -27,6 +27,13 @@ import {numbersToTones} from '/lib/pinyin';
 
 const kBackdropTimeout = 500;
 
+const comparisonKey = (name) => {
+  tokens = name.split(' ');
+  if (isNaN(parseInt(tokens[tokens.length - 1], 10))) return name;
+  tokens[tokens.length - 1] = leftPad(tokens[tokens.length - 1], '0', 8);
+  return tokens.join(' ');
+}
+
 const disableList = (list) => {
   Vocabulary.dropList(list);
   Lists.disable(list);
@@ -44,6 +51,10 @@ const enableList = (list) => {
   });
 }
 
+const leftPad = (input, character, length) => {
+  return (new Array(length).fill(character).join('') + input).substr(-length);
+}
+
 const setListStatus = (list, on) => (on ? enableList : disableList)(list);
 
 const toListTemplate = (lists) => {
@@ -52,8 +63,9 @@ const toListTemplate = (lists) => {
   return categories.map((category) => {
     const lists = groups[category].map((x) => ({
       label: x[1].name,
+      key: comparisonKey(x[1].name),
       variable: `lists.${x[0]}`,
-    }));
+    })).sort((a, b) => a.key > b.key);
     return {label: category, lists: lists};
   });
 }
