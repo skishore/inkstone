@@ -25,7 +25,7 @@ import {assert} from '/lib/base';
 const get = (variable) => {
   const pair = variable.split('.');
   assert(pair.length === 2);
-  return (pair[0] === 'lists' ? Lists.enabled : Settings.get)(pair[1]);
+  return (pair[0] === 'lists' ? Lists.isListEnabled : Settings.get)(pair[1]);
 }
 
 const set = (variable, value) => {

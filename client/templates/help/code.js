@@ -110,17 +110,14 @@ const kDemos = {
   ],
   practice_writing: () => [
     () => {
-      Lists.setAllLists([{
-        label: 'General',
-        lists: [{label: 'Demo Words', list: 'demo'}],
-      }]);
+      Lists.setAllLists({demo: {category: 'General', name: 'Demo Words'}});
       return true;
     },
     highlight('.lists', 'First, enable a word list. ' +
                         'From the main menu, tap "Lists".'),
     waitOnUrl('lists'),
     highlight('.block.group', 'Use the toggle to enable the list.'),
-    () => Lists.enabled('demo'),
+    () => Lists.isListEnabled('demo'),
     sleep(500),
     () => {
       allow_back_button = true;

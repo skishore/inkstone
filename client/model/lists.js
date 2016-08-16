@@ -35,29 +35,37 @@ const kLists = {
 const lists = new PersistentDict('lists');
 
 class Lists {
+  // Methods for adding, removing, or looking up list metadata.
   static addList(category, name, list) {
     const lists = Lists.getAllLists();
     if (lists[list]) return;
     lists[list] = {category: category, name: name};
     Lists.setAllLists(lists);
   }
-  static anyListEnabled() {
-    return lists.keys().filter((key) => key.startsWith('status.')).length > 0;
-  }
-  static disable(list) {
-    return lists.delete(`status.${list}`);
-  }
-  static enable(list) {
-    return lists.set(`status.${list}`, true);
-  }
-  static enabled(list) {
-    return lists.get(`status.${list}`);
+  static deleteList(list) {
+    const lists = Lists.getAllLists();
+    if (!lists[list] || kLists[list]) return;
+    delete lists[list];
+    Lists.setAllLists(lists);
   }
   static getAllLists() {
     return lists.get('lists') || kLists;
   }
   static setAllLists(value) {
-    value ? lists.set('lists', value) : lists.delete('lists');
+    lists.set('lists', value);
+  }
+  // Methods for getting and setting the status of an individual list.
+  static anyListEnabled() {
+    return lists.keys().filter((key) => key.startsWith('status.')).length > 0;
+  }
+  static disable(list) {
+    lists.delete(`status.${list}`);
+  }
+  static enable(list) {
+    lists.set(`status.${list}`, true);
+  }
+  static isListEnabled(list) {
+    return lists.get(`status.${list}`);
   }
 }
 

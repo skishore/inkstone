@@ -91,7 +91,7 @@ const saveList = (category, name, data) => {
     item.pinyin = pinyin.result;
     rows.push(item);
   }
-  return writeList(list, rows); //.then(() => Lists.add(category, name, list));
+  return writeList(list, rows).then(() => Lists.addList(category, name, list));
 }
 
 const submitLocalList = () => {
@@ -116,7 +116,6 @@ const submitLocalList = () => {
   const reader = new FileReader;
   reader.onloadend = () => {
     saveList(submission.category, submission.name, reader.result)
-        .then(() => console.log('Wrote list:', submission))
         .catch((error) => console.error(error));
     Backdrop.hide(kBackdropTimeout);
   }
