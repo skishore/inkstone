@@ -22,29 +22,25 @@
 // variable 'lists' which stores metadata about all available lists.
 import {PersistentDict} from '/client/model/persistence';
 
-const kLists = [
-  {
-    label: 'General',
-    lists: [
-      {label: '100 Common Radicals', list: '100cr'},
-    ],
-  },
-  {
-    label: 'Hanyu Shuiping Kaoshi',
-    lists: [
-      {label: 'HSK Level 1', list: 'nhsk1'},
-      {label: 'HSK Level 2', list: 'nhsk2'},
-      {label: 'HSK Level 3', list: 'nhsk3'},
-      {label: 'HSK Level 4', list: 'nhsk4'},
-      {label: 'HSK Level 5', list: 'nhsk5'},
-      {label: 'HSK Level 6', list: 'nhsk6'},
-    ],
-  },
-];
+const kLists = {
+  '100cr': {category: 'General', name: '100 Common Radicals'},
+  'nhsk1': {category: 'Hanyu Shuiping Kaoshi', name: 'HSK Level 1'},
+  'nhsk2': {category: 'Hanyu Shuiping Kaoshi', name: 'HSK Level 2'},
+  'nhsk3': {category: 'Hanyu Shuiping Kaoshi', name: 'HSK Level 3'},
+  'nhsk4': {category: 'Hanyu Shuiping Kaoshi', name: 'HSK Level 4'},
+  'nhsk5': {category: 'Hanyu Shuiping Kaoshi', name: 'HSK Level 5'},
+  'nhsk6': {category: 'Hanyu Shuiping Kaoshi', name: 'HSK Level 6'},
+};
 
 const lists = new PersistentDict('lists');
 
 class Lists {
+  static addList(category, name, list) {
+    const lists = Lists.getAllLists();
+    if (lists[list]) return;
+    lists[list] = {category: category, name: name};
+    Lists.setAllLists(lists);
+  }
   static anyListEnabled() {
     return lists.keys().filter((key) => key.startsWith('status.')).length > 0;
   }

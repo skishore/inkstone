@@ -47,8 +47,15 @@ const enableList = (list) => {
 const setListStatus = (list, on) => (on ? enableList : disableList)(list);
 
 const toListTemplate = (lists) => {
-  const render = (y) => _.extend({variable: `lists.${y.list}`}, y);
-  return lists.map((x) => ({label: x.label, lists: x.lists.map(render)}));
+  const groups = _.groupBy(_.pairs(lists), (x) => x[1].category);
+  const categories = _.keys(groups).sort();
+  return categories.map((category) => {
+    const lists = groups[category].map((x) => ({
+      label: x[1].name,
+      variable: `lists.${x[0]}`,
+    }));
+    return {label: category, lists: lists};
+  });
 }
 
 // Handlers specific to the import-saved-list template.
