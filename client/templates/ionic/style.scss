@@ -77,7 +77,13 @@ $toggle-height:                   7.75vw !default;
 
       .back-text {
         font-size: $font-size-base;
+        padding: 11 * $font-size-base / 20 0;
         vertical-align: top;
+      }
+
+      .icon {
+        line-height: 12.5vw;
+        vertical-align: middle;
       }
     }
 
@@ -87,6 +93,7 @@ $toggle-height:                   7.75vw !default;
 
     .title.title-center {
       left: 0 !important;
+      line-height: 14vw;
       right: 0 !important;
     }
   }
