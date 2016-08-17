@@ -28,12 +28,13 @@ const render = (template) => {
 }
 
 class Backdrop {
-  static hide(timeout) {
+  static hide(timeout, callback) {
     holds -= 1;
     if (holds === 0) {
       Meteor.setTimeout(() => {
         views.map(Blaze.remove);
         views.length = 0;
+        callback && callback();
       }, timeout);
     }
   }

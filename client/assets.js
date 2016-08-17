@@ -138,9 +138,15 @@ const writeAsset = (path, data) => {
 }
 
 // Input: a list of list-item objects with all the list column keys
-// Output: a promise that resolves to true if the write is successful
+// Output: a promise that resolves to a dict with the following keys:
+//    - items: the set of new words added included in the list
+//    - missing: the set of characters in list without stroke data
+//
+// WARNING: If items is an empty set, the list will not actually be written.
+// This is a failure case that should be handled by the caller.
 const writeList = (list, rows) => {
   const data = [];
+  const result = {items: {}, missing: {}};
   for (let row of rows) {
     const fields = kListColumns.map((column) => row[column]);
     const missing = kListColumns.filter((column) => !row[column]);
@@ -148,13 +154,20 @@ const writeList = (list, rows) => {
       return Promise.reject(`Malformatted row: ${fields.join(', ')}. ` +
                             `Missing data for: ${missing.join(', ')}.`);
     }
+    if (!_.all(row.word, (x) => characters[x])) {
+      Array.from(row.word).forEach(
+          (x) => { if (!characters[x]) result.missing[x] = true; });
+      continue;
+    }
     const line = fields.join('\t');
     if (line.split('\t').length !== fields.length) {
       return Promise.reject(`Row contains tabs: ${fields.join(', ')}.`);
     }
     data.push(line);
+    result.items[row.word] = true;
   }
-  return writeAsset(`lists/${list}.list`, data.join('\n'));
+  if (data.length === 0) return Promise.resolve(result);
+  return writeAsset(`lists/${list}.list`, data.join('\n')).then(() => result);
 }
 
 readAsset('characters/all.txt').then((data) => {
