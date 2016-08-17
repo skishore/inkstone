@@ -178,6 +178,7 @@ const submitLocalList = () => {
 Template.imports.events({
   'click .option.github': () => {
     Popup.hide(50);
+    Router.go('choose_lists_to_import');
   },
   'click .option.saved': () => {
     const buttons = [
@@ -193,7 +194,9 @@ Template.imports.events({
 });
 
 Template.lists.events({
-  'click .delete': () => console.log('Deleted lists.'),
+  'click .delete': () => {
+    Router.go('choose_lists_to_delete');
+  },
   'click .import': () => {
     Popup.show({title: 'Import a word list', template: 'imports'});
   },
@@ -201,4 +204,4 @@ Template.lists.events({
 
 Template.lists.helpers({groups: () => toListTemplate(Lists.getAllLists())});
 
-export {setListStatus};
+export {setListStatus, toListTemplate};

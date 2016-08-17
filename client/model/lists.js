@@ -51,6 +51,13 @@ class Lists {
   static getAllLists() {
     return lists.get('lists') || kLists;
   }
+  static getImportedLists() {
+    const result = {};
+    const lists = Lists.getAllLists();
+    _.keys(lists).filter((x) => !kLists[x])
+                 .forEach((x) => result[x] = lists[x]);
+    return result;
+  }
   static setAllLists(value) {
     lists.set('lists', value);
   }

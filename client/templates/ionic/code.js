@@ -36,7 +36,7 @@ const set = (variable, value) => {
 
 Template.ionRange.events({
   'change, input input[type="range"]': function(event) {
-    set(this.variable, parseInt(event.target.value, 10));
+    set(this.variable, parseInt(event.currentTarget.value, 10));
   },
 });
 
@@ -44,7 +44,7 @@ Template.ionRange.helpers({get: get});
 
 Template.ionSelect.events({
   'change select': function(event) {
-    const target = event.target;
+    const target = event.currentTarget;
     set(this.variable, target.options[target.selectedIndex].value);
   },
 });
