@@ -102,6 +102,7 @@ const onClick = () => {
 const onDouble = () => {
   if (maybeAdvance()) return;
   const task = item.tasks[item.index];
+  if (task.penalties < kMaxPenalties) return;
   handwriting.reveal(task.strokes);
   handwriting.highlight(task.strokes[task.missing[0]]);
 }
