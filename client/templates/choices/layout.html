@@ -18,14 +18,14 @@
  -->
 
 <template name="choices">
-  {{#each this}}
+  {{#each group in this}}
     <div class="block group">
       {{#ionItem class="item-divider"}}
-        {{label}}
+        {{group.label}}
       {{/ionItem}}
-      {{#each lists}}
+      {{#each list in group.lists}}
         {{#ionItem class="list-management-option"}}
-          <div data-variable="{{variable}}">{{label}}</div>
+          <div data-variable="{{list.variable}}">{{list.label}}</div>
         {{/ionItem}}
       {{/each}}
     </div>

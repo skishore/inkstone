@@ -34,8 +34,8 @@
         <div class="flashcard {{get 'deck'}}">
           <div class="error">
             {{get 'error'}}
-            {{#each get 'options'}}
-              <a class="option">{{text}}</a>
+            {{#each option in get 'options'}}
+              <a class="option">{{option.text}}</a>
             {{/each}}
           </div>
           {{#if get 'grading'}}
@@ -59,11 +59,11 @@
 
 <template name="answer_selection">
   <div id="answer-selection">
-    {{#each tasks}}
+    {{#each task in tasks}}
       <div class="option">
-        <div class="character">{{obfuscate this}}</div>
+        <div class="character">{{obfuscate task}}</div>
         <div class="spacer">-</div>
-        <div class="pinyin">{{data.pinyin}}</div>
+        <div class="pinyin">{{task.data.pinyin}}</div>
       </div>
     {{/each}}
   </div>

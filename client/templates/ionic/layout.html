@@ -43,9 +43,10 @@
   <div class='item item-select'>
     {{label}}
     <select>
-      {{#each options}}
-        <option value="{{value}}" selected="{{get ../variable value}}">
-          {{label}}
+      {{#each option in options}}
+        <option value="{{option.value}}"
+                selected="{{get variable option.value}}">
+          {{option.label}}
         </option>
       {{/each}}
     </select>

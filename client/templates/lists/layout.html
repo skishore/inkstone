@@ -37,13 +37,13 @@
           Delete imported lists
         {{/ionItem}}
       </div>
-      {{#each groups}}
+      {{#each group in groups}}
         <div class="block group">
           {{#ionItem class="item-divider"}}
-            {{label}}
+            {{group.label}}
           {{/ionItem}}
-          {{#each lists}}
-            {{> ionToggle label=label variable=variable}}
+          {{#each list in group.lists}}
+            {{> ionToggle label=list.label variable=list.variable}}
           {{/each}}
         </div>
       {{/each}}

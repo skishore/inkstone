@@ -31,10 +31,10 @@
       <div class="panel">
         <div class="panel-heading">Metadata</div>
         <div class="panel-body">
-          {{#each metadata}}
+          {{#each item in metadata}}
             <div class="field">
-              <label class="label">{{label}}</label>
-              <div class="value">{{{linkify value}}}</div>
+              <label class="label">{{item.label}}</label>
+              <div class="value">{{{linkify item.value}}}</div>
             </div>
           {{/each}}
         </div>
@@ -57,8 +57,8 @@
     {{else}}
       <div class="text">{{label}}</div>
     {{/if}}
-    {{#each children}}
-      {{> decomposition this}}
+    {{#each child in children}}
+      {{> decomposition child}}
     {{/each}}
   </div>
 </template>
