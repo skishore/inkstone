@@ -36,6 +36,8 @@ Transitioner.default({in: 'transition.fadeIn', out: 'transition.fadeOut'});
 
 // Set up global template helpers.
 
+if (Meteor.isCordova) Meteor.disconnect();
+
 Platform.isAndroid = () => false;
 Platform.isIOS = () => true;
 

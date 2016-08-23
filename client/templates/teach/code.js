@@ -114,6 +114,7 @@ const onRegrade = (result) => {
   handwriting.glow(task.result);
   handwriting._stage.update();
   helpers.set('grading', false);
+  helpers.set('report-issue', false);
   element.find('#grading').remove();
   element.find('.icon.report-issue').remove();
   maybeAdvance();
@@ -136,6 +137,7 @@ const onRequestRegrade = (stroke) => {
   task.result = null;
   handwriting.glow(task.result);
   helpers.set('grading', true);
+  helpers.set('report-issue', !Meteor.isCordova);
   return true;
 }
 

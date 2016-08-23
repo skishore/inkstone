@@ -41,7 +41,9 @@
             {{/each}}
           </div>
           {{#if get 'grading'}}
-            <div class="icon report-issue"><i class="ion-alert"></i></div>
+            {{#if get 'report-issue'}}
+              <div class="icon report-issue"><i class="ion-alert"></i></div>
+            {{/if}}
             {{> grading}}
           {{/if}}
         </div>
