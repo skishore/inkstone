@@ -25,14 +25,14 @@
       {{/ionItem}}
       {{#each list in group.lists}}
         {{#ionItem class="list-management-option"}}
-          <div data-variable="{{list.variable}}">{{list.label}}</div>
+          <div data-variable={{list.variable}}>{{list.label}}</div>
         {{/ionItem}}
       {{/each}}
     </div>
   {{/each}}
 </template>
 
-<template name="choose_lists_to_delete">
+<template name="delete_lists">
   {{#ionic}}
     {{#contentFor "headerButtonLeft"}}
       {{> ionNavBackButton text="Done"}}
@@ -41,12 +41,28 @@
       <h1 class="title">Delete Lists</h1>
     {{/contentFor}}
     {{#ionList}}
-      {{> choices groups}}
+      {{#let values=groups}}
+        <div class="block group delete-lists-options">
+          {{#ionItem class="item-divider"}}
+            Options
+          {{/ionItem}}
+          {{#if values.length}}
+            {{#ionItem class="delete-all"}}
+              Delete all imported lists
+            {{/ionItem}}
+          {{else}}
+            {{#ionItem class="go-back"}}
+              No imported lists. Tap to go back.
+            {{/ionItem}}
+          {{/if}}
+        </div>
+        {{> choices values}}
+      {{/let}}
     {{/ionList}}
   {{/ionic}}
 </template>
 
-<template name="choose_lists_to_import">
+<template name="import_lists">
   {{#ionic}}
     {{#contentFor "headerButtonLeft"}}
       {{> ionNavBackButton text="Done"}}
@@ -58,4 +74,19 @@
       {{> choices groups}}
     {{/ionList}}
   {{/ionic}}
+</template>
+
+<template name="import_saved_list">
+  <div id="import-saved-list">
+    <input name="category" placeholder="Category" type="text">
+    <input name="name" placeholder="Name" type="text">
+    <input name="file" type="file">
+  </div>
+</template>
+
+<template name="imports">
+  <div id="imports">
+    <div class="option github">Download from GitHub</div>
+    <div class="option saved">Import a saved list</div>
+  </div>
 </template>

@@ -243,7 +243,7 @@ const updateItem = (card, data) => {
   }));
 }
 
-// Meteor template bindings.
+// Meteor template and event bindings follow.
 
 const maybeShowAnswerForTask = (task) => {
   task = item.tasks[task.index];
