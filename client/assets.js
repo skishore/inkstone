@@ -97,7 +97,7 @@ const readList = (list) => {
     const result = [];
     data.split('\n').map((line) => {
       const values = line.split('\t');
-      if (values.length != kListColumns.length) return;
+      if (values.length !== kListColumns.length) return;
       const row = {};
       kListColumns.forEach((column, i) => row[column] = values[i]);
       if (!_.all(row.word, (x) => characters[x])) return;
