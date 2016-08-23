@@ -18,14 +18,29 @@
  -->
 
 <template name="choices">
-  {{#each group in this}}
+  <div class="block group list-management-options">
+    {{#ionItem class="item-divider"}}
+      Options
+    {{/ionItem}}
+    {{#if groups.length}}
+      {{#ionItem class="all"}}
+        <div data-mode={{mode}}>{{all}}</div>
+      {{/ionItem}}
+    {{else}}
+      {{#ionItem class="back"}}
+        <div data-mode={{mode}}>{{back}}</div>
+      {{/ionItem}}
+    {{/if}}
+  </div>
+  {{#each group in groups}}
     <div class="block group">
       {{#ionItem class="item-divider"}}
         {{group.label}}
       {{/ionItem}}
       {{#each list in group.lists}}
         {{#ionItem class="list-management-option"}}
-          <div data-variable={{list.variable}}>{{list.label}}</div>
+          <div data-variable={{list.variable}}
+               data-mode={{mode}}>{{list.label}}</div>
         {{/ionItem}}
       {{/each}}
     </div>
@@ -41,23 +56,9 @@
       <h1 class="title">Delete Lists</h1>
     {{/contentFor}}
     {{#ionList}}
-      {{#let values=groups}}
-        <div class="block group delete-lists-options">
-          {{#ionItem class="item-divider"}}
-            Options
-          {{/ionItem}}
-          {{#if values.length}}
-            {{#ionItem class="delete-all"}}
-              Delete all imported lists
-            {{/ionItem}}
-          {{else}}
-            {{#ionItem class="go-back"}}
-              No imported lists. Tap to go back.
-            {{/ionItem}}
-          {{/if}}
-        </div>
-        {{> choices values}}
-      {{/let}}
+      {{> choices all="Delete all imported lists"
+                  back="No imported lists. Tap to go back."
+                  groups=groups mode="delete"}}
     {{/ionList}}
   {{/ionic}}
 </template>
@@ -71,7 +72,9 @@
       <h1 class="title">Import Lists</h1>
     {{/contentFor}}
     {{#ionList}}
-      {{> choices groups}}
+      {{> choices all="Import all GitHub lists"
+                  back="No new lists. Tap to go back."
+                  groups=groups mode="import"}}
     {{/ionList}}
   {{/ionic}}
 </template>

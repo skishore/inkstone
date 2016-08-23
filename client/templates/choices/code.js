@@ -28,7 +28,11 @@ import {numbersToTones} from '/lib/pinyin';
 
 const kBackdropTimeout = 500;
 
+const kGitHubDomain = 'https://skishore.github.io/inkstone';
+
 const kImportColumns = ['word', 'traditional', 'numbered', 'definition'];
+
+const github_lists = new ReactiveVar({});
 
 const deleteAllLists = () => {
   // TODO(skishore): Consider deleting the lists from the asset store here.
@@ -44,6 +48,22 @@ const deleteList = (list) => {
   setListStatus(list, /*on=*/false);
   if (!Lists.isListEnabled(list)) Lists.deleteList(list);
   Popup.hide(50);
+}
+
+const getGitHubLists = () => {
+  return getUrl(`${kGitHubDomain}/all.json`).then((data) => {
+    check(data, [{category: String, name: String}]);
+    if (data.length === 0) throw 'No lists available.';
+    const result = {};
+    data.forEach((x) => result[getListKey(x.category, x.name)] = x);
+    return result;
+  });
+}
+
+const getListKey = (category, name) => {
+  const padding = Math.max(category.length, name.length) -
+                  Math.min(category.length, name.length);
+  return `s/${md5(`${category}${new Array(padding).join(' ')}${name}`)}`;
 }
 
 const getMissingCharacterWarning = (missing) => {
@@ -63,18 +83,35 @@ const getMissingCharacterWarning = (missing) => {
          `other${m.length === 4 ? '' : 's'}.`;
 }
 
-const importList = (category, name, data) => {
-  // Compute a name for the new list. This name is a function of its category
-  // and its label within that category, so that if we import this list again,
-  // it will overwrite the old data.
-  category = category.trim();
-  name = name.trim();
-  if (category.length === 0) return Promise.reject('No category provided.');
-  if (name.length === 0) return Promise.reject('No name provided.');
-  const padding = Math.max(category.length, name.length) -
-                  Math.min(category.length, name.length);
-  const key = `${category}${new Array(padding).join(' ')}${name}`;
-  const list = `s/${md5(key)}`;
+const getUrl = (url) => {
+  return new Promise((resolve, reject) => {
+    HTTP.get(url, (error, result) => {
+      if (error && !result) {
+        return reject(error);
+      } else if (result.statusCode !== 200) {
+        return reject(`Request failed with status ${result.statusCode}.`);
+      }
+      resolve(result.data || result.content);
+    });
+  });
+}
+
+const importAllLists = () => {
+  Popup.hide();
+}
+
+const importList = (list) => {
+  Popup.hide();
+  const entry = github_lists.get()[list];
+  if (!entry) return;
+  Backdrop.show();
+  const url = `${kGitHubDomain}/lists/${entry.category}/${entry.name}.list`;
+  getUrl(url).then((data) => saveList(entry.category, entry.name, data))
+             .then((x) => showListSavedMessage(x, /*success=*/true))
+             .catch((x) => showListSavedMessage(x, /*success=*/false));
+}
+
+const saveList = (category, name, data) => {
   // Do error checking and coerce the new list's data from the import format
   // (a tab-separated file with columns kImportColumns) into the list-object
   // format used by readList and writeList.
@@ -95,6 +132,7 @@ const importList = (category, name, data) => {
     rows.push(item);
   }
   // Write the actual list and return a Promise with a success message.
+  const list = getListKey(category, name);
   return writeList(list, rows).then((result) => {
     const length = _.keys(result.items).length;
     const warning = getMissingCharacterWarning(_.keys(result.missing));
@@ -111,22 +149,42 @@ const showDeleteAllDialog = () => {
     {callback: deleteAllLists, label: 'Yes'},
     {class: 'bold', label: 'No'},
   ];
-  const text = 'Do you really want to delete all of your imported lists?';
-  Popup.show({title: 'Delete All', text: text, buttons: buttons});
+  const text = 'Delete all of your imported lists?';
+  Popup.show({title: 'Confirm Deletion', text: text, buttons: buttons});
 }
 
-const showDeletionDialog = (list) => {
-  const data = Lists.getAllLists()[list];
-  if (!data) return;
+const showDeleteDialog = (list) => {
+  const entry = Lists.getAllLists()[list];
+  if (!entry) return;
   const buttons = [
     {callback: () => deleteList(list), label: 'Yes'},
     {class: 'bold', label: 'No'},
   ];
-  const text = `Do you really want to delete ${data.name}?`;
-  Popup.show({title: 'Delete List', text: text, buttons: buttons});
+  const text = `Delete ${entry.name}?`;
+  Popup.show({title: 'Confirm Deletion', text: text, buttons: buttons});
 }
 
-const showImportMessage = (message, success) => {
+const showImportAllDialog = () => {
+  const buttons = [
+    {callback: importAllLists, label: 'Yes'},
+    {class: 'bold', label: 'No'},
+  ];
+  const text = 'Import all of the lists below?';
+  Popup.show({title: 'Confirm Import', text: text, buttons: buttons});
+}
+
+const showImportDialog = (list) => {
+  const entry = github_lists.get()[list];
+  if (!entry) return;
+  const buttons = [
+    {callback: () => importList(list), label: 'Yes'},
+    {class: 'bold', label: 'No'},
+  ];
+  const text = `Import ${entry.name}?`;
+  Popup.show({title: 'Confirm Import', text: text, buttons: buttons});
+}
+
+const showListSavedMessage = (message, success) => {
   Backdrop.hide(kBackdropTimeout, () => Popup.show({
     buttons: [{class: 'bold', label: 'Okay'}],
     text: `${message}`,
@@ -157,10 +215,9 @@ const submitLocalList = () => {
   Backdrop.show();
   const reader = new FileReader;
   reader.onloadend = () => {
-    const buttons = [{class: 'bold', label: 'Okay'}];
-    importList(submission.category, submission.name, reader.result)
-        .then((x) => showImportMessage(x, /*success=*/true))
-        .catch((x) => showImportMessage(x, /*success=*/false));
+    saveList(submission.category, submission.name, reader.result)
+        .then((x) => showListSavedMessage(x, /*success=*/true))
+        .catch((x) => showListSavedMessage(x, /*success=*/false));
   }
   reader.readAsText(submission.file);
 }
@@ -169,18 +226,22 @@ const submitLocalList = () => {
 
 ['delete_lists', 'import_lists'].map((x) => Router.route(x, {template: x}));
 
-Template.delete_lists.events({
-  'click .delete-lists-options .delete-all': () => {
-    showDeleteAllDialog();
+Meteor.startup(() => getGitHubLists().then((x) => github_lists.set(x)));
+
+Template.choices.events({
+  'click .list-management-options .all': (event) => {
+    const mode = $(event.currentTarget).children().data('mode');
+    (mode === 'delete' ? showDeleteAllDialog : showImportAllDialog)();
   },
-  'click .delete-lists-options .go-back': () => {
+  'click .list-management-options .back': () => {
     history.back();
   },
   'click .list-management-option': (event) => {
+    const mode = $(event.currentTarget).children().data('mode');
     const variable = $(event.currentTarget).children().data('variable');
     const pair = variable.split('.');
     assert(pair.length === 2 && pair[0] === 'lists');
-    showDeletionDialog(pair[1]);
+    (mode === 'delete' ? showDeleteDialog : showImportDialog)(pair[1]);
   },
 });
 
@@ -189,13 +250,19 @@ Template.delete_lists.helpers({
 });
 
 Template.import_lists.helpers({
-  groups: () => toListTemplate(Lists.getAllLists()),
+  groups: () => toListTemplate(github_lists.get()),
 });
 
 Template.imports.events({
   'click .option.github': () => {
-    Popup.hide(50);
-    Router.go('import_lists');
+    getGitHubLists().then((lists) => {
+      github_lists.set(lists);
+      Popup.hide(50);
+      Router.go('import_lists');
+    }).catch((error) => {
+      const buttons = [{class: 'bold', label: 'Okay'}];
+      Popup.show({buttons: buttons, text: `${error}`, title: 'Import Failed'});
+    });
   },
   'click .option.saved': () => {
     const buttons = [
