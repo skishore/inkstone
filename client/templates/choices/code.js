@@ -50,13 +50,30 @@ const deleteList = (list) => {
   Popup.hide(50);
 }
 
-const getGitHubLists = () => {
-  return getUrl(`${kGitHubDomain}/all.json`).then((data) => {
+const fetchGitHubLists = () => {
+  return fetchUrl(`${kGitHubDomain}/all.json`).then((data) => {
     check(data, [{category: String, name: String}]);
     if (data.length === 0) throw 'No lists available.';
     const result = {};
     data.forEach((x) => result[getListKey(x.category, x.name)] = x);
     return result;
+  });
+}
+
+const fetchListData = (category, name) => {
+  return fetchUrl(`${kGitHubDomain}/lists/${category}/${name}.list`);
+}
+
+const fetchUrl = (url) => {
+  return new Promise((resolve, reject) => {
+    HTTP.get(url, (error, result) => {
+      if (error && !result) {
+        return reject(error);
+      } else if (result.statusCode !== 200) {
+        return reject(`Request failed with status ${result.statusCode}.`);
+      }
+      resolve(result.data || result.content);
+    });
   });
 }
 
@@ -83,21 +100,17 @@ const getMissingCharacterWarning = (missing) => {
          `other${m.length === 4 ? '' : 's'}.`;
 }
 
-const getUrl = (url) => {
-  return new Promise((resolve, reject) => {
-    HTTP.get(url, (error, result) => {
-      if (error && !result) {
-        return reject(error);
-      } else if (result.statusCode !== 200) {
-        return reject(`Request failed with status ${result.statusCode}.`);
-      }
-      resolve(result.data || result.content);
-    });
-  });
-}
-
 const importAllLists = () => {
   Popup.hide();
+  const lists = github_lists.get();
+  const entries = _.keys(lists).map((x) => lists[x]);
+  Backdrop.show();
+  const success = `Imported ${entries.length} lists.`;
+  Promise.all(entries.map((x) => fetchListData(x.category, x.name)))
+         .then((x) => Promise.all(_.zip(entries, x).map(
+               (pair) => saveList(pair[0].category, pair[0].name, pair[1]))))
+         .then(() => showListSavedMessage(success, /*success=*/true))
+         .catch((x) => showListSavedMessage(x, /*success=*/false));
 }
 
 const importList = (list) => {
@@ -105,10 +118,10 @@ const importList = (list) => {
   const entry = github_lists.get()[list];
   if (!entry) return;
   Backdrop.show();
-  const url = `${kGitHubDomain}/lists/${entry.category}/${entry.name}.list`;
-  getUrl(url).then((data) => saveList(entry.category, entry.name, data))
-             .then((x) => showListSavedMessage(x, /*success=*/true))
-             .catch((x) => showListSavedMessage(x, /*success=*/false));
+  fetchListData(entry.category, entry.name)
+      .then((data) => saveList(entry.category, entry.name, data))
+      .then((x) => showListSavedMessage(x, /*success=*/true))
+      .catch((x) => showListSavedMessage(x, /*success=*/false));
 }
 
 const saveList = (category, name, data) => {
@@ -226,7 +239,7 @@ const submitLocalList = () => {
 
 ['delete_lists', 'import_lists'].map((x) => Router.route(x, {template: x}));
 
-Meteor.startup(() => getGitHubLists().then((x) => github_lists.set(x)));
+Meteor.startup(() => fetchGitHubLists().then((x) => github_lists.set(x)));
 
 Template.choices.events({
   'click .list-management-options .all': (event) => {
@@ -255,7 +268,7 @@ Template.import_lists.helpers({
 
 Template.imports.events({
   'click .option.github': () => {
-    getGitHubLists().then((lists) => {
+    fetchGitHubLists().then((lists) => {
       github_lists.set(lists);
       Popup.hide(50);
       Router.go('import_lists');
