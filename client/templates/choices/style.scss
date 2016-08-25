@@ -17,8 +17,8 @@
  *  along with Inkstone.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-.list-management-options .all:hover,
-.list-management-options .back:hover,
-.list-management-option:hover {
+.list-management-options .all:active,
+.list-management-options .back:active,
+.list-management-option:active {
   background-color: #80d8ff;
 }

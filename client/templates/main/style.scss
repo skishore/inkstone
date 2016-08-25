@@ -145,7 +145,7 @@ body {
       margin-bottom: 10%;
       width: $swash-width;
 
-      &:hover {
+      &:active {
         background-color: $link-color;
       }
     }
@@ -157,7 +157,7 @@ body {
       margin: 4%;
       width: 20%;
 
-      &:hover {
+      &:active {
         color: $link-color;
       }
 

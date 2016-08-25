@@ -49,7 +49,7 @@
       position: absolute;
       @include buttonlike;
 
-      &.left:hover, &.right:active {
+      &:active {
         color: $link-color;
       }
 
@@ -117,7 +117,7 @@
               margin-top: 8%;
             }
 
-            &:hover {
+            &:active {
               background-color: $link-color;
             }
           }
