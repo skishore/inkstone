@@ -304,6 +304,8 @@ Template.teach.events({
     ReportIssue.show(task.data, task.recording);
   },
   'click a.control.left': (event) => {
+    // NOTE: We have to go forward here instead of going back because the
+    // answer selection page adds spurious history entries for this page.
     Router.go('/');
     event.stopPropagation();
   },
