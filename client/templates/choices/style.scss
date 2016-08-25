@@ -17,8 +17,54 @@
  *  along with Inkstone.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+@import '{}/client/style.scss';
+
 .list-management-options .all:active,
 .list-management-options .back:active,
 .list-management-option:active {
-  background-color: #80d8ff;
+  background-color: $active-color;
+}
+
+#imports {
+  > .option {
+    background-color: $base-color;
+    color: white;
+    font-size: 7 * $font-size / 8;
+    line-height: 2 * $font-size;
+    margin-top: 3 * $font-size / 4;
+    padding: 0 6%;
+
+    &:active {
+      background-color: $link-color;
+    }
+
+    &:first-child {
+      margin-top: 0;
+    }
+  }
+}
+
+#import-saved-list {
+  > input[type="text"] {
+    border-bottom: 1px solid #444;
+    font-size: 7 * $font-size / 8;
+    height: 3 * $font-size / 2;
+    margin-bottom: $font-size;
+
+    &.error {
+      border-bottom-color: red;
+    }
+  }
+
+  > input[type="file"] {
+    border: 1px solid white;
+    border-radius: $font-size / 4;
+    font-size: 7 * $font-size / 8;
+    height: 3 * $font-size / 2;
+    line-height: 3 * $font-size / 2;
+
+    &.error {
+      border-color: red;
+    }
+  }
 }

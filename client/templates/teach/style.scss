@@ -183,6 +183,10 @@
     margin-top: 3 * $font-size / 4;
     padding: 0 6%;
 
+    &:active {
+      background-color: $link-color;
+    }
+
     &:first-child {
       margin-top: 0;
     }

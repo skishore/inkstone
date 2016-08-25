@@ -17,6 +17,8 @@
  *  along with Inkstone.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+@import '{}/client/style.scss';
+
 .help-item:active {
-  background-color: #80d8ff;
+  background-color: $active-color;
 }

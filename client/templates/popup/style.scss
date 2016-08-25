@@ -17,6 +17,8 @@
  *  along with Inkstone.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+@import '{}/client/style.scss';
+
 .popup-container {
   pointer-events: auto;
 
@@ -50,12 +52,20 @@
         padding: 0;
         vertical-align: center;
 
+        &:active {
+          background-color: $active-color;
+        }
+
         &:first-child {
           margin-left: 0;
         }
 
         &.bold {
           background-color: #444;
+
+          &:active {
+            background-color: $link-color;
+          }
         }
       }
     }
