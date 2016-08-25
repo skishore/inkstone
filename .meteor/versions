@@ -55,9 +55,9 @@ mobile-experience@1.0.4
 mobile-status-bar@1.0.12
 modules@0.7.6
 modules-runtime@0.7.6
-mongo@1.1.11
+mongo@1.1.12
 mongo-id@1.0.5
-npm-mongo@1.5.46
+npm-mongo@1.5.48
 observe-sequence@1.0.12
 ordered-dict@1.0.8
 promise@0.8.4
