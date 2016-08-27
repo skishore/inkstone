@@ -19,7 +19,11 @@
 
 // Schema: for each list, Lists tracks a variable `status.${list}` which is
 // true if that list is currently enabled. In addition, Lists tracks a
-// variable 'lists' which stores metadata about all available lists.
+// variable 'lists' which stores a mapping from list name to list metadata.
+// List metadata is a map with the keys:
+//  - category: The category the list belongs to.
+//  - name: The name of the list.
+//  - ts: The last-modified timestamp. Set for lists imported from the web.
 import {PersistentDict} from '/client/model/persistence';
 
 const kLists = {
@@ -32,14 +36,16 @@ const kLists = {
   'nhsk6': {category: 'Hanyu Shuiping Kaoshi', name: 'HSK Level 6'},
 };
 
+const kSchema = {category: String, name: String, ts: Match.Maybe(Number)};
+
 const lists = new PersistentDict('lists');
 
 class Lists {
   // Methods for adding, removing, or looking up list metadata.
-  static addList(category, name, list) {
+  static addList(list, metadata) {
+    check(metadata, kSchema);
     const lists = Lists.getAllLists();
-    if (lists[list]) return;
-    lists[list] = {category: category, name: name};
+    lists[list] = metadata;
     Lists.setAllLists(lists);
   }
   static deleteList(list) {

@@ -53,7 +53,7 @@ const deleteList = (list) => {
 
 const fetchGitHubLists = () => {
   return fetchUrl(`${kGitHubDomain}/all.json`).then((data) => {
-    check(data, [{category: String, name: String}]);
+    check(data, [{category: String, name: String, ts: Number}]);
     if (data.length === 0) throw 'No lists available.';
     const result = {};
     data.forEach((x) => result[getListKey(x.category, x.name)] = x);
@@ -101,26 +101,36 @@ const getMissingCharacterWarning = (missing) => {
          `other${m.length === 4 ? '' : 's'}.`;
 }
 
+const getNewGitHubLists = () => {
+  const local = Lists.getAllLists();
+  const remote = github_lists.get();
+  const result = {};
+  _.keys(remote)
+      .filter((x) => !(local[x] && (local[x].ts || Infinity) >= remote[x].ts))
+      .forEach((x) => result[x] = remote[x]);
+  return result;
+}
+
 const importAllLists = () => {
   Popup.hide();
-  const lists = github_lists.get();
+  const lists = getNewGitHubLists();
   const entries = _.keys(lists).map((x) => lists[x]);
   Backdrop.show();
   const success = `Imported ${entries.length} lists.`;
   Promise.all(entries.map((x) => fetchListData(x.category, x.name)))
          .then((x) => Promise.all(_.zip(entries, x).map(
-               (pair) => saveList(pair[0].category, pair[0].name, pair[1]))))
+               (pair) => saveList(pair[0], pair[1]))))
          .then(() => showListSavedMessage(success, /*success=*/true))
          .catch((x) => showListSavedMessage(x, /*success=*/false));
 }
 
 const importList = (list) => {
   Popup.hide();
-  const entry = github_lists.get()[list];
+  const entry = getNewGitHubLists()[list];
   if (!entry) return;
   Backdrop.show();
   fetchListData(entry.category, entry.name)
-      .then((data) => saveList(entry.category, entry.name, data))
+      .then((data) => saveList(entry, data))
       .then((x) => showListSavedMessage(x, /*success=*/true))
       .catch((x) => showListSavedMessage(x, /*success=*/false));
 }
@@ -130,7 +140,7 @@ const refreshListItems = (list, rows) => {
   rows.forEach((row) => Vocabulary.addItem(row.word, list));
 }
 
-const saveList = (category, name, data) => {
+const saveList = (entry, data) => {
   // Do error checking and coerce the new list's data from the import format
   // (a tab-separated file with columns kImportColumns) into the list-object
   // format used by readList and writeList.
@@ -151,16 +161,16 @@ const saveList = (category, name, data) => {
     rows.push(item);
   }
   // Write the actual list and return a Promise with a success message.
-  const list = getListKey(category, name);
+  const list = getListKey(entry.category, entry.name);
   return writeList(list, rows).then((result) => {
     const length = _.keys(result.items).length;
     const warning = getMissingCharacterWarning(_.keys(result.missing));
     if (length > 0) {
-      Lists.addList(category, name, list);
+      Lists.addList(list, entry);
       if (Lists.isListEnabled(list)) refreshListItems(list, rows);
-      return `Imported ${length} items for ${name}.${warning}`;
+      return `Imported ${length} items for ${entry.name}.${warning}`;
     }
-    throw `No items found for ${name}.${warning}`;
+    throw `No items found for ${entry.name}.${warning}`;
   });
 }
 
@@ -194,7 +204,7 @@ const showImportAllDialog = () => {
 }
 
 const showImportDialog = (list) => {
-  const entry = github_lists.get()[list];
+  const entry = getNewGitHubLists()[list];
   if (!entry) return;
   const buttons = [
     {callback: () => importList(list), label: 'Yes'},
@@ -235,7 +245,8 @@ const submitLocalList = () => {
   Backdrop.show();
   const reader = new FileReader;
   reader.onloadend = () => {
-    saveList(submission.category, submission.name, reader.result)
+    const entry = {category: submission.category, name: submission.name};
+    saveList(entry, reader.result)
         .then((x) => showListSavedMessage(x, /*success=*/true))
         .catch((x) => showListSavedMessage(x, /*success=*/false));
   }
@@ -270,7 +281,7 @@ Template.delete_lists.helpers({
 });
 
 Template.import_lists.helpers({
-  groups: () => toListTemplate(github_lists.get()),
+  groups: () => toListTemplate(getNewGitHubLists()),
 });
 
 Template.imports.events({
