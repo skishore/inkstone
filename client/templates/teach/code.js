@@ -281,7 +281,7 @@ Template.answer_selection.helpers({
 
 Template.grading.events({
   'click .icon': function(event) {
-    onRegrade(parseInt($(event.currentTarget).data('result'), 10));
+    onRegrade(parseInt($(event.currentTarget).attr('data-result'), 10));
   },
 });
 

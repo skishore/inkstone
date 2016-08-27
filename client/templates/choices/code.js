@@ -261,15 +261,15 @@ Meteor.startup(() => fetchGitHubLists().then((x) => github_lists.set(x)));
 
 Template.choices.events({
   'click .list-management-options .all': (event) => {
-    const mode = $(event.currentTarget).children().data('mode');
+    const mode = $(event.currentTarget).children().attr('data-mode');
     (mode === 'delete' ? showDeleteAllDialog : showImportAllDialog)();
   },
   'click .list-management-options .back': () => {
     history.back();
   },
   'click .list-management-option': (event) => {
-    const mode = $(event.currentTarget).children().data('mode');
-    const variable = $(event.currentTarget).children().data('variable');
+    const mode = $(event.currentTarget).children().attr('data-mode');
+    const variable = $(event.currentTarget).children().attr('data-variable');
     const pair = variable.split('.');
     assert(pair.length === 2 && pair[0] === 'lists');
     (mode === 'delete' ? showDeleteDialog : showImportDialog)(pair[1]);
