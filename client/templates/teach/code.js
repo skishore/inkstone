@@ -222,9 +222,7 @@ const updateCard = () => {
     onErrorCard(card);
   } else {
     defer(() => readItem(card.data).then(onItemData).catch((error) => {
-      if (Settings.get('demo_mode')) return;
       console.error('Card data request error:', error);
-      defer(Timing.shuffle);
     }));
   }
 }

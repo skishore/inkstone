@@ -21,6 +21,7 @@ import {writeList} from '/client/assets';
 import {Backdrop} from '/client/backdrop';
 import md5 from '/client/external/blueimp/md5';
 import {Lists} from '/client/model/lists';
+import {Vocabulary} from '/client/model/vocabulary';
 import {setListStatus, toListTemplate} from '/client/templates/lists/code';
 import {Popup} from '/client/templates/popup/code';
 import {assert} from '/lib/base';
@@ -124,6 +125,11 @@ const importList = (list) => {
       .catch((x) => showListSavedMessage(x, /*success=*/false));
 }
 
+const refreshListItems = (list, rows) => {
+  Vocabulary.dropList(list);
+  rows.forEach((row) => Vocabulary.addItem(row.word, list));
+}
+
 const saveList = (category, name, data) => {
   // Do error checking and coerce the new list's data from the import format
   // (a tab-separated file with columns kImportColumns) into the list-object
@@ -151,6 +157,7 @@ const saveList = (category, name, data) => {
     const warning = getMissingCharacterWarning(_.keys(result.missing));
     if (length > 0) {
       Lists.addList(category, name, list);
+      if (Lists.isListEnabled(list)) refreshListItems(list, rows);
       return `Imported ${length} items for ${name}.${warning}`;
     }
     throw `No items found for ${name}.${warning}`;
