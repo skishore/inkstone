@@ -118,7 +118,7 @@ const importAllLists = () => {
   Backdrop.show();
   const success = `Imported ${entries.length} lists.`;
   Promise.all(entries.map((x) => fetchListData(x.category, x.name)))
-         .then((x) => Promise.all(_.zip(entries, x).map(
+         .then((x) => Promise.all(_.zip(x, entries).map(
                (pair) => saveList(pair[0], pair[1]))))
          .then(() => showListSavedMessage(success, /*success=*/true))
          .catch((x) => showListSavedMessage(x, /*success=*/false));
@@ -126,11 +126,11 @@ const importAllLists = () => {
 
 const importList = (list) => {
   Popup.hide();
-  const entry = getNewGitHubLists()[list];
-  if (!entry) return;
+  const metadata = getNewGitHubLists()[list];
+  if (!metadata) return;
   Backdrop.show();
-  fetchListData(entry.category, entry.name)
-      .then((data) => saveList(entry, data))
+  fetchListData(metadata.category, metadata.name)
+      .then((data) => saveList(data, metadata))
       .then((x) => showListSavedMessage(x, /*success=*/true))
       .catch((x) => showListSavedMessage(x, /*success=*/false));
 }
@@ -140,7 +140,7 @@ const refreshListItems = (list, rows) => {
   rows.forEach((row) => Vocabulary.addItem(row.word, list));
 }
 
-const saveList = (entry, data) => {
+const saveList = (data, metadata) => {
   // Do error checking and coerce the new list's data from the import format
   // (a tab-separated file with columns kImportColumns) into the list-object
   // format used by readList and writeList.
@@ -161,16 +161,16 @@ const saveList = (entry, data) => {
     rows.push(item);
   }
   // Write the actual list and return a Promise with a success message.
-  const list = getListKey(entry.category, entry.name);
+  const list = getListKey(metadata.category, metadata.name);
   return writeList(list, rows).then((result) => {
     const length = _.keys(result.items).length;
     const warning = getMissingCharacterWarning(_.keys(result.missing));
     if (length > 0) {
-      Lists.addList(list, entry);
+      Lists.addList(list, metadata);
       if (Lists.isListEnabled(list)) refreshListItems(list, rows);
-      return `Imported ${length} items for ${entry.name}.${warning}`;
+      return `Imported ${length} items for ${metadata.name}.${warning}`;
     }
-    throw `No items found for ${entry.name}.${warning}`;
+    throw `No items found for ${metadata.name}.${warning}`;
   });
 }
 
@@ -184,13 +184,13 @@ const showDeleteAllDialog = () => {
 }
 
 const showDeleteDialog = (list) => {
-  const entry = Lists.getAllLists()[list];
-  if (!entry) return;
+  const metadata = Lists.getAllLists()[list];
+  if (!metadata) return;
   const buttons = [
     {callback: () => deleteList(list), label: 'Yes'},
     {class: 'bold', label: 'No'},
   ];
-  const text = `Delete ${entry.name}?`;
+  const text = `Delete ${metadata.name}?`;
   Popup.show({title: 'Confirm Deletion', text: text, buttons: buttons});
 }
 
@@ -204,13 +204,13 @@ const showImportAllDialog = () => {
 }
 
 const showImportDialog = (list) => {
-  const entry = getNewGitHubLists()[list];
-  if (!entry) return;
+  const metadata = getNewGitHubLists()[list];
+  if (!metadata) return;
   const buttons = [
     {callback: () => importList(list), label: 'Yes'},
     {class: 'bold', label: 'No'},
   ];
-  const text = `Import ${entry.name}?`;
+  const text = `Import ${metadata.name}?`;
   Popup.show({title: 'Confirm Import', text: text, buttons: buttons});
 }
 
@@ -245,8 +245,8 @@ const submitLocalList = () => {
   Backdrop.show();
   const reader = new FileReader;
   reader.onloadend = () => {
-    const entry = {category: submission.category, name: submission.name};
-    saveList(entry, reader.result)
+    const metadata = {category: submission.category, name: submission.name};
+    saveList(reader.result, metadata)
         .then((x) => showListSavedMessage(x, /*success=*/true))
         .catch((x) => showListSavedMessage(x, /*success=*/false));
   }
