@@ -2,38 +2,27 @@
 
 ### Introduction
 
-Inkstone is a mobile app for English-speakers who want to learn to read
-and write Mandarin. To build this app,
-[install the latest version of Meteor.js](https://www.meteor.com/install),
-then check out this repository and run:
+Inkstone is a mobile app for people who want to learn to read and
+write Mandarin. It's **totally free**, **open-source**, and can be used
+**without an Internet connection**! Inkstone is licensed under the
+[GNU General Public License v3.0](https://www.gnu.org/licenses/gpl-3.0.en.html).
+Although the app is still being developed, it has quite a few features:
 
-    $ meteor build output --server localhost:3785
+- Tap for a hint, double-tap for a walkthrough
+- Stroke recognition and automatic grading
+- Spaced-repetition-based scheduling
+- Help pages and stroke-order animations for every character
+- Bundled word lists: radicals and all HSK levels
+- Settings that give you control over scheduling
+- Support for custom word lists
 
-The `--server` parameter in this build command is a dummy: this app is an
-entirely client-side app. That means that you can study Chinese on the go
-without any Internet connection!
+Inkstone should run on both Android and iOS, but I don't have an iPhone
+on which to test the iOS version. See the `Supported platforms` section
+for details.
 
-### Supported platforms
+### Installing from binary
 
-This app is currently Android-only. After running the build command
-above, you'll find two .apk files in the output directory, one for armv7
-phones and the other for x86 phones. Look for the files in:
-
-    output/inkstone/android/project/build/outputs/apk/
-
-In theory, the code in this repository can be used to build an iOS app,
-too, as follows:
-
-    $ meteor add-platform ios
-    $ meteor build output --server localhost:3785
-
-However, I can't test or debug the iOS build because I don't have an
-iPhone. If people are interested, I'd love to buy one and try it out!
-Apple devices are expensive, though, as are Apple developer licenses...
-
-### Pre-built binaries
-
-I've uploaded copies of the Android binaries to Dropbox. Only use these
+I've uploaded compiled Android APKs to Dropbox. Only use these
 binaries if you trust me and Dropbox! The legal disclaimers in the
 `LICENSE` file apply to these binaries as well: **there is no warranty
 for this program, to the extent permitted by applicable law**. See that
@@ -42,6 +31,43 @@ binaries are here:
 
 - [Inkstone for Android armv7](https://www.dropbox.com/s/z2avjvqclmj2snd/inkstone-armv7.apk?dl=0)
 - [Inkstone for Android x86](https://www.dropbox.com/s/ucm7zrwuwmeioy6/inkstone-x86.apk?dl=0)
+
+Most Android phones use armv7. Trying to install the APK for the wrong
+architecture will just result in an error message, so if you're not sure
+which one your phone's running, try both.
+
+### Building from source
+
+To build Inkstone,
+[install the latest version of Meteor.js](https://www.meteor.com/install),
+then check out this repository and run:
+
+    $ meteor build .build --server localhost:3785
+    $ cp -R cordova-build-override/* .build/android/project/assets/.
+    $ pushd .build/android/project/cordova
+    $ ./build --release
+    $ popd
+
+If the build goes successfully, you'll end up with APKs in:
+
+    ./build/android/project/build/outputs/apk/
+
+You'll have to sign these APKs before they can be installed on a device.
+See `scripts/build` for an example that also signs the APKs.
+Note that the `--server` parameter in the `meteor build` command is a dummy.
+Other than custom-lists downloads, the app is an entirely-client-side app.
+
+### Supported platforms
+
+This app has only been tested on Android. In theory, this code could
+be used to build an iOS app, too, as follows:
+
+    $ meteor add-platform ios
+    $ meteor build .build --server localhost:3785
+
+However, I can't test or debug the iOS build because I don't have an
+iPhone. If people are interested, I'd love to buy one and try it out!
+Apple devices are expensive, though, as are Apple developer licenses...
 
 ### Upcoming features
 
