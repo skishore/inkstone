@@ -148,8 +148,8 @@ window.onhashchange = onHashChange;
 Meteor.startup(onHashChange);
 
 Template.answer.events({
-  'click .header .back, touchstart .header .back': () => {
-    window.location.hash = '';
+  'click .header .back, touchstart .header .back': (event) => {
+    Meteor.defer(() => window.location.hash = '');
   },
   'click .link, touchstart .link': (event) => {
     const codepoint = $(event.currentTarget).attr('data-codepoint');
