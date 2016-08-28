@@ -299,7 +299,9 @@ Iron.Location.onPopState(() => {
 Template.help.events({
   'click .item.help-item': function(event) {
     if (this.link) {
-      Router.go(this.link);
+      window.open(this.link, '_system');
+    } else if (this.page) {
+      Router.go(this.page);
     } else if (this.topic) {
       kDemoPrefix();
       runDemo([sleep(300)].concat(kDemos[this.topic]()));
