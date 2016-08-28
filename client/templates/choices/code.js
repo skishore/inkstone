@@ -145,7 +145,7 @@ const saveList = (data, metadata) => {
   // format used by readList and writeList.
   const rows = [];
   for (let row of data.split('\n')) {
-    if (!row) continue;
+    if (!row || row.startsWith('//')) continue;
     row = row.replace('\r', '').split('\t');
     if (row.length !== kImportColumns.length) {
       return Promise.reject(`Malformatted row: ${row.join(', ')}`);
@@ -290,6 +290,10 @@ Template.import_lists.helpers({
 });
 
 Template.imports.events({
+  'click .option.format': () => {
+    window.open(`${kGitHubDomain}/docs/format.html`, '_system');
+    Popup.hide(50);
+  },
   'click .option.github': () => {
     fetchGitHubLists().then((lists) => {
       github_lists.set(lists);
