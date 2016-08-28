@@ -36,43 +36,30 @@
 <h3>
 <a id="introduction" class="anchor" href="#introduction" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Introduction</h3>
 
-<p>Inkstone is a mobile app for English-speakers who want to learn to read
-and write Mandarin. To build this app,
-<a href="https://www.meteor.com/install">install the latest version of Meteor.js</a>,
-then check out this repository and run:</p>
+<p>Inkstone is a mobile app for people who want to learn to read and
+write Mandarin. It's <strong>totally free</strong>, <strong>open-source</strong>, and can be used
+<strong>without an Internet connection</strong>! Inkstone is licensed under the
+<a href="https://www.gnu.org/licenses/gpl-3.0.en.html">GNU General Public License v3.0</a>.
+Although the app is still being developed, it has quite a few features:</p>
 
-<pre><code>$ meteor build output --server localhost:3785
-</code></pre>
+<ul>
+<li>Tap for a hint, double-tap for a walkthrough</li>
+<li>Stroke recognition and automatic grading</li>
+<li>Spaced-repetition-based scheduling</li>
+<li>Help pages and stroke-order animations for every character</li>
+<li>Bundled word lists: radicals and all HSK levels</li>
+<li>Settings that give you control over scheduling</li>
+<li>Support for custom word lists</li>
+</ul>
 
-<p>The <code>--server</code> parameter in this build command is a dummy: this app is an
-entirely client-side app. That means that you can study Chinese on the go
-without any Internet connection!</p>
-
-<h3>
-<a id="supported-platforms" class="anchor" href="#supported-platforms" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Supported platforms</h3>
-
-<p>This app is currently Android-only. After running the build command
-above, you'll find two .apk files in the output directory, one for armv7
-phones and the other for x86 phones. Look for the files in:</p>
-
-<pre><code>output/inkstone/android/project/build/outputs/apk/
-</code></pre>
-
-<p>In theory, the code in this repository can be used to build an iOS app,
-too, as follows:</p>
-
-<pre><code>$ meteor add-platform ios
-$ meteor build output --server localhost:3785
-</code></pre>
-
-<p>However, I can't test or debug the iOS build because I don't have an
-iPhone. If people are interested, I'd love to buy one and try it out!
-Apple devices are expensive, though, as are Apple developer licenses...</p>
+<p>Inkstone should run on both Android and iOS, but I don't have an iPhone
+on which to test the iOS version. See the <code>Supported platforms</code> section
+for details.</p>
 
 <h3>
-<a id="pre-built-binaries" class="anchor" href="#pre-built-binaries" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Pre-built binaries</h3>
+<a id="installing-from-binary" class="anchor" href="#installing-from-binary" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Installing from binary</h3>
 
-<p>I've uploaded copies of the Android binaries to Dropbox. Only use these
+<p>I've uploaded compiled Android APKs to Dropbox. Only use these
 binaries if you trust me and Dropbox! The legal disclaimers in the
 <code>LICENSE</code> file apply to these binaries as well: <strong>there is no warranty
 for this program, to the extent permitted by applicable law</strong>. See that
@@ -83,6 +70,48 @@ binaries are here:</p>
 <li><a href="https://www.dropbox.com/s/z2avjvqclmj2snd/inkstone-armv7.apk?dl=0">Inkstone for Android armv7</a></li>
 <li><a href="https://www.dropbox.com/s/ucm7zrwuwmeioy6/inkstone-x86.apk?dl=0">Inkstone for Android x86</a></li>
 </ul>
+
+<p>Most Android phones use armv7. Trying to install the APK for the wrong
+architecture will just result in an error message, so if you're not sure
+which one your phone's running, try both.</p>
+
+<h3>
+<a id="building-from-source" class="anchor" href="#building-from-source" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Building from source</h3>
+
+<p>To build Inkstone,
+<a href="https://www.meteor.com/install">install the latest version of Meteor.js</a>,
+then check out this repository and run:</p>
+
+<pre><code>$ meteor build .build --server localhost:3785
+$ cp -R cordova-build-override/* .build/android/project/assets/.
+$ pushd .build/android/project/cordova
+$ ./build --release
+$ popd
+</code></pre>
+
+<p>If the build goes successfully, you'll end up with APKs in:</p>
+
+<pre><code>./build/android/project/build/outputs/apk/
+</code></pre>
+
+<p>You'll have to sign these APKs before they can be installed on a device.
+See <code>scripts/build</code> for an example that also signs the APKs.
+Note that the <code>--server</code> parameter in the <code>meteor build</code> command is a dummy.
+Other than custom-lists downloads, the app is an entirely-client-side app.</p>
+
+<h3>
+<a id="supported-platforms" class="anchor" href="#supported-platforms" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Supported platforms</h3>
+
+<p>This app has only been tested on Android. In theory, this code could
+be used to build an iOS app, too, as follows:</p>
+
+<pre><code>$ meteor add-platform ios
+$ meteor build .build --server localhost:3785
+</code></pre>
+
+<p>However, I can't test or debug the iOS build because I don't have an
+iPhone. If people are interested, I'd love to buy one and try it out!
+Apple devices are expensive, though, as are Apple developer licenses...</p>
 
 <h3>
 <a id="upcoming-features" class="anchor" href="#upcoming-features" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Upcoming features</h3>
@@ -103,7 +132,7 @@ or drop me an email at <code>kshaunak "at" gmail.com</code>.</p>
       </footer>
     </div>
 
-
+    
 
   </body>
 </html>
