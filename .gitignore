@@ -2,4 +2,4 @@
 *.swp
 .DS_Store
 .sass-cache
-.demeteorized
+.build

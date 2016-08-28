@@ -1,4 +1,24 @@
 #!/bin/bash
+
+# Clear the build directory.
+rm -r .build
 meteor remove-platform android
 meteor add-platform android
-meteor build ~/build --server localhost:3785
+
+# Run the Meteor build script and then implement cordova-build-override.
+meteor build .build --server localhost:3785
+cp -R cordova-build-override/* .build/android/project/assets/.
+
+# Run the Cordova build script.
+pushd .build/android/project/cordova
+./build --release
+cd ../build/outputs/apk
+
+# Sign the output. Will prompt for passwords.
+jarsigner -verbose -sigalg SHA1withRSA -digestalg SHA1 -keystore ~/.keystore project-armv7-release-unsigned.apk inkstone
+jarsigner -verbose -sigalg SHA1withRSA -digestalg SHA1 -keystore ~/.keystore project-x86-release-unsigned.apk inkstone
+
+# Copy the output to shared location in Dropbox.
+cp project-armv7-release-unsigned.apk ~/Dropbox/Projects/inkstone-armv7.apk
+cp project-x86-release-unsigned.apk ~/Dropbox/Projects/inkstone-x86.apk
+popd
