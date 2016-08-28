@@ -126,6 +126,29 @@ const readList = (list) => {
   });
 }
 
+// Input: a path to an asset in cordova-build-overrides/www/assets
+// Output: a Promise that resolves when that asset is removed
+const removeAsset = (path) => {
+  return new Promise((resolve, reject) => {
+    if (Meteor.isCordova) {
+      try {
+        const url = `${cordova.file.dataDirectory}www/assets/${path}`;
+        window.resolveLocalFileSystemURL(
+            url, (entry) => entry.remove(resolve, reject), reject);
+      } catch (e) {
+        reject(e);
+      }
+    } else {
+      Meteor.call('removeAsset', path, (error, data) => {
+        error ? reject(error) : resolve();
+      });
+    }
+  });
+}
+
+// Deletes the given list and resolves when it is removed.
+const removeList = (list) => removeAsset(`lists/${list}.list`);
+
 // Input: a path to an asset in cordova-build-overrides/www/assets, and data
 //        to write to the asset at that path.
 // Output: a Promise that resolves to true if the write is successful.
@@ -197,4 +220,4 @@ readAsset('radicals.json').then((data) => {
   _.extend(radicals, JSON.parse(data).radical_to_index_map);
 });
 
-export {readCharacter, readItem, readList, writeList};
+export {readCharacter, readItem, readList, removeList, writeList};

@@ -17,7 +17,7 @@
  *  along with Inkstone.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-import {writeList} from '/client/assets';
+import {removeList, writeList} from '/client/assets';
 import {Backdrop} from '/client/backdrop';
 import md5 from '/client/external/blueimp/md5';
 import {Lists} from '/client/model/lists';
@@ -42,9 +42,11 @@ const deleteAllLists = () => {
 }
 
 const deleteList = (list, hidden) => {
-  // TODO(skishore): Maybe delete the list from the asset store here.
   setListStatus(list, /*on=*/false);
-  if (!Lists.isListEnabled(list)) Lists.deleteList(list);
+  if (!Lists.isListEnabled(list)) {
+    removeList(list).catch((x) => console.error(x));
+    Lists.deleteList(list);
+  }
   hidden || Popup.hide(50);
 }
 

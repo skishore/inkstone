@@ -29,6 +29,9 @@ Meteor.methods({
   readAsset: (path) => {
     return Meteor.wrapAsync(fs.readFile, fs)(asset(path), 'utf8');
   },
+  removeAsset: (path) => {
+    return Meteor.wrapAsync(fs.unlink, fs)(asset(path));
+  },
   writeAsset: (path, data) => {
     return Meteor.wrapAsync(fs.writeFile, fs)(asset(path), data, 'utf8');
   },
