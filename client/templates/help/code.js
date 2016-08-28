@@ -23,6 +23,7 @@ import {mockPersistenceLayer} from '/client/model/persistence';
 import {Settings} from '/client/model/settings';
 import {Vocabulary} from '/client/model/vocabulary';
 import {Overlay} from '/client/templates/overlay/code';
+import {Popup} from '/client/templates/popup/code';
 import {assert} from '/lib/base';
 
 let allow_back_button = false;
@@ -99,13 +100,37 @@ const kDemoSuffix = () => {
   Router.go('help', undefined, {replaceState: true});
   mockPersistenceLayer(localStorage);
   Overlay.hide();
+  Popup.hide();
 }
 
 const kDemos = {
   add_custom_word_lists: () => [
-    highlight('.lists', "Custom lists aren't implemented yet, but when " +
-                        "they are, they'll be accessible from the " +
-                        '"Lists" page.'),
+    () => {
+      Lists.setAllLists({demo: {category: 'My Lists', name: 'Chinese 101'}});
+      return true;
+    },
+    highlight('.lists', 'You can import and delete custom ' +
+                        'lists on the "Lists" page.'),
+    waitOnUrl('lists'),
+    highlight('.block .item.customization-option.import',
+              'Tap here to import custom word lists.'),
+    () => $('.popup').length > 0,
+    sleep(300),
+    highlight('.popup', 'You can import shared lists from GitHub (requires ' +
+                        'a data connection) or local files from your device.'),
+    waitOnTap(),
+    highlight('.popup .option.format',
+              'Consult the Inkstone documentation for ' +
+              'information about the list data format.'),
+    waitOnTap(),
+    () => Popup.hide() || true,
+    highlight('.block .item.customization-option.delete',
+              'You can delete custom lists. Doing so will not ' +
+              'delete your progress on words from those lists.'),
+    waitOnTap(),
+    highlight('.block.group',
+              'Importing a list just makes it available on this page. ' +
+              'Remember to enable your lists after importing them!'),
     waitOnTap(),
   ],
   practice_writing: () => [
