@@ -36,19 +36,16 @@ const kImportColumns = ['word', 'traditional', 'numbered', 'definition'];
 const github_lists = new ReactiveVar({});
 
 const deleteAllLists = () => {
-  // TODO(skishore): Consider deleting the lists from the asset store here.
-  for (let list of _.keys(Lists.getImportedLists())) {
-    setListStatus(list, /*on=*/false);
-    if (!Lists.isListEnabled(list)) Lists.deleteList(list);
-  }
+  _.keys(Lists.getImportedLists())
+   .forEach((list) => deleteList(list, /* hidden=*/true));
   Popup.hide(50);
 }
 
-const deleteList = (list) => {
-  // TODO(skishore): Consider deleting the list from the asset store here.
+const deleteList = (list, hidden) => {
+  // TODO(skishore): Maybe delete the list from the asset store here.
   setListStatus(list, /*on=*/false);
   if (!Lists.isListEnabled(list)) Lists.deleteList(list);
-  Popup.hide(50);
+  hidden || Popup.hide(50);
 }
 
 const fetchGitHubLists = () => {
@@ -215,6 +212,12 @@ const showImportDialog = (list) => {
 }
 
 const showListSavedMessage = (message, success) => {
+  if (!success) console.error(message);
+  if (message instanceof Error) {
+    message = ('' + message).substr('Error: '.length);
+  } else if (message instanceof Object) {
+    message = JSON.stringify(message);
+  }
   Backdrop.hide(kBackdropTimeout, () => Popup.show({
     buttons: [{class: 'bold', label: 'Okay'}],
     text: `${message}`,

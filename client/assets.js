@@ -23,13 +23,32 @@ const kListColumns = [
 const characters = {};
 const radicals = {};
 
+// On Cordova, imported assets are under a different directory than builtins.
+const isImportedAsset = (asset) => asset.startsWith('lists/s/');
+
+// Input: a list of path fragments in a Cordova filesystem
+// Output: the entry of the directory given by fragments.join('/'), which is
+//         created recursively if folders on the path do not already exist.
+const getDirectoryEntry = (fragments, root) => {
+  if (fragments.length === 0 && !root) return Promise.reject('No fragments.');
+  if (fragments.length === 0) return Promise.resolve(root);
+  return new Promise((resolve, reject) => {
+    const recurse = (entry) => getDirectoryEntry(fragments.slice(1), entry)
+                                  .then(resolve).catch(reject);
+    root ? root.getDirectory(fragments[0], {create: true}, recurse, reject)
+         : window.resolveLocalFileSystemURL(fragments[0], recurse, reject);
+  });
+}
+
 // Input: a path to an asset in cordova-build-overrides/www/assets
 // Output: a Promise that resolves to the String contents of that file
 const readAsset = (path) => {
   return new Promise((resolve, reject) => {
     if (Meteor.isCordova) {
       try {
-        const url = `${cordova.file.applicationDirectory}www/assets/${path}`;
+        const root = isImportedAsset(path) ?
+            cordova.file.dataDirectory : cordova.file.applicationDirectory;
+        const url = `${root}www/assets/${path}`;
         window.resolveLocalFileSystemURL(url, (entry) => {
           entry.file((file) => {
             const reader = new FileReader;
@@ -95,7 +114,7 @@ const readItem = (item, callback) => {
 const readList = (list) => {
   return readAsset(`lists/${list}.list`).then((data) => {
     const result = [];
-    data.split('\n').map((line) => {
+    data.split('\n').forEach((line) => {
       const values = line.split('\t');
       if (values.length !== kListColumns.length) return;
       const row = {};
@@ -114,18 +133,18 @@ const writeAsset = (path, data) => {
   return new Promise((resolve, reject) => {
     if (Meteor.isCordova) {
       try {
-        const url = `${cordova.file.applicationDirectory}www/assets/${path}`;
-        const index = url.lastIndexOf('/');
-        const directory = url.substr(0, index);
-        window.resolveLocalFileSystemURL(directory, (entry) => {
-          entry.getFile(url.substr(index + 1), {create: true}, (file) => {
+        const prefix = [cordova.file.dataDirectory, 'www', 'assets'];
+        const fragments = prefix.concat(path.split('/'));
+        const filename = fragments.pop();
+        return getDirectoryEntry(fragments).then((entry) => {
+          entry.getFile(filename, {create: true}, (file) => {
             file.createWriter((writer) => {
               writer.onerror = reject;
               writer.onwriteend = () => resolve(true);
               writer.write(new Blob([data]), {type: 'text/plain'});
             }, reject);
           }, reject);
-        }, reject);
+        }).catch(reject);
       } catch (e) {
         reject(e);
       }
