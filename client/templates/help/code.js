@@ -273,7 +273,11 @@ Iron.Location.onPopState(() => {
 
 Template.help.events({
   'click .item.help-item': function(event) {
-    kDemoPrefix();
-    runDemo([sleep(300)].concat(kDemos[this.topic]()));
+    if (this.link) {
+      Router.go(this.link);
+    } else if (this.topic) {
+      kDemoPrefix();
+      runDemo([sleep(300)].concat(kDemos[this.topic]()));
+    }
   },
 });

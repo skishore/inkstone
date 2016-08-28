@@ -1,0 +1,162 @@
+<!--
+ *  Copyright 2016 Shaunak Kishore (kshaunak "at" gmail.com)
+ *
+ *  This file is part of Inkstone.
+ *
+ *  Inkstone is free software: you can redistribute it and/or modify
+ *  it under the terms of the GNU General Public License as published by
+ *  the Free Software Foundation, either version 3 of the License, or
+ *  (at your option) any later version.
+ *
+ *  Inkstone is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *  GNU General Public License for more details.
+ *
+ *  You should have received a copy of the GNU General Public License
+ *  along with Inkstone.  If not, see <http://www.gnu.org/licenses/>.
+ -->
+
+<template name="credits">
+  {{#ionic}}
+    {{#contentFor "headerButtonLeft"}}
+      {{> ionNavBackButton text="Done"}}
+    {{/contentFor}}
+    {{#contentFor "headerTitle"}}
+      <h1 class="title">Credits</h1>
+    {{/contentFor}}
+    {{#ionList}}
+      <div class="block">
+        {{#ionItem class="credits-item"}}
+          Inkstone is licensed under the GNU General Public License v3.0.
+        {{/ionItem}}
+        {{#ionItem class="credits-item link"}}
+          https://github.com/skishore/inkstone
+        {{/ionItem}}
+      </div>
+      <!-- General credits (Meteor + friends, data dependencies) -->
+      <div class="block">
+        {{#ionItem class="item-divider"}}
+          MeteorJS
+        {{/ionItem}}
+        {{#ionItem class="credits-item"}}
+          Copyright 2011-2016 Meteor Development Group;
+          licensed under the MIT License
+        {{/ionItem}}
+        {{#ionItem class="credits-item link"}}
+          https://www.meteor.com/
+        {{/ionItem}}
+      </div>
+      <div class="block">
+        {{#ionItem class="item-divider"}}
+          Apache Cordova
+        {{/ionItem}}
+        {{#ionItem class="credits-item"}}
+          Copyright 2012, 2013, 2015 The Apache Software Foundation;
+          licensed under the Apache License Version 2.0.
+        {{/ionItem}}
+        {{#ionItem class="credits-item link"}}
+          https://cordova.apache.org/
+        {{/ionItem}}
+      </div>
+      <div class="block">
+        {{#ionItem class="item-divider"}}
+          Arphic PL KaitiM GB and UKai
+        {{/ionItem}}
+        {{#ionItem class="credits-item"}}
+          Copyright 1999 Arphic Technology Co., Ltd.;
+          licensed under the Arphic Public License
+        {{/ionItem}}
+        {{#ionItem class="credits-item link"}}
+          http://www.arphic.com.tw/en/home/index
+        {{/ionItem}}
+      </div>
+      <div class="block">
+        {{#ionItem class="item-divider"}}
+          Make Me a Hanzi
+        {{/ionItem}}
+        {{#ionItem class="credits-item"}}
+          Copyright 1999 Arphic Technology Co., Ltd.;
+          Copyright 2016 Shaunak Kishore;
+          licensed under the Arphic Public License
+        {{/ionItem}}
+        {{#ionItem class="credits-item link"}}
+          https://github.com/skishore/makemeahanzi
+        {{/ionItem}}
+      </div>
+      <!-- Credits from client/external -->
+      <div class="block">
+        {{#ionItem class="item-divider"}}
+          JavaScript MD5
+        {{/ionItem}}
+        {{#ionItem class="credits-item"}}
+          Copyright 2011, Sebastian Tschan;
+          licensed under the MIT License
+        {{/ionItem}}
+        {{#ionItem class="credits-item link"}}
+          https://github.com/blueimp/JavaScript-MD5
+        {{/ionItem}}
+      </div>
+      <div class="block">
+        {{#ionItem class="item-divider"}}
+          CreateJS
+        {{/ionItem}}
+        {{#ionItem class="credits-item"}}
+          Copyright 2014 gskinner.com, inc.;
+          licensed under the MIT License
+        {{/ionItem}}
+        {{#ionItem class="credits-item link"}}
+          http://createjs.com/
+        {{/ionItem}}
+      </div>
+      <div class="block">
+        {{#ionItem class="item-divider"}}
+          Ionicons
+        {{/ionItem}}
+        {{#ionItem class="credits-item"}}
+          Copyright 2016 Drifty;
+          licensed under the MIT License
+        {{/ionItem}}
+        {{#ionItem class="credits-item link"}}
+          http://ionicons.com/
+        {{/ionItem}}
+      </div>
+      <div class="block">
+        {{#ionItem class="item-divider"}}
+          Skritter HTML5
+        {{/ionItem}}
+        {{#ionItem class="credits-item"}}
+          Copyright 2015 Inkren Inc;
+          licensed under the MIT License
+        {{/ionItem}}
+        {{#ionItem class="credits-item link"}}
+          https://github.com/skritter/skritter-html5
+        {{/ionItem}}
+      </div>
+      <div class="block">
+        {{#ionItem class="item-divider"}}
+          Meteoric
+        {{/ionItem}}
+        {{#ionItem class="credits-item"}}
+          Copyright 2015 Nick Wientge;
+          licensed under the MIT License
+        {{/ionItem}}
+        {{#ionItem class="credits-item link"}}
+          https://github.com/meteoric/meteor-ionic
+        {{/ionItem}}
+      </div>
+      <div class="block">
+        {{#ionItem class="item-divider"}}
+          Sketch.js
+        {{/ionItem}}
+        {{#ionItem class="credits-item"}}
+          Copyright 2013 Justin Windle;
+          licensed under the MIT License
+        {{/ionItem}}
+        {{#ionItem class="credits-item link"}}
+          http://soulwire.github.io/sketch.js/
+        {{/ionItem}}
+      </div>
+    {{/ionList}}
+  {{/ionic}}
+</template>
