@@ -1,0 +1,4 @@
+#!/bin/bash
+meteor remove-platform android
+meteor add-platform android
+meteor build ~/build --server localhost:3785
