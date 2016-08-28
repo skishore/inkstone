@@ -1,7 +1,6 @@
 - Add ability to save and load a database snapshot to a file
 - Add an "Add characters when adding words" feature
 - Create flashcards for character -> [definition|pinyin|tone]
-- On adding a word to vocab, also add its constituent characters
 - Populate a number of useful wordlists on the github.io page
 - Relax angle feature for dot strokes
 - Support some shortcuts in stroke matching (女, 了, 子, 纟, 糹, 糸, 系, 辶)
