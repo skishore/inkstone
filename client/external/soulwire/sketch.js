@@ -33,6 +33,10 @@
     ----------------------------------------------------------------------
     */
 
+    function isPassiveEventType(type) {
+        return event.type === 'mousemove' || event.type === 'touchmove';
+    }
+
     var MATH_PROPS = 'E LN10 LN2 LOG2E LOG10E PI SQRT1_2 SQRT2 abs acos asin atan ceil cos exp floor log round sin sqrt tan atan2 pow max min'.split( ' ' );
     var HAS_SKETCH = '__hasSketch';
     var M = Math;
@@ -130,7 +134,7 @@
         var object = {};
 
         for ( var key in target ) {
-            
+
             if ( key === 'webkitMovementX' || key === 'webkitMovementY' )
                 continue;
 
@@ -210,7 +214,7 @@
 
                 if ( isString( node ) )
 
-                    target[ ( on ? 'add' : 'remove' ) + 'EventListener' ].call( target, node, handler, false );
+                    target[ ( on ? 'add' : 'remove' ) + 'EventListener' ].call( target, node, handler, {passive: isPassiveEventType(node)} );
 
                 else if ( isFunction( node ) )
 
@@ -344,7 +348,7 @@
 
         function process( event ) {
 
-            event.preventDefault();
+            if (!isPassiveEventType(event.type)) event.preventDefault();
 
             copy = clone( event );
             copy.originalEvent = event;
