@@ -55,7 +55,7 @@ class Lists {
     Lists.setAllLists(lists);
   }
   static getAllLists() {
-    return lists.get('lists') || kLists;
+    return lists.get('lists') || _.extend({}, kLists);
   }
   static getImportedLists() {
     const result = {};
