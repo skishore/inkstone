@@ -20,8 +20,7 @@
 const kListColumns = [
   'word', 'traditional', 'numbered', 'pinyin', 'definition'];
 
-const characters = {};
-const radicals = {};
+const kStartup = new Promise((resolve, _) => Meteor.startup(resolve));
 
 // On Cordova, imported assets are under a different directory than builtins.
 const isImportedAsset = (asset) => asset.startsWith('lists/s/');
@@ -43,7 +42,7 @@ const getDirectoryEntry = (fragments, root) => {
 // Input: a path to an asset in cordova-build-overrides/www/assets
 // Output: a Promise that resolves to the String contents of that file
 const readAsset = (path) => {
-  return new Promise((resolve, reject) => {
+  return kStartup.then(() => new Promise((resolve, reject) => {
     if (Meteor.isCordova) {
       try {
         const root = isImportedAsset(path) ?
@@ -65,7 +64,7 @@ const readAsset = (path) => {
         error ? reject(error) : resolve(data);
       });
     }
-  });
+  }));
 }
 
 // Input: a single Chinese character
@@ -94,11 +93,13 @@ const readItem = (item, callback) => {
   return Promise.all([
     readList(item.lists[0]),
     Promise.all(Array.from(item.word).map(readCharacter)),
-  ]).then((data) => {
-    const entries = data[0].filter((x) => x.word === item.word);
+    kRadicals,
+  ]).then((resolutions) => {
+    const [list, characters, radicals] = resolutions;
+    const entries = list.filter((x) => x.word === item.word);
     if (entries.length === 0) throw new Error(`Entry not found: ${item.word}`);
     const entry = entries[0];
-    entry.characters = data[1];
+    entry.characters = characters;
     const radical = radicals[item.word];
     if (radical && entry.characters.length === 1) {
       const base = entry.definition || entry.characters[0].definition || '';
@@ -112,7 +113,11 @@ const readItem = (item, callback) => {
 // Output: a Promise that resolves to a list of items that appear in the list,
 //         each with all the data returned by readItem except characters
 const readList = (list) => {
-  return readAsset(`lists/${list}.list`).then((data) => {
+  return Promise.all([
+    readAsset(`lists/${list}.list`),
+    kCharacters,
+  ]).then((resolutions) => {
+    const [data, characters] = resolutions;
     const result = [];
     data.split('\n').forEach((line) => {
       const values = line.split('\t');
@@ -129,7 +134,7 @@ const readList = (list) => {
 // Input: a path to an asset in cordova-build-overrides/www/assets
 // Output: a Promise that resolves when that asset is removed
 const removeAsset = (path) => {
-  return new Promise((resolve, reject) => {
+  return kStartup.then(() => new Promise((resolve, reject) => {
     if (Meteor.isCordova) {
       try {
         const url = `${cordova.file.dataDirectory}www/assets/${path}`;
@@ -143,7 +148,7 @@ const removeAsset = (path) => {
         error ? reject(error) : resolve();
       });
     }
-  });
+  }));
 }
 
 // Deletes the given list and resolves when it is removed.
@@ -153,7 +158,7 @@ const removeList = (list) => removeAsset(`lists/${list}.list`);
 //        to write to the asset at that path.
 // Output: a Promise that resolves to true if the write is successful.
 const writeAsset = (path, data) => {
-  return new Promise((resolve, reject) => {
+  return kStartup.then(() => new Promise((resolve, reject) => {
     if (Meteor.isCordova) {
       try {
         const prefix = [cordova.file.dataDirectory, 'www', 'assets'];
@@ -176,7 +181,7 @@ const writeAsset = (path, data) => {
         error ? reject(error) : resolve(true);
       });
     }
-  });
+  }));
 }
 
 // Input: a list of list-item objects with all the list column keys
@@ -186,38 +191,45 @@ const writeAsset = (path, data) => {
 //
 // WARNING: If items is an empty set, the list will not actually be written.
 // This is a failure case that should be handled by the caller.
-const writeList = (list, rows) => {
-  const data = [];
-  const result = {items: {}, missing: {}};
-  for (let row of rows) {
-    const fields = kListColumns.map((column) => row[column]);
-    const missing = kListColumns.filter((column) => !row[column]);
-    if (missing.length > 0) {
-      return Promise.reject(`Malformatted row: ${fields.join(', ')}. ` +
-                            `Missing data for: ${missing.join(', ')}.`);
+const writeList = (list, items) => {
+  return kCharacters.then((characters) => {
+    const result = {items: {}, missing: {}};
+    const rows = [];
+    for (let item of items) {
+      const fields = kListColumns.map((column) => item[column]);
+      const missing = kListColumns.filter((column) => !item[column]);
+      if (missing.length > 0) {
+        return Promise.reject(`Malformatted row: ${fields.join(', ')}. ` +
+                              `Missing data for: ${missing.join(', ')}.`);
+      }
+      if (!_.all(item.word, (x) => characters[x])) {
+        Array.from(item.word).forEach(
+            (x) => { if (!characters[x]) result.missing[x] = true; });
+        continue;
+      }
+      const line = fields.join('\t');
+      if (line.split('\t').length !== fields.length) {
+        return Promise.reject(`Row contains tabs: ${fields.join(', ')}.`);
+      }
+      result.items[item.word] = true;
+      rows.push(line);
     }
-    if (!_.all(row.word, (x) => characters[x])) {
-      Array.from(row.word).forEach(
-          (x) => { if (!characters[x]) result.missing[x] = true; });
-      continue;
-    }
-    const line = fields.join('\t');
-    if (line.split('\t').length !== fields.length) {
-      return Promise.reject(`Row contains tabs: ${fields.join(', ')}.`);
-    }
-    data.push(line);
-    result.items[row.word] = true;
-  }
-  if (data.length === 0) return Promise.resolve(result);
-  return writeAsset(`lists/${list}.list`, data.join('\n')).then(() => result);
+    if (rows.length === 0) return Promise.resolve(result);
+    const data = rows.join('\n');
+    return writeAsset(`lists/${list}.list`, data).then(() => result);
+  });
 }
 
-readAsset('characters/all.txt').then((data) => {
-  for (let character of data) characters[character] = true;
-});
+// Compute two pieces of global data that can be loaded into memory once.
 
-readAsset('radicals.json').then((data) => {
-  _.extend(radicals, JSON.parse(data).radical_to_index_map);
-});
+const kCharacters = readAsset('characters/all.txt').then((data) => {
+  const characters = {};
+  for (let character of data) characters[character] = true;
+  return characters;
+}).catch((error) => console.error(error));
+
+const kRadicals = readAsset('radicals.json')
+    .then((data) => JSON.parse(data).radical_to_index_map)
+    .catch((error) => console.error(error));
 
 export {readCharacter, readItem, readList, removeList, writeList};
