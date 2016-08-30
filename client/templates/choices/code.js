@@ -35,6 +35,8 @@ const kImportColumns = ['word', 'traditional', 'numbered', 'definition'];
 
 const github_lists = new ReactiveVar({});
 
+const cardinal = (n, object) => `${n} ${object}${n === 1 ? '' : 's'}`;
+
 const deleteAllLists = () => {
   _.keys(Lists.getImportedLists())
    .forEach((list) => deleteList(list, /* hidden=*/true));
@@ -115,7 +117,7 @@ const importAllLists = () => {
   const lists = getNewGitHubLists();
   const entries = _.keys(lists).map((x) => lists[x]);
   Backdrop.show();
-  const success = `Imported ${entries.length} lists.`;
+  const success = `Imported ${cardinal(entries.length, 'list')}.`;
   Promise.all(entries.map((x) => fetchListData(x.category, x.name)))
          .then((x) => Promise.all(_.zip(x, entries).map(
                (pair) => saveList(pair[0], pair[1]))))
@@ -167,7 +169,8 @@ const saveList = (data, metadata) => {
     if (length > 0) {
       Lists.addList(list, metadata);
       if (Lists.isListEnabled(list)) refreshListItems(list, rows);
-      return `Imported ${length} items for ${metadata.name}.${warning}`;
+      return `Imported ${cardinal(length, 'item')} ` +
+             `for ${metadata.name}.${warning}`;
     }
     throw `No items found for ${metadata.name}.${warning}`;
   });
