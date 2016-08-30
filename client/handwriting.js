@@ -17,7 +17,6 @@
  *  along with Inkstone.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-import Sketch from '/client/external/soulwire/sketch';
 import {Settings} from '/client/model/settings';
 
 const kCanvasSize = 512;
@@ -70,34 +69,39 @@ const convertShapeStyles = (shape, end) => {
   if (updated) shape.updateCache();
 }
 
-const createSketch = (element, handwriting) => {
+const createCanvas = (element, handwriting) => {
+  const canvas = document.createElement('canvas');
+  canvas.width = canvas.height = kCanvasSize;
+  canvas.style.width = canvas.style.height = `${element.width()}px`;
+  element.append(canvas);
+
+  const zoom = kCanvasSize / element.width();
+
+  const getPosition = (touch) => {
+    const bound = canvas.getBoundingClientRect();
+    const point = [touch.clientX - bound.left, touch.clientY - bound.top];
+    return point.map((x) => Math.round(zoom * x));
+  }
+
   let mousedown = false;
-  Sketch.create({
-    container: element[0],
-    autoclear: false,
-    fullscreen: false,
-    width: kCanvasSize,
-    height: kCanvasSize,
-    mousedown(e) {
-      mousedown = true;
-      handwriting._pushPoint([e.x, e.y]);
-    },
-    mouseup(e) {
-      mousedown = false;
-      handwriting._endStroke();
-    },
-    touchmove() {
-      if (mousedown && this.touches.length > 0) {
-        const touch = this.touches[0];
-        handwriting._maybePushPoint([touch.ox, touch.oy]);
-        handwriting._pushPoint([touch.x, touch.y]);
-      }
-    }
+
+  canvas.addEventListener('touchstart', (event) => {
+    mousedown = true;
+    if (event.touches.length === 0) return;
+    handwriting._pushPoint(getPosition(event.touches[0]));
   });
-  const canvas = element.find('canvas')[0];
-  canvas.style.width = `${element.width()}px`;
-  canvas.style.height = `${element.width()}px`;
-  return element.width() / kCanvasSize;
+
+  canvas.addEventListener('touchmove', (event) => {
+    if (!mousedown || event.touches.length === 0) return;
+    handwriting._pushPoint(getPosition(event.touches[0]));
+  }, {passive: true});
+
+  canvas.addEventListener('touchend', (event) => {
+    mousedown = false;
+    handwriting._endStroke();
+  });
+
+  return canvas;
 }
 
 const distance = (xs) => {
@@ -224,8 +228,8 @@ class Handwriting {
     ['double_tap_speed', 'reveal_order', 'snap_strokes'].forEach(
         (x) => this._settings[x] = Settings.get(x));
 
-    this._zoom = createSketch(element, this);
-    this._stage = new createjs.Stage(element.find('canvas')[0]);
+    const canvas = createCanvas(element, this);
+    this._stage = new createjs.Stage(canvas);
     this._size = this._stage.canvas.width;
 
     this._layers = [];
@@ -402,14 +406,9 @@ class Handwriting {
     this._animate(child, {alpha: 0}, 1500,
                   () => child.parent && child.parent.removeChild(child));
   }
-  _maybePushPoint(point) {
-    if (this._stroke.length === 0) {
-      this._pushPoint(point);
-    }
-  }
   _pushPoint(point) {
     if (point[0] != null && point[1] != null) {
-      this._stroke.push(point.map((x) => Math.round(x / this._zoom)));
+      this._stroke.push(point);
       if (this._drawable) this._drawStroke();
     }
   }
