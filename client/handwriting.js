@@ -87,6 +87,7 @@ const createCanvas = (element, handwriting) => {
 
   canvas.addEventListener('touchstart', (event) => {
     mousedown = true;
+    if (event.cancelable) event.preventDefault();
     if (event.touches.length === 0) return;
     handwriting._pushPoint(getPosition(event.touches[0]));
   });
