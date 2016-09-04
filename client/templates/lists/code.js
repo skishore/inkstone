@@ -20,6 +20,7 @@
 import {readList} from '/client/assets';
 import {Backdrop} from '/client/backdrop';
 import {Lists} from '/client/model/lists';
+import {Settings} from '/client/model/settings';
 import {Vocabulary} from '/client/model/vocabulary';
 import {Popup} from '/client/templates/popup/code';
 
@@ -40,7 +41,8 @@ const disableList = (list) => {
 const enableList = (list) => {
   Backdrop.show();
   readList(list).then((rows) => {
-    rows.forEach((row) => Vocabulary.addItem(row.word, list));
+    const charset = Settings.get('character_set');
+    rows.forEach((row) => Vocabulary.addItem(row[charset], list));
     Lists.enable(list);
     Backdrop.hide(kBackdropTimeout);
   }).catch((error) => {

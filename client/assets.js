@@ -18,7 +18,7 @@
  */
 
 const kListColumns = [
-  'word', 'traditional', 'numbered', 'pinyin', 'definition'];
+  'simplified', 'traditional', 'numbered', 'pinyin', 'definition'];
 
 const kStartup = new Promise((resolve, _) => Meteor.startup(resolve));
 
@@ -84,9 +84,10 @@ const readCharacter = (character) => {
 //   - definition: the definition of this word
 //   - numbered: the pronunciation of this word in the form `Zhong1wen2`.
 //   - pinyin: the pronunciation of this word
+//   - simplified: the word in simplified characters
 //   - traditional: the word in traditional characters
-//   - word: the word
-const readItem = (item, callback) => {
+//   - word: the word in the given character set
+const readItem = (item, charset) => {
   if (!item || !item.word || item.lists.length === 0) {
     return Promise.reject(new Error(item));
   }
@@ -96,10 +97,11 @@ const readItem = (item, callback) => {
     kRadicals,
   ]).then((resolutions) => {
     const [list, characters, radicals] = resolutions;
-    const entries = list.filter((x) => x.word === item.word);
+    const entries = list.filter((x) => x[charset] === item.word);
     if (entries.length === 0) throw new Error(`Entry not found: ${item.word}`);
     const entry = entries[0];
     entry.characters = characters;
+    entry.word = item.word;
     const radical = radicals[item.word];
     if (radical && entry.characters.length === 1) {
       const base = entry.definition || entry.characters[0].definition || '';
@@ -111,7 +113,7 @@ const readItem = (item, callback) => {
 
 // Input: the name of a list
 // Output: a Promise that resolves to a list of items that appear in the list,
-//         each with all the data returned by readItem except characters
+//         each with all the readItem fields except `characters` and `word`
 const readList = (list) => {
   return Promise.all([
     readAsset(`lists/${list}.list`),
@@ -124,7 +126,8 @@ const readList = (list) => {
       if (values.length !== kListColumns.length) return;
       const row = {};
       kListColumns.forEach((column, i) => row[column] = values[i]);
-      if (!_.all(row.word, (x) => characters[x])) return;
+      const words = row.simplified + row.traditional;
+      if (!_.all(words, (x) => characters[x])) return;
       result.push(row);
     });
     return result;
@@ -189,14 +192,14 @@ const writeAsset = (path, data) => {
 
 // Input: a list of list-item objects with all the list column keys
 // Output: a promise that resolves to a dict with the following keys:
-//    - items: the set of new words added included in the list
+//    - count: the total number of new words included in the list
 //    - missing: the set of characters in list without stroke data
 //
 // WARNING: If items is an empty set, the list will not actually be written.
 // This is a failure case that should be handled by the caller.
 const writeList = (list, items) => {
   return kCharacters.then((characters) => {
-    const result = {items: {}, missing: {}};
+    const result = {count: 0, missing: {}};
     const rows = [];
     for (let item of items) {
       const fields = kListColumns.map((column) => item[column]);
@@ -205,8 +208,9 @@ const writeList = (list, items) => {
         return Promise.reject(`Malformatted row: ${fields.join(', ')}. ` +
                               `Missing data for: ${missing.join(', ')}.`);
       }
-      if (!_.all(item.word, (x) => characters[x])) {
-        Array.from(item.word).forEach(
+      const words = item.simplified + item.traditional;
+      if (!_.all(words, (x) => characters[x])) {
+        Array.from(words).forEach(
             (x) => { if (!characters[x]) result.missing[x] = true; });
         continue;
       }
@@ -214,7 +218,7 @@ const writeList = (list, items) => {
       if (line.split('\t').length !== fields.length) {
         return Promise.reject(`Row contains tabs: ${fields.join(', ')}.`);
       }
-      result.items[item.word] = true;
+      result.count += 1;
       rows.push(line);
     }
     if (rows.length === 0) return Promise.resolve(result);

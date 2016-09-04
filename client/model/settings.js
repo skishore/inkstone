@@ -23,6 +23,7 @@ import {PersistentDict} from '/client/model/persistence';
 const settings = new PersistentDict('settings');
 
 const defaults = {
+  character_set: 'simplified',
   double_tap_speed: 500,
   max_adds: 20,
   max_reviews: 200,

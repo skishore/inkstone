@@ -21,6 +21,7 @@ import {removeList, writeList} from '/client/assets';
 import {Backdrop} from '/client/backdrop';
 import md5 from '/client/external/blueimp/md5';
 import {Lists} from '/client/model/lists';
+import {Settings} from '/client/model/settings';
 import {Vocabulary} from '/client/model/vocabulary';
 import {setListStatus, toListTemplate} from '/client/templates/lists/code';
 import {Popup} from '/client/templates/popup/code';
@@ -31,7 +32,7 @@ const kBackdropTimeout = 500;
 
 const kGitHubDomain = 'https://skishore.github.io/inkstone';
 
-const kImportColumns = ['word', 'traditional', 'numbered', 'definition'];
+const kImportColumns = ['simplified', 'traditional', 'numbered', 'definition'];
 
 const github_lists = new ReactiveVar({});
 
@@ -138,7 +139,8 @@ const importList = (list) => {
 
 const refreshListItems = (list, rows) => {
   Vocabulary.dropList(list);
-  rows.forEach((row) => Vocabulary.addItem(row.word, list));
+  const charset = Settings.get('character_set');
+  rows.forEach((row) => Vocabulary.addItem(row[charset], list));
 }
 
 const saveList = (data, metadata) => {
@@ -164,12 +166,11 @@ const saveList = (data, metadata) => {
   // Write the actual list and return a Promise with a success message.
   const list = getListKey(metadata.category, metadata.name);
   return writeList(list, rows).then((result) => {
-    const length = _.keys(result.items).length;
     const warning = getMissingCharacterWarning(_.keys(result.missing));
-    if (length > 0) {
+    if (result.count > 0) {
       Lists.addList(list, metadata);
       if (Lists.isListEnabled(list)) refreshListItems(list, rows);
-      return `Imported ${cardinal(length, 'item')} ` +
+      return `Imported ${cardinal(result.count, 'item')} ` +
              `for ${metadata.name}.${warning}`;
     }
     throw `No items found for ${metadata.name}.${warning}`;

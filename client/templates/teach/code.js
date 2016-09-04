@@ -213,6 +213,15 @@ const onItemData = (data) => {
   updateItem(card, data);
 }
 
+const onNewItem = (item) => {
+  const charset = Settings.get('character_set');
+  readItem(item, charset).then(onItemData).catch((error) => {
+    if (Settings.get('demo_mode')) return;
+    console.error('Card data request error:', error);
+    defer(Timing.shuffle);
+  });
+}
+
 const updateCard = () => {
   const card = Timing.getNextCard();
   if (!card || !card.data) return;
@@ -221,11 +230,7 @@ const updateCard = () => {
   if (card.deck === 'errors') {
     onErrorCard(card);
   } else {
-    defer(() => readItem(card.data).then(onItemData).catch((error) => {
-      if (Settings.get('demo_mode')) return;
-      console.error('Card data request error:', error);
-      defer(Timing.shuffle);
-    }));
+    defer(() => onNewItem(card.data));
   }
 }
 

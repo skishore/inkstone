@@ -103,6 +103,7 @@ class Cursor {
 
 class Vocabulary {
   static addItem(word, list) {
+    check(word, String);
     if (!cache.index[word]) {
       const entry = [word, null, null, [], 0, 0, false];
       if (entry.length !== kColumns.length) throw new Error(entry);
