@@ -19,6 +19,8 @@ jarsigner -verbose -sigalg SHA1withRSA -digestalg SHA1 -keystore ~/.keystore pro
 jarsigner -verbose -sigalg SHA1withRSA -digestalg SHA1 -keystore ~/.keystore project-x86-release-unsigned.apk inkstone
 
 # Copy the output to shared location in Dropbox.
+mv ~/Dropbox/Projects/inkstone-armv7.apk ~/Dropbox/Projects/inkstone-armv7.apk.bak
+mv ~/Dropbox/Projects/inkstone-x86.apk ~/Dropbox/Projects/inkstone-x86.apk.bak
 cp project-armv7-release-unsigned.apk ~/Dropbox/Projects/inkstone-armv7.apk
 cp project-x86-release-unsigned.apk ~/Dropbox/Projects/inkstone-x86.apk
 popd
