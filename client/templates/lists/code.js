@@ -55,6 +55,28 @@ const leftPad = (input, character, length) => {
   return (new Array(length).fill(character).join('') + input).substr(-length);
 }
 
+const setCharacterSet = (charset) => {
+  if (charset === Settings.get('character_set')) return;
+  const lists = _.keys(Lists.getEnabledLists());
+  if (lists.length === 0) {
+    Settings.set('character_set', charset);
+    return;
+  }
+  Backdrop.show();
+  Promise.all(lists.map(readList)).then((data) => {
+    _.zip(lists, data).map((pair) => {
+      const [list, rows] = pair;
+      Vocabulary.dropList(list);
+      rows.forEach((row) => Vocabulary.addItem(row[charset], list));
+    });
+    Settings.set('character_set', charset);
+    Backdrop.hide(kBackdropTimeout);
+  }).catch((error) => {
+    console.error(error);
+    Backdrop.hide(kBackdropTimeout);
+  });
+}
+
 const setListStatus = (list, on) => (on ? enableList : disableList)(list);
 
 const toListTemplate = (lists) => {
@@ -83,4 +105,4 @@ Template.lists.events({
 
 Template.lists.helpers({groups: () => toListTemplate(Lists.getAllLists())});
 
-export {setListStatus, toListTemplate};
+export {setCharacterSet, setListStatus, toListTemplate};

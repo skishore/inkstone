@@ -19,7 +19,13 @@
 
 import {Settings} from '/client/model/settings';
 
+const kCharacterSets = [
+  {label: 'Simplified', value: 'simplified'},
+  {label: 'Traditional', value: 'traditional'},
+];
+
 Template.settings.helpers({
+  charsets: () => kCharacterSets,
   max_adds: () => Settings.get('max_adds'),
   max_reviews: () => Settings.get('max_reviews'),
 });

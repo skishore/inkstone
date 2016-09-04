@@ -36,10 +36,12 @@
         {{#ionItem class="item-divider"}}
           Writing
         {{/ionItem}}
+        {{> ionSelect variable="settings.character_set"
+                      label="Character Set" options=charsets}}
         {{> ionToggle variable="settings.reveal_order" label="Reveal Order"}}
-        {{> ionToggle variable="settings.snap_strokes" label="Snap Strokes"}}
         {{> ionToggle variable="settings.revisit_failures"
                       label="Revisit Failures"}}
+        {{> ionToggle variable="settings.snap_strokes" label="Snap Strokes"}}
       </div>
       <div class="block">
         {{#ionItem class="item-divider"}}
