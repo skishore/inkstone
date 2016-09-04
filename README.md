@@ -2,11 +2,12 @@
 
 ### What's new
 
-The latest release of Inkstone is version 0.0.5. This version includes the
-option to **study traditional characters**! You can update by downloading the
-APK below again - your progress will carry over. From now on, the app version
-will be displayed on the main page. If you don't see it there below the
-"Inkstone" title, you're at version 0.0.4 or earlier.
+The app version that you're on is displayed on the main page below the
+"Inkstone" title. If you don't see it there, you're at version 0.0.4
+or earlier.
+
+- Version 0.0.6 makes it possible to adjust scheduling settings freely.
+- Version 0.0.5 includes the option to **study traditional characters**.
 
 See the [Installing from binary](#installing-from-binary)
 section for updated APKs.
@@ -40,8 +41,8 @@ for this program, to the extent permitted by applicable law**. See that
 file for full details. With those caveats stated, the pre-built
 binaries are here:
 
-- [Inkstone v. 0.0.5 for Android armv7](https://www.dropbox.com/s/z2avjvqclmj2snd/inkstone-armv7.apk?dl=0)
-- [Inkstone v. 0.0.5 for Android x86](https://www.dropbox.com/s/ucm7zrwuwmeioy6/inkstone-x86.apk?dl=0)
+- [Inkstone v. 0.0.6 for Android armv7](https://www.dropbox.com/s/z2avjvqclmj2snd/inkstone-armv7.apk?dl=0)
+- [Inkstone v. 0.0.6 for Android x86](https://www.dropbox.com/s/ucm7zrwuwmeioy6/inkstone-x86.apk?dl=0)
 
 Most Android phones use armv7. Trying to install the APK for the wrong
 architecture will just result in an error message, so if you're not sure
