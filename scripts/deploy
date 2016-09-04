@@ -1,0 +1,7 @@
+#!/bin/bash
+
+# Move the staging build to the release build in Dropbox.
+mv ~/Dropbox/Projects/inkstone-armv7.apk ~/Dropbox/Projects/inkstone-armv7.apk.bak
+mv ~/Dropbox/Projects/inkstone-x86.apk ~/Dropbox/Projects/inkstone-x86.apk.bak
+mv ~/Dropbox/Projects/inkstone-armv7.new.apk ~/Dropbox/Projects/inkstone-armv7.apk
+mv ~/Dropbox/Projects/inkstone-x86.new.apk ~/Dropbox/Projects/inkstone-x86.apk
