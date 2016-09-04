@@ -1,5 +1,16 @@
 ![Inkstone in action](http://i.imgur.com/FetiXVc.gif)
 
+### What's new
+
+The latest release of Inkstone is version 0.0.5. This version includes the
+option to **study traditional characters**! You can update by downloading the
+APK below again - your progress will carry over. From now on, the app version
+will be displayed on the main page. If you don't see it there below the
+"Inkstone" title, you're at version 0.0.4 or earlier.
+
+See the [Installing from binary](#installing-from-binary)
+section for updated APKs.
+
 ### Introduction
 
 Inkstone is a mobile app for people who want to learn to read and
@@ -29,12 +40,12 @@ for this program, to the extent permitted by applicable law**. See that
 file for full details. With those caveats stated, the pre-built
 binaries are here:
 
-- [Inkstone for Android armv7](https://www.dropbox.com/s/z2avjvqclmj2snd/inkstone-armv7.apk?dl=0)
-- [Inkstone for Android x86](https://www.dropbox.com/s/ucm7zrwuwmeioy6/inkstone-x86.apk?dl=0)
+- [Inkstone v. 0.0.5 for Android armv7](https://www.dropbox.com/s/z2avjvqclmj2snd/inkstone-armv7.apk?dl=0)
+- [Inkstone v. 0.0.5 for Android x86](https://www.dropbox.com/s/ucm7zrwuwmeioy6/inkstone-x86.apk?dl=0)
 
 Most Android phones use armv7. Trying to install the APK for the wrong
 architecture will just result in an error message, so if you're not sure
-which one your phone's running, try both.
+which one your phone is, try both.
 
 ### Building from source
 
@@ -71,8 +82,6 @@ Apple devices are expensive, though, as are Apple developer licenses...
 
 ### Upcoming features
 
-Right now, Inkstone only supports simplified characters. Adding an option
-to study traditional characters is on the roadmap, as are a number of
-other significant new features - see `todo.txt` for a list. If there's
-something you'd like to see added that's not in that file, open an issue
-or drop me an email at `kshaunak "at" gmail.com`.
+See `todo.txt` for a list of planned features. If there's something you'd
+like to see added that's not in that file, open an issue or drop me an email
+at `kshaunak "at" gmail.com`.
