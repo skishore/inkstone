@@ -134,6 +134,9 @@ const readList = (list) => {
 // Input: a path to an asset in cordova-build-overrides/www/assets
 // Output: a Promise that resolves when that asset is removed
 const removeAsset = (path) => {
+  if (!isImportedAsset(path)) {
+    return Promise.reject(`Tried to delete static asset: ${path}`);
+  }
   return kStartup.then(() => new Promise((resolve, reject) => {
     if (Meteor.isCordova) {
       try {
