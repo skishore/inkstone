@@ -121,8 +121,13 @@ body {
       font-family: anke-calligraphic;
       font-size: 4 * $font-size;
       line-height: 4 * $font-size;
-      margin-bottom: 24%;
       transform: translateY(4vw);
+    }
+
+    > .version {
+      font-family: sans-serif;
+      font-size: $header-height / 2;
+      margin-bottom: 20%;
     }
 
     > .teach, > .options > .option {
