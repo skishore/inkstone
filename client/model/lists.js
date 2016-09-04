@@ -40,6 +40,13 @@ const kSchema = {category: String, name: String, ts: Match.Maybe(Number)};
 
 const lists = new PersistentDict('lists');
 
+const getMatchingLists = (condition) => {
+  const result = {};
+  const lists = Lists.getAllLists();
+  _.keys(lists).filter(condition).forEach((x) => result[x] = lists[x]);
+  return result;
+}
+
 class Lists {
   // Methods for adding, removing, or looking up list metadata.
   static addList(list, metadata) {
@@ -57,20 +64,16 @@ class Lists {
   static getAllLists() {
     return lists.get('lists') || _.extend({}, kLists);
   }
+  static getEnabledLists() {
+    return getMatchingLists(Lists.isListEnabled);
+  }
   static getImportedLists() {
-    const result = {};
-    const lists = Lists.getAllLists();
-    _.keys(lists).filter((x) => !kLists[x])
-                 .forEach((x) => result[x] = lists[x]);
-    return result;
+    return getMatchingLists((list) => !kLists[list]);
   }
   static setAllLists(value) {
     lists.set('lists', value);
   }
   // Methods for getting and setting the status of an individual list.
-  static anyListEnabled() {
-    return lists.keys().filter((key) => key.startsWith('status.')).length > 0;
-  }
   static disable(list) {
     lists.delete(`status.${list}`);
   }

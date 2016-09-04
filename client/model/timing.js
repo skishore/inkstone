@@ -74,7 +74,7 @@ const remainder = new ReactiveVar();
 const time_left = new ReactiveVar();
 
 const buildErrorCard = (counts, extra) => {
-  if (!Lists.anyListEnabled()) {
+  if (_.keys(Lists.getEnabledLists()).length === 0) {
     const data = {
       error: 'You have no lists enabled!',
       options: [{link: 'lists', text: 'Enable a word list.'}],
