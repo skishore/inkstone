@@ -197,6 +197,10 @@ const kDemos = {
                            "Inkstone's writing assistance. To do so, " +
                            'go to the "Settings" page.'),
     waitOnUrl('settings'),
+    () => {
+      $('.ionic-body .content').scrollTop(window.innerHeight);
+      return true;
+    },
     highlight('.item:contains("Snap Strokes")',
               'Turn writing assistance off here.'),
     () => !Settings.get('snap_strokes'),
@@ -253,32 +257,27 @@ const kDemos = {
     highlight('.settings', 'Now, go to the "Settings" page to ' +
                            'change scheduling settings.'),
     waitOnUrl('settings'),
-    highlight('.item:contains("Revisit Failures")',
-              'When you get a flashcard wrong, it is scheduled again ' +
-              'for review that day. Try disabling this option now.'),
-    () => !Settings.get('revisit_failures'),
-    sleep(50),
-    highlight('.info.right', 'Note that mistakes are no longer ' +
-                             'included in the flashcard count.'),
-    waitOnTap(),
-    () => {
-      $('.ionic-body .content').scrollTop(window.innerHeight);
-      return true;
-    },
+    highlight('.item:contains("New Cards Per Day")',
+              'The first setting places a limit on the number ' +
+              'of new cards added per day. Try setting it to 10.'),
+    () => Settings.get('max_adds') === 10,
     highlight('.item:contains("Reviews Per Day")',
               'Reviews are flashcards that you have seen before. ' +
               'This setting bounds the number of reviews per day. ' +
               'Try setting it to 100.'),
     () => Settings.get('max_reviews') === 100,
-    highlight('.item:contains("New Cards Per Day")',
-              'Great! The next setting places a limit on the number ' +
-              'of new cards added per day. Try setting it to 10.'),
-    () => Settings.get('max_adds') === 10,
-    sleep(50),
-    highlight('.info.right', 'As with the "Revisit Failures" setting, ' +
-                             'changes to these settings are immediately ' +
-                             'reflected in the count.'),
+    highlight('.info.right', 'Note that changes to scheduling settings are ' +
+                             'immediately reflected in the flashcard count.'),
     waitOnTap(),
+    highlight('.item:contains("Revisit Failures")',
+              'When you get a flashcard wrong, it is scheduled again ' +
+              'for review that day. Try disabling this option now.'),
+    () => !Settings.get('revisit_failures'),
+    sleep(50),
+    highlight('.info.right', 'With this setting off, mistakes are no ' +
+                             'longer included in the count.'),
+    waitOnTap(),
+    sleep(50),
     () => {
       $('.ionic-body .content').scrollTop(0);
       return true;
