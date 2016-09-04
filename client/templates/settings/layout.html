@@ -45,19 +45,12 @@
       </div>
       <div class="block">
         {{#ionItem class="item-divider"}}
-          Reviews Per Day
-          <div class="right">{{max_reviews}}</div>
+          Scheduling
         {{/ionItem}}
-        {{> ionRange min="0" max="1000" step="100"
-                     variable="settings.max_reviews"}}
-      </div>
-      <div class="block">
-        {{#ionItem class="item-divider"}}
-          New Cards Per Day
-          <div class="right">{{max_adds}}</div>
-        {{/ionItem}}
-        {{> ionRange min="0" max="100" step="10"
-                     variable="settings.max_adds"}}
+        {{> ionInput variable="settings.max_reviews" type="number"
+                     label="Reviews Per Day"}}
+        {{> ionInput variable="settings.max_adds" type="number"
+                     label="New Cards Per Day"}}
       </div>
       <div class="block">
         {{#ionItem class="item-divider"}}

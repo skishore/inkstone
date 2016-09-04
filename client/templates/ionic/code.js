@@ -35,6 +35,19 @@ const set = (variable, value) => {
   (pair[0] === 'lists' ? setListStatus : Settings.set)(pair[1], value);
 }
 
+Template.ionInput.events({
+  'change input': function(event) {
+    const value = parseInt(event.currentTarget.value, 10);
+    if (isNaN(value)) {
+      event.currentTarget.value = get(this.variable);
+    } else {
+      set(this.variable, value);
+    }
+  },
+});
+
+Template.ionInput.helpers({get: get});
+
 Template.ionRange.events({
   'change, input input[type="range"]': function(event) {
     set(this.variable, parseInt(event.currentTarget.value, 10));

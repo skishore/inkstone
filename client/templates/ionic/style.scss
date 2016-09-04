@@ -118,14 +118,20 @@ $toggle-height:                   7.75vw !default;
           &:first-child {
             border-width: 0;
           }
-
-          > .right {
-            float: right;
-          }
         }
 
         &.item-toggle > .toggle {
           top: 2.5vw;
+        }
+
+        &.input input {
+          background-color: #eee;
+          float: right;
+          height: 9vw;
+          margin: -1vw 0;
+          padding: 0 2vw;
+          text-align: right;
+          width: 25%;
         }
       }
     }
