@@ -44,6 +44,10 @@ Template.ionInput.events({
       set(this.variable, value);
     }
   },
+  'click input': (event) => {
+    const target = event.currentTarget;
+    Meteor.setTimeout(() => target.select(), 50);
+  },
 });
 
 Template.ionInput.helpers({get: get});
