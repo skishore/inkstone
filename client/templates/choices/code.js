@@ -137,6 +137,14 @@ const importList = (list) => {
       .catch((x) => showListSavedMessage(x, /*success=*/false));
 }
 
+const parseImportedRow = (row) => {
+  row = row.replace('\r', '').split('\t');
+  if (row.length === kImportColumns.length) return row;
+  const match = /^(.+)\[(.+)\]$/.exec(row[0]);
+  if (!match) return row;
+  return [match[1], match[2]].concat(row.slice(1));
+}
+
 const refreshListItems = (list, rows) => {
   Vocabulary.dropList(list);
   const charset = Settings.get('character_set');
@@ -150,7 +158,7 @@ const saveList = (data, metadata) => {
   const rows = [];
   for (let row of data.split('\n')) {
     if (!row || row.startsWith('//')) continue;
-    row = row.replace('\r', '').split('\t');
+    row = parseImportedRow(row);
     if (row.length !== kImportColumns.length) {
       return Promise.reject(`Malformatted row: ${row.join(', ')}`);
     }
