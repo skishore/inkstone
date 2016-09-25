@@ -5,24 +5,62 @@ const child_process = require('child_process');
 const fs = require('fs');
 const readline = require('readline');
 
+const Decomposition = require('../lib/decomposition');
+
 const kDelimiter = 'BREAK';
 const kDirectory = 'cordova-build-override/www/assets/characters';
+
+const computeComponents = (character, index, rows, result) => {
+  result = result || {};
+  result[character] = index;
+  const data = rows[character];
+  if (!data) throw new Error(`Computing component for ${character}.`);
+  const match = data.matches[index];
+  if (!data.matches[index]) return result;
+
+  // Walk the path down the decomposition tree to find the component.
+  let node = Decomposition.convertDecompositionToTree(data.decomposition);
+  for (let i of data.matches[index]) {
+    if (!node.children) {
+      node = null;
+      break;
+    }
+    node = node.children[i];
+  }
+  if (!node || node.type !== 'character' || !rows[node.value]) {
+    throw new Error(`Error matching component for ${character}, ${index}:\n` +
+                    `Final node: ${JSON.stringify(node)}\n` +
+                    JSON.stringify(data));
+  }
+
+  // Determine what index we are into that component.
+  let child_index = 0;
+  for (let i = 0; i < index; i++) {
+    if (JSON.stringify(data.matches[i]) === JSON.stringify(match)) {
+      child_index += 1;
+    }
+  }
+  return computeComponents(node.value, child_index, rows, result);
+}
 
 const dumpCharacters = (all, rows) => {
   for (let character of all) {
     const row = rows[character];
     row.dependencies = {};
-    Array.from(row.decomposition).map((character) => {
-      const data = rows[character];
-      if (data) {
-        let value = data.definition || '(unknown)';
-        if (data.pinyin.length > 0) {
-          value = data.pinyin.join(', ') + ' - ' + value;
-        }
-        row.dependencies[character] = value;
+    Array.from(row.decomposition).map((x) => {
+      if (Decomposition.ids_data[x] || x === '？') return; 
+      const data = rows[x];
+      if (!data) throw new Error(`Missing component of ${character}: ${x}\n` +
+                                 JSON.stringify(row));
+      let value = data.definition || '(unknown)';
+      if (data.pinyin.length > 0) {
+        value = data.pinyin.join(', ') + ' - ' + value;
       }
+      row.dependencies[x] = value;
     });
-    const filename = `${kDirectory}/${row.character.charCodeAt(0)}`;
+    row.components = row.strokes.map(
+        (x, i) => computeComponents(character, i, rows));
+    const filename = `${kDirectory}/${character.charCodeAt(0)}`;
     fs.writeFileSync(filename, JSON.stringify(row));
   }
   fs.writeFileSync(`${kDirectory}/all.txt`, all.join(''));
