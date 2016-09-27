@@ -3,5 +3,4 @@
 - Create flashcards for word -> [definition|pinyin|tone]
 - Populate a number of useful wordlists on the github.io page
 - Relax angle feature for dot strokes
-- Support some shortcuts in stroke matching (女, 了, 子, 纟, 糹, 糸, 系, 辶)
 - Support Taiwanese stroke order
