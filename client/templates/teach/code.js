@@ -145,11 +145,10 @@ const onStroke = (stroke) => {
   if (onRequestRegrade(stroke) || maybeAdvance()) return;
   const task = item.tasks[item.index];
   const result = task.matcher.match(stroke, task.missing);
-  const index = result.index;
-  task.recording.push({index: index, stroke: stroke});
+  task.recording.push({indices: result.indices, stroke: stroke});
 
   // The user's input does not match any of the character's strokes.
-  if (index < 0) {
+  if (result.indices.length === 0) {
     task.mistakes += 1;
     handwriting.fade();
     if (task.mistakes >= kMaxMistakes) {
@@ -159,24 +158,31 @@ const onStroke = (stroke) => {
     return;
   }
 
-  // The user's input matches a stroke that was already drawn.
-  if (task.missing.indexOf(index) < 0) {
+  // Compute the matched path and the remaining missing strokes.
+  const path = result.indices.map((x) => task.strokes[x]).join(' ');
+  const missing = task.missing.filter((x) => result.indices.indexOf(x) < 0);
+
+  // The user's input matches strokes that were already drawn.
+  if (missing.length === task.missing.length) {
     task.penalties += 1;
     handwriting.undo();
-    handwriting.flash(task.strokes[index]);
+    handwriting.flash(path);
     return;
   }
 
-  // The user's input matches one of the missing strokes.
-  task.missing.splice(task.missing.indexOf(index), 1);
+  // The user's input matches one or more of the missing strokes.
+  task.missing = missing;
   const rotate = result.simplified_median.length === 2;
-  handwriting.emplace([task.strokes[index], rotate,
-                       result.source_segment,
+  handwriting.emplace([path, rotate, result.source_segment,
                        result.target_segment]);
   if (result.warning) {
     task.penalties += result.penalties;
     handwriting.warn(result.warning);
   }
+
+  // If the user finished the character, mark it complete. Otherwise, if they
+  // drew a stroke out of order, penalize them and give them a hint.
+  const index = _.min(result.indices);
   if (task.missing.length === 0) {
     $(window).trigger('makemeahanzi-character-complete');
     task.result = getResult(task.penalties);

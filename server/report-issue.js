@@ -45,7 +45,7 @@ Meteor.methods({
       character_data: Object,
       message: String,
       recording: [{
-        index: Match.Integer,
+        indices: [Match.Integer],
         stroke: Stroke,
       }],
     });
