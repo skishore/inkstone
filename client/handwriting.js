@@ -127,9 +127,6 @@ const midpoint = (point1, point2) => {
 const pathToShape = (path, size, color, uncached) => {
   const scale = 1024 / size;
   const result = new createjs.Shape();
-  const graphics = result.graphics;
-  result.graphics.beginFill(color);
-  result.graphics.beginStroke(color);
   const tokens = path.split(' ');
   let index = 0;
   const next = () => {
@@ -139,17 +136,21 @@ const pathToShape = (path, size, color, uncached) => {
     result[1] = 900 - result[1];
     return result.map((x) => Math.round(x / scale));
   }
-  while (index < tokens.length - 2) {
+  const arity = {L: 1, M: 1, Q: 2, Z: 0};
+  while (index < tokens.length) {
     index += 1;
     const command = tokens[index - 1];
-    const point = next();
-    if (command === 'M') {
-      graphics.moveTo(point[0], point[1]);
+    const args = _.range(arity[command] || 0).map(next);
+    if (command === 'Z') {
+      result.graphics.closePath();
+    } else if (command === 'M') {
+      result.graphics.beginFill(color);
+      result.graphics.beginStroke(color);
+      result.graphics.moveTo(args[0][0], args[0][1]);
     } else if (command === 'L') {
-      graphics.lineTo(point[0], point[1]);
+      result.graphics.lineTo(args[0][0], args[0][1]);
     } else if (command === 'Q') {
-      const end = next();
-      graphics.curveTo(point[0], point[1], end[0], end[1]);
+      result.graphics.curveTo(args[0][0], args[0][1], args[1][0], args[1][1]);
     } else {
       console.error(`Invalid command: ${command}`);
     }
