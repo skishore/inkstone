@@ -1,5 +1,7 @@
 #!/bin/bash
 
+DIRECTORY="~/Dropbox/Projects/inkstone"
+
 # Clear the build directory.
 rm -r .build
 meteor remove-platform android
@@ -19,6 +21,6 @@ jarsigner -verbose -sigalg SHA1withRSA -digestalg SHA1 -keystore ~/.keystore pro
 jarsigner -verbose -sigalg SHA1withRSA -digestalg SHA1 -keystore ~/.keystore project-x86-release-unsigned.apk inkstone
 
 # Copy the output to a staging location in Dropbox.
-cp project-armv7-release-unsigned.apk ~/Dropbox/Projects/inkstone-armv7.new.apk
-cp project-x86-release-unsigned.apk ~/Dropbox/Projects/inkstone-x86.new.apk
+cp project-armv7-release-unsigned.apk $DIRECTORY/inkstone-armv7.new.apk
+cp project-x86-release-unsigned.apk $DIRECTORY/inkstone-x86.new.apk
 popd
