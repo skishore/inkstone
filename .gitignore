@@ -3,3 +3,5 @@
 .DS_Store
 .sass-cache
 .meteor
+cordova-build-override
+node_modules
