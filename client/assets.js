@@ -17,13 +17,19 @@
  *  along with Inkstone.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+const kCharacterDataUrl = 'https://skishore.github.io/inkstone/characters.zip';
+
 const kListColumns = [
   'simplified', 'traditional', 'numbered', 'pinyin', 'definition'];
 
+// TODO(skishore): This method should block on the data being installed.
+const kReady = new Promise((resolve, _) => Meteor.startup(resolve));
+
 const kStartup = new Promise((resolve, _) => Meteor.startup(resolve));
 
-// On Cordova, imported assets are under a different directory than builtins.
-const isImportedAsset = (asset) => asset.startsWith('lists/s/');
+const isImportedAsset = (asset) => {
+  return asset.startsWith('characters/') || asset.startsWith('lists/s/');
+}
 
 // Input: a list of path fragments in a Cordova filesystem
 // Output: the entry of the directory given by fragments.join('/'), which is
@@ -42,9 +48,10 @@ const getDirectoryEntry = (fragments, root) => {
 // Input: a path to an asset in cordova-build-overrides/www/assets
 // Output: a Promise that resolves to the String contents of that file
 const readAsset = (path) => {
-  return kStartup.then(() => new Promise((resolve, reject) => {
+  return kReady.then(() => new Promise((resolve, reject) => {
     if (Meteor.isCordova) {
       try {
+        // On Cordova, imported assets are in the data directory, not the app.
         const root = isImportedAsset(path) ?
             cordova.file.dataDirectory : cordova.file.applicationDirectory;
         const url = `${root}www/assets/${path}`;
@@ -138,7 +145,7 @@ const readList = (list) => {
 // Output: a Promise that resolves when that asset is removed
 const removeAsset = (path) => {
   if (!isImportedAsset(path)) {
-    return Promise.reject(`Tried to delete static asset: ${path}`);
+    return Promise.reject(`Tried to remove static asset: ${path}`);
   }
   return kStartup.then(() => new Promise((resolve, reject) => {
     if (Meteor.isCordova) {
@@ -164,6 +171,9 @@ const removeList = (list) => removeAsset(`lists/${list}.list`);
 //        to write to the asset at that path.
 // Output: a Promise that resolves to true if the write is successful.
 const writeAsset = (path, data) => {
+  if (!isImportedAsset(path)) {
+    return Promise.reject(`Tried to write static asset: ${path}`);
+  }
   return kStartup.then(() => new Promise((resolve, reject) => {
     if (Meteor.isCordova) {
       try {
