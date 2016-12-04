@@ -266,8 +266,10 @@ const writeList = (list, items) => {
 
 const kCharacters = readAsset('characters.txt').then((data) => {
   const characters = {};
-  for (let character of data) {
-    characters[character] = (characters[character] || 0) + 1;
+  for (let line of data.split('\n')) {
+    if (line.length === 0 || line[0] === '#') continue;
+    if (line.length !== 1) throw new Error(`Unexpected line: ${line}`);
+    characters[line] = (characters[line] || 0) + 1;
   }
   return characters;
 }).catch((error) => console.error(error));
