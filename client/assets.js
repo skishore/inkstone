@@ -17,7 +17,7 @@
  *  along with Inkstone.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-const kCharacterDataUrl = 'https://skishore.github.io/inkstone/characters.zip';
+import {CharacterData} from '/lib/base';
 
 const kListColumns = [
   'simplified', 'traditional', 'numbered', 'pinyin', 'definition'];
@@ -26,8 +26,6 @@ const kListColumns = [
 const kLoaded = new Promise((resolve, _) => Meteor.startup(resolve));
 
 const kStartup = new Promise((resolve, _) => Meteor.startup(resolve));
-
-const Character = Match.Where((x) => check(x, String) || x.length === 1);
 
 const isImportedAsset = (asset) => {
   return asset.startsWith('characters/') || asset.startsWith('lists/s/');
@@ -204,22 +202,7 @@ const writeAsset = (path, data) => {
 // Input: an character Object (with format defined by the Match expression)
 // Output: a promise that resolves to true when it is saved to the asset store
 const writeCharacter = (data) => {
-  try {
-    check(data, {
-      character: Character,
-      definition: String,
-      pinyin: [String],
-      decomposition: String,
-      radical: Character,
-      matches: [[Match.Integer]],
-      strokes: [String],
-      medians: [[[Match.Integer]]],
-      dependencies: Object,
-      components: [Object],
-    });
-  } catch (error) {
-    return Promise.reject(error);
-  }
+  check(data, CharacterData);
   const path = `characters/${data.character.codePointAt(0)}`;
   return writeAsset(path, JSON.stringify(data));
 }

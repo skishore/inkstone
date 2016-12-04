@@ -1,14 +1,13 @@
-#!/usr/local/bin/node --use_strict
-"use strict";
+const child_process = Npm.require('child_process');
+const fs = Npm.require('fs');
+const readline = Npm.require('readline');
 
-const child_process = require('child_process');
-const fs = require('fs');
-const readline = require('readline');
+import {CharacterData} from '/lib/base';
+import {Decomposition} from '/lib/decomposition';
 
-const Decomposition = require('../lib/decomposition');
-
+const kBase = process.env.PWD;
 const kDelimiter = 'BREAK';
-const kDirectory = 'cordova-build-override/www/assets/characters';
+const kDirectory = `${kBase}/cordova-build-override/www/assets/characters`;
 
 const augmentRows = (all, rows) => {
   for (let character of all) {
@@ -36,11 +35,11 @@ const computeComponents = (character, index, rows, result) => {
   const data = rows[character];
   if (!data) throw new Error(`Computing component for ${character}.`);
   const match = data.matches[index];
-  if (!data.matches[index]) return result;
+  if (!match) return result;
 
   // Walk the path down the decomposition tree to find the component.
   let node = Decomposition.convertDecompositionToTree(data.decomposition);
-  for (let i of data.matches[index]) {
+  for (let i of match) {
     if (!node.children) {
       node = null;
       break;
@@ -69,7 +68,7 @@ const dumpCharacters = (all, rows) => {
     const filename = `${kDirectory}/${character.charCodeAt(0)}`;
     fs.writeFileSync(filename, JSON.stringify(rows[character]));
   }
-  fs.writeFileSync(`${kDirectory}.txt`, all.concat(['']).join('\n'));
+  fs.writeFileSync(`${kDirectory}.txt`, all.join('\n'));
 }
 
 const parseLine = (line, delimiter) => {
@@ -86,7 +85,7 @@ const parseLine = (line, delimiter) => {
   return row;
 }
 
-const main = () => {
+const rebuildCharacterData = () => {
   // TODO(skishore): This whole function is a terrible hack! Clean it up.
 
   // Combine each line of the dictionary.txt and graphics.txt files.
@@ -96,11 +95,12 @@ const main = () => {
   console.log('Preparing...');
   child_process.execSync(
       `paste -d ${kDelimiter} ../makemeahanzi/dictionary.txt ` +
-      `${spacer} ../makemeahanzi/graphics.txt > makemeahanzi.txt`);
+      `${spacer} ../makemeahanzi/graphics.txt > makemeahanzi.txt`,
+      {cwd: kBase});
 
   // Read in the combined-file line-by-line into memory.
   console.log('Reading...');
-  const input = fs.createReadStream('makemeahanzi.txt');
+  const input = fs.createReadStream(`${kBase}/makemeahanzi.txt`);
   const reader = readline.createInterface({input: input});
   const rows = {};
   const all = [];
@@ -110,16 +110,17 @@ const main = () => {
     all.push(row.character);
   });
 
-  // Dump each part into a characters/part-xxx file, then compress them all.
+  // Add a few more fields to the character data, then write them to disk.
   reader.on('close', () => {
     console.log('Augmenting...');
     augmentRows(all, rows);
+    all.map((character) => check(rows[character], CharacterData));
     console.log('Dumping...');
     dumpCharacters(all, rows);
     console.log('Cleaning up...');
-    child_process.execSync('rm makemeahanzi.txt', () => 0);
+    child_process.execSync('rm makemeahanzi.txt', {cwd: kBase});
     console.log('Done!');
   });
 }
 
-main();
+Meteor.methods({rebuildCharacterData, rebuildCharacterData});
