@@ -69,7 +69,7 @@ const dumpCharacters = (all, rows) => {
     const filename = `${kDirectory}/${character.charCodeAt(0)}`;
     fs.writeFileSync(filename, JSON.stringify(rows[character]));
   }
-  fs.writeFileSync(`${kDirectory}/all.txt`, all.join(''));
+  fs.writeFileSync(`${kDirectory}.txt`, all.join(''));
 }
 
 const parseLine = (line, delimiter) => {

@@ -22,10 +22,12 @@ const kCharacterDataUrl = 'https://skishore.github.io/inkstone/characters.zip';
 const kListColumns = [
   'simplified', 'traditional', 'numbered', 'pinyin', 'definition'];
 
-// TODO(skishore): This method should block on the data being installed.
-const kReady = new Promise((resolve, _) => Meteor.startup(resolve));
+// TODO(skishore): This method should block on the data being loaded.
+const kLoaded = new Promise((resolve, _) => Meteor.startup(resolve));
 
 const kStartup = new Promise((resolve, _) => Meteor.startup(resolve));
+
+const Character = Match.Where((x) => check(x, String) || x.length === 1);
 
 const isImportedAsset = (asset) => {
   return asset.startsWith('characters/') || asset.startsWith('lists/s/');
@@ -48,7 +50,8 @@ const getDirectoryEntry = (fragments, root) => {
 // Input: a path to an asset in cordova-build-overrides/www/assets
 // Output: a Promise that resolves to the String contents of that file
 const readAsset = (path) => {
-  return kReady.then(() => new Promise((resolve, reject) => {
+  const blocker = isImportedAsset(path) ? kLoaded : kStartup;
+  return blocker.then(() => new Promise((resolve, reject) => {
     if (Meteor.isCordova) {
       try {
         // On Cordova, imported assets are in the data directory, not the app.
@@ -75,10 +78,8 @@ const readAsset = (path) => {
 }
 
 // Input: a single Chinese character
-// Output: a Promise that resolves to that character's data, with keys:
-//   - character: the character
-//   - medians: a list of stroke medians, each of which is a list of points
-//   - strokes: a list of SVG strokes comprising that character
+// Output: a Promise that resolves to that character's data, with all of the
+// data required in writeCharacter, below
 const readCharacter = (character) => {
   if (!character) return Promise.reject('No character provided.');
   const path = `characters/${character.codePointAt(0)}`;
@@ -200,6 +201,29 @@ const writeAsset = (path, data) => {
   }));
 }
 
+// Input: an character Object (with format defined by the Match expression)
+// Output: a promise that resolves to true when it is saved to the asset store
+const writeCharacter = (data) => {
+  try {
+    check(data, {
+      character: Character,
+      definition: String,
+      pinyin: [String],
+      decomposition: String,
+      radical: Character,
+      matches: [[Match.Integer]],
+      strokes: [String],
+      medians: [[[Match.Integer]]],
+      dependencies: Object,
+      components: [Object],
+    });
+  } catch (error) {
+    return Promise.reject(error);
+  }
+  const path = `characters/${data.character.codePointAt(0)}`;
+  return writeAsset(path, JSON.stringify(data));
+}
+
 // Input: a list of list-item objects with all the list column keys
 // Output: a promise that resolves to a dict with the following keys:
 //    - count: the total number of new words included in the list
@@ -238,10 +262,13 @@ const writeList = (list, items) => {
 }
 
 // Compute two pieces of global data that can be loaded into memory once.
+// kCharacters is a mapping from character to its current data version.
 
-const kCharacters = readAsset('characters/all.txt').then((data) => {
+const kCharacters = readAsset('characters.txt').then((data) => {
   const characters = {};
-  for (let character of data) characters[character] = true;
+  for (let character of data) {
+    characters[character] = (characters[character] || 0) + 1;
+  }
   return characters;
 }).catch((error) => console.error(error));
 
@@ -249,4 +276,12 @@ const kRadicals = readAsset('radicals.json')
     .then((data) => JSON.parse(data).radical_to_index_map)
     .catch((error) => console.error(error));
 
-export {readCharacter, readItem, readList, removeList, writeList};
+export {
+  kCharacters,
+  readCharacter,
+  readItem,
+  readList,
+  removeList,
+  writeCharacter,
+  writeList,
+};
