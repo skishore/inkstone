@@ -25,7 +25,7 @@ import {Settings} from '/client/model/settings';
 import {Vocabulary} from '/client/model/vocabulary';
 import {setListStatus, toListTemplate} from '/client/templates/lists/code';
 import {Popup} from '/client/templates/popup/code';
-import {assert} from '/lib/base';
+import {assert, fetchUrl} from '/lib/base';
 import {numbersToTones} from '/lib/pinyin';
 
 const kBackdropTimeout = 500;
@@ -65,19 +65,6 @@ const fetchGitHubLists = () => {
 
 const fetchListData = (category, name) => {
   return fetchUrl(`${kGitHubDomain}/lists/${category}/${name}.list`);
-}
-
-const fetchUrl = (url) => {
-  return new Promise((resolve, reject) => {
-    HTTP.get(url, (error, result) => {
-      if (error && !result) {
-        return reject(error);
-      } else if (result.statusCode !== 200) {
-        return reject(`Request failed with status ${result.statusCode}.`);
-      }
-      resolve(result.data || result.content);
-    });
-  });
 }
 
 const getListKey = (category, name) => {
