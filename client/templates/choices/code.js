@@ -25,12 +25,10 @@ import {Settings} from '/client/model/settings';
 import {Vocabulary} from '/client/model/vocabulary';
 import {setListStatus, toListTemplate} from '/client/templates/lists/code';
 import {Popup} from '/client/templates/popup/code';
-import {assert, fetchUrl} from '/lib/base';
+import {kHomePage, assert, fetchUrl} from '/lib/base';
 import {numbersToTones} from '/lib/pinyin';
 
 const kBackdropTimeout = 500;
-
-const kGitHubDomain = 'https://skishore.github.io/inkstone';
 
 const kImportColumns = ['simplified', 'traditional', 'numbered', 'definition'];
 
@@ -54,7 +52,7 @@ const deleteList = (list, hidden) => {
 }
 
 const fetchGitHubLists = () => {
-  return fetchUrl(`${kGitHubDomain}/all.json`).then((data) => {
+  return fetchUrl(`${kHomePage}/all.json`).then((data) => {
     check(data, [{category: String, name: String, ts: Number}]);
     if (data.length === 0) throw 'No lists available.';
     const result = {};
@@ -64,7 +62,7 @@ const fetchGitHubLists = () => {
 }
 
 const fetchListData = (category, name) => {
-  return fetchUrl(`${kGitHubDomain}/lists/${category}/${name}.list`);
+  return fetchUrl(`${kHomePage}/lists/${category}/${name}.list`);
 }
 
 const getListKey = (category, name) => {
@@ -290,7 +288,7 @@ Template.import_lists.helpers({
 
 Template.imports.events({
   'click .option.format': () => {
-    window.open(`${kGitHubDomain}/docs/format.html`, '_system');
+    window.open(`${kHomePage}/docs/format.html`, '_system');
     Popup.hide(50);
   },
   'click .option.github': () => {

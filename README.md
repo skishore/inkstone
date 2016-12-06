@@ -9,7 +9,7 @@ or earlier.
 - Version 0.0.8 adds support for
   [handwriting shortcuts](http://i.imgur.com/suDHz1v.gif).
 - Version 0.0.7 makes it
-  [easier to import word lists](https://skishore.github.io/inkstone/docs/format.html).
+  [easier to import word lists](https://www.skishore.me/inkstone/docs/format.html).
 - Version 0.0.6 makes it possible to adjust scheduling settings freely.
 - Version 0.0.5 includes the option to **study traditional characters**.
 

@@ -19,9 +19,7 @@
 
 import {kCharacters, writeCharacter} from '/client/assets';
 import {Assets} from '/client/model/assets';
-import {fetchUrl} from '/lib/base';
-
-const kAssetDomain = 'https://skishore.github.io/inkstone/assets';
+import {kHomePage, fetchUrl} from '/lib/base';
 
 // Returns a list of "item" objects for assets that are in our asset manifest
 // but have not been saved to our asset store. Each item has keys:
@@ -45,7 +43,7 @@ const computeMissingAssets = (characters) => {
 
 // Returns a Promise that resolves to true when we have loaded the asset.
 const loadMissingAsset = (item) => {
-  const url = `${kAssetDomain}/${item.asset}`;
+  const url = `${kHomePage}/assets/${item.asset}`;
   return fetchUrl(url).then((data) => {
     // TODO(skishore): Handle different types of assets differently here.
     const characters = data.split('\n').filter((x) => x).map(JSON.parse);
