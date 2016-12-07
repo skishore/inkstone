@@ -17,7 +17,7 @@
  *  along with Inkstone.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-import {kCharacters, writeCharacter} from '/client/assets';
+import {kCharacters, onAssetsLoaded, writeCharacter} from '/client/assets';
 import {Assets} from '/client/model/assets';
 import {kHomePage, fetchUrl} from '/lib/base';
 import {assetForCharacter} from '/lib/characters';
@@ -95,6 +95,7 @@ const onComplete = (success, message) => {
   error.set(message);
   started.set(success);
   style.set(success ? undefined : 'transform: translateY(0);');
+  if (success) onAssetsLoaded();
 }
 
 Meteor.setTimeout(() => {

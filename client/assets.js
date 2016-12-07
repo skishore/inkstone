@@ -22,8 +22,10 @@ import {CharacterData} from '/lib/characters';
 const kListColumns = [
   'simplified', 'traditional', 'numbered', 'pinyin', 'definition'];
 
-// TODO(skishore): This method should block on the data being loaded.
-const kLoaded = new Promise((resolve, _) => Meteor.startup(resolve));
+// onAssetsLoaded is a callback that is executed when all required assets,
+// such as the character data files, are saved to the asset store.
+let onAssetsLoaded = null;
+const kLoaded = new Promise((resolve, _) => onAssetsLoaded = resolve);
 
 const kStartup = new Promise((resolve, _) => Meteor.startup(resolve));
 
@@ -263,6 +265,7 @@ const kRadicals = readAsset('radicals.json')
 
 export {
   kCharacters,
+  onAssetsLoaded,
   readCharacter,
   readItem,
   readList,
