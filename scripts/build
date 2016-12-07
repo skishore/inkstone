@@ -1,15 +1,18 @@
 #!/bin/bash
 
-DIRECTORY="~/Dropbox/Projects/inkstone"
+DIRECTORY="/Users/skishore/Dropbox/Projects/inkstone"
 
 # Clear the build directory.
 rm -r .build
 meteor remove-platform android
 meteor add-platform android
 
-# Run the Meteor build script and then implement cordova-build-override.
+# Run the Meteor build script. Since Meteor copies the cordova-build-override
+# directory, we manually exclude the saved character data files in our build.
+mv cordova-build-override/www/assets/characters .characters
 meteor build .build --server localhost:3785
 cp -R cordova-build-override/* .build/android/project/assets/.
+mv .characters cordova-build-override/www/assets/characters
 
 # Run the Cordova build script.
 pushd .build/android/project/cordova
