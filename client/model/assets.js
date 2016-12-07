@@ -30,11 +30,13 @@ const assets = new PersistentDict('assets');
 
 class Assets {
   static getVersion(filename) {
-    return assets.get(filename) || 0;
+    return (assets.get('data') || {})[filename] || 0;
   }
   static setVersion(filename, version) {
-    assert(Number.isInteger(version));
-    assets.set(filename, version);
+    check(version, Match.Integer);
+    const data = assets.get('data') || {};
+    data[filename] = version;
+    assets.set('data', data);
   }
 }
 
