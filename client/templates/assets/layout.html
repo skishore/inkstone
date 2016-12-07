@@ -20,10 +20,31 @@
 <template name="assets">
   <div id="assets" style="{{style}}">
     <div class="loader">
-      Downloading data files...
-      <div class="progress-bar">
-        <div class="progress" style="width: {{progress}}%;"></div>
-      </div>
+      {{#if started}}
+        <div class="status">
+          Downloading file {{counters}}...
+        </div>
+        <div class="progress-bar">
+          <div class="progress" style="width: {{progress}}%;"></div>
+        </div>
+      {{else}}
+        {{#if error}}
+          <div class="header error">{{error}}</div>
+          <div class="header">
+            Please try again, or send an email to
+            <a href="mailto:kshaunak+inkstone@gmail.com">Inkstone support</a>
+            if the error persists.
+          </div>
+          <div class="start">Retry download</div>
+        {{else}}
+          <div class="header">
+            Before using Inkstone, you must download the character data files.
+            These files total ~35Mb in size. It is recommended that you
+            download them over a WiFi connection.
+          </div>
+          <div class="start">Start download</div>
+        {{/if}}
+      {{/if}}
     </div>
   </div>
 </template>

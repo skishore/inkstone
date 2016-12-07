@@ -19,27 +19,57 @@
 
 @import '{}/client/style.scss';
 
+$dark-color: black;
+$light-color: #eee;
+
 #assets {
   @include full-size;
-  background-color: #eee;
+  background-color: $light-color;
+  color: #111;
+  transform: translateY(100%);
+  transition: transform 0.3s;
   z-index: 99999999999;
 
   > .loader {
     font-size: 8 * $font-size / 7;
+    margin: 0 10%;
     position: absolute;
     top: 50%;
     transform: translateY(-50%);
-    width: 100%;
+    width: 80%;
+
+    > .status, .progress-bar, .header, .start {
+      margin: 6 * $font-size / 7 0;
+    }
 
     > .progress-bar {
-      border: $font-size / 14 solid black;
+      border: $font-size / 14 solid $dark-color;
       height: 8 * $font-size / 7;
-      margin: 6 * $font-size / 7 10% 0;
-      width: 80%;
 
       > .progress {
-        background-color: black;
+        background-color: $dark-color;
         height: 100%;
+      }
+    }
+
+    > .header {
+      font-size: 6 * $font-size / 7;
+
+      &.error {
+        color: #c00;
+      }
+    }
+
+    > .start {
+      border: $font-size / 14 solid $dark-color;
+      border-radius: $font-size / 4;
+      display: inline-block;
+      padding: 4% 0;
+      width: 68%;
+
+      &:active {
+        background-color: $dark-color;
+        color: $light-color;
       }
     }
   }
