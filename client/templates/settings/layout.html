@@ -30,6 +30,8 @@
         {{#ionItem class="item-divider"}}
           Graphics
         {{/ionItem}}
+        {{> ionInput variable="settings.canvas_width" type="number"
+                     label="Canvas Width (%)"}}
         {{> ionToggle variable="settings.paper_filter" label="Paper Filter"}}
       </div>
       <div class="block">
@@ -49,15 +51,10 @@
         {{/ionItem}}
         {{> ionSelect variable="settings.character_set"
                       label="Character Set" options=charsets}}
+        {{> ionInput variable="settings.double_tap_speed" type="number"
+                     label="Double-tap (ms)"}}
         {{> ionToggle variable="settings.reveal_order" label="Reveal Order"}}
         {{> ionToggle variable="settings.snap_strokes" label="Snap Strokes"}}
-      </div>
-      <div class="block">
-        {{#ionItem class="item-divider"}}
-          Double-tap Speed
-        {{/ionItem}}
-        {{> ionRange min="0" max="1000" step="100" left="Fast" right="Slow"
-                     variable="settings.double_tap_speed"}}
       </div>
     {{/ionList}}
   {{/ionic}}

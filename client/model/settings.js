@@ -23,6 +23,7 @@ import {PersistentDict} from '/client/model/persistence';
 const settings = new PersistentDict('settings');
 
 const defaults = {
+  canvas_width: 88,
   character_set: 'simplified',
   double_tap_speed: 500,
   max_adds: 20,

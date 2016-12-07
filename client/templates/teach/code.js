@@ -329,7 +329,13 @@ Template.teach.events({
   },
 });
 
-Template.teach.helpers({get: (key) => helpers.get(key)});
+Template.teach.helpers({
+  get: (key) => helpers.get(key),
+  margin: () => {
+    const width = Settings.get('canvas_width');
+    return Math.max(Math.min(Math.floor((100 - width) / 2), 50), 0);
+  },
+});
 
 Template.teach.onRendered(onRendered);
 

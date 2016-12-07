@@ -84,8 +84,6 @@
         transform: translateY(-50%);
         @include full-size;
         bottom: auto;
-        left: 6%;
-        right: 6%;
 
         &.errors {
           > canvas { display: none; }
