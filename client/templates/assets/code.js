@@ -22,9 +22,10 @@ import {Assets} from '/client/model/assets';
 import {kHomePage, fetchUrl} from '/lib/base';
 import {assetForCharacter} from '/lib/characters';
 
-// See initializeState for the schema of this dictionary. Note that this
-// dictionary is ONLY used to build the UI, never for actual logic.
+const error = new ReactiveVar();
+const started = new ReactiveVar();
 const state = new ReactiveDict();
+const style = new ReactiveVar();
 
 // Returns a list of "item" objects for assets that are in our asset manifest
 // but have not been saved to our asset store. Each item has keys:
@@ -79,22 +80,42 @@ const mapAsync = (fn, args, key, index) => {
   return fn(args[index]).then(() => mapAsync(fn, args, key, index + 1));
 }
 
-//kCharacters.then(computeMissingAssets)
-//           .then((items) => { state.clear(); return items; })
-//           .then((items) => mapAsync(loadMissingAsset, items, 'assets'))
-//           .catch((error) => console.error(error));
+// Meteor template and event bindings follow.
 
-// Meteor template bindings follow.
+const onClick = () => {
+  started.set(true);
+  state.clear();
+  kCharacters.then(computeMissingAssets)
+             .then((items) => mapAsync(loadMissingAsset, items, 'assets'))
+             .then(() => onComplete(/*success=*/true))
+             .catch((error) => onComplete(/*success=*/false, error));
+}
+
+const onComplete = (success, message) => {
+  error.set(message);
+  started.set(success);
+  style.set(success ? undefined : 'transform: translateY(0);');
+}
+
+Meteor.setTimeout(() => {
+  kCharacters.then(computeMissingAssets)
+             .then((items) => onComplete(/*success=*/items.length === 0));
+}, 100);
+
+Template.assets.events({'click .start': onClick});
 
 Template.assets.helpers({
+  counters: () => {
+    const assets = state.get('assets') || {index: 0, total: 0};
+    return `${Math.min(assets.index + 1, assets.total)}/${assets.total}`;
+  },
+  error: () => error.get(),
   progress: () => {
     const assets = state.get('assets') || {index: 0, total: 1};
     const files = state.get('files') || {index: 0, total: 1};
-    const n = Math.max(assets.total, 1);
-    return Math.floor(100 * (assets.index + files.index / files.total) / n);
+    const denominator = Math.max(assets.total, 1);
+    return 100 * (assets.index + files.index / files.total) / denominator;
   },
-  style: () => {
-    const assets = state.get('assets') || {index: 0, total: 0};
-    return assets.index < assets.total ? undefined : 'display: none;';
-  },
+  started: () => started.get(),
+  style: () => style.get(),
 });
