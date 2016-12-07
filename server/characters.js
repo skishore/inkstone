@@ -2,7 +2,7 @@ const child_process = Npm.require('child_process');
 const fs = Npm.require('fs');
 const readline = Npm.require('readline');
 
-import {CharacterData, assetForCharacter} from '/lib/base';
+import {CharacterData, assetForCharacter} from '/lib/characters';
 import {Decomposition} from '/lib/decomposition';
 
 const kBase = process.env.PWD;

@@ -19,7 +19,8 @@
 
 import {kCharacters, writeCharacter} from '/client/assets';
 import {Assets} from '/client/model/assets';
-import {kHomePage, assetForCharacter, fetchUrl} from '/lib/base';
+import {kHomePage, fetchUrl} from '/lib/base';
+import {assetForCharacter} from '/lib/characters';
 
 // Returns a list of "item" objects for assets that are in our asset manifest
 // but have not been saved to our asset store. Each item has keys:

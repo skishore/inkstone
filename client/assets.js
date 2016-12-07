@@ -17,7 +17,7 @@
  *  along with Inkstone.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-import {CharacterData} from '/lib/base';
+import {CharacterData} from '/lib/characters';
 
 const kListColumns = [
   'simplified', 'traditional', 'numbered', 'pinyin', 'definition'];
