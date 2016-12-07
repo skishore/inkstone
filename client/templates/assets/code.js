@@ -19,7 +19,7 @@
 
 import {kCharacters, writeCharacter} from '/client/assets';
 import {Assets} from '/client/model/assets';
-import {kHomePage, fetchUrl} from '/lib/base';
+import {kHomePage, assetForCharacter, fetchUrl} from '/lib/base';
 
 // Returns a list of "item" objects for assets that are in our asset manifest
 // but have not been saved to our asset store. Each item has keys:
@@ -28,7 +28,7 @@ import {kHomePage, fetchUrl} from '/lib/base';
 const computeMissingAssets = (characters) => {
   const targets = {};
   for (let character of Object.keys(characters)) {
-    const asset = `${Math.floor(character.charCodeAt(0) / 256)}`;
+    const asset = assetForCharacter(character);
     targets[asset] = (targets[asset] || 0) + 1;
   }
   const result = [];

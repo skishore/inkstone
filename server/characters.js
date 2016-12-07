@@ -2,12 +2,13 @@ const child_process = Npm.require('child_process');
 const fs = Npm.require('fs');
 const readline = Npm.require('readline');
 
-import {CharacterData} from '/lib/base';
+import {CharacterData, assetForCharacter} from '/lib/base';
 import {Decomposition} from '/lib/decomposition';
 
 const kBase = process.env.PWD;
 const kDelimiter = 'BREAK';
-const kDirectory = `${kBase}/cordova-build-override/www/assets/characters`;
+const kExcludedAssets = `${kBase}/.assets`;
+const kIncludedAssets = `${kBase}/cordova-build-override/www/assets`;
 
 const augmentRows = (all, rows) => {
   for (let character of all) {
@@ -63,12 +64,21 @@ const computeComponents = (character, index, rows, result) => {
 }
 
 const dumpCharacters = (all, rows) => {
+  const assets = [];
+  const contents = {};
   for (let character of all) {
-    const row = rows[character];
-    const filename = `${kDirectory}/${character.charCodeAt(0)}`;
-    fs.writeFileSync(filename, JSON.stringify(rows[character]));
+    const asset = assetForCharacter(character);
+    if (!contents[asset]) {
+      assets.push(asset);
+      contents[asset] = [];
+    }
+    contents[asset].push(rows[character]);
   }
-  fs.writeFileSync(`${kDirectory}.txt`, all.join('\n'));
+  for (let asset of assets) {
+    const filename = `${kExcludedAssets}/${asset}`;
+    fs.writeFileSync(filename, contents[asset].map(JSON.stringify).join('\n'));
+  }
+  fs.writeFileSync(`${kIncludedAssets}/characters.txt`, all.join('\n'));
 }
 
 const parseLine = (line, delimiter) => {
@@ -116,6 +126,8 @@ const rebuildCharacterData = () => {
     augmentRows(all, rows);
     all.map((character) => check(rows[character], CharacterData));
     console.log('Dumping...');
+    child_process.execSync('mkdir -p .assets', {cwd: kBase});
+    child_process.execSync('mkdir -p .assets/characters', {cwd: kBase});
     dumpCharacters(all, rows);
     console.log('Cleaning up...');
     child_process.execSync('rm makemeahanzi.txt', {cwd: kBase});
