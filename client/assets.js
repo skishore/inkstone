@@ -39,12 +39,23 @@ const isImportedAsset = (asset) => {
 const getDirectoryEntry = (fragments, root) => {
   if (fragments.length === 0 && !root) return Promise.reject('No fragments.');
   if (fragments.length === 0) return Promise.resolve(root);
-  return new Promise((resolve, reject) => {
+
+  // Optimization: if we're not in a recursive call, and if the directory
+  // already exists, use resolveLocalFileSystemUrl to get it immediately.
+  const full_path = fragments.join('/');
+  const if_exists =
+    root ? Promise.reject('Cannot skip ahead during recursion.')
+         : new Promise((resolve, reject) =>
+              window.resolveLocalFileSystemURL(full_path, resolve, reject));
+
+  // Slow but sure main algorithm. Iterate over the fragments of the path,
+  // traversing the tree and creating each directory if it does not exist.
+  return if_exists.catch(() => new Promise((resolve, reject) => {
     const recurse = (entry) => getDirectoryEntry(fragments.slice(1), entry)
                                   .then(resolve).catch(reject);
     root ? root.getDirectory(fragments[0], {create: true}, recurse, reject)
          : window.resolveLocalFileSystemURL(fragments[0], recurse, reject);
-  });
+  }));
 }
 
 // Input: a path to an asset in cordova-build-overrides/www/assets
