@@ -6,6 +6,7 @@ The app version that you're on is displayed on the main page below the
 "Inkstone" title. If you don't see it there, you're at version 0.0.4
 or earlier.
 
+- Version 0.1.0 adds an asset download pane and a canvas width setting.
 - Version 0.0.8 adds support for
   [handwriting shortcuts](http://i.imgur.com/suDHz1v.gif).
 - Version 0.0.7 makes it
@@ -45,8 +46,8 @@ for this program, to the extent permitted by applicable law**. See that
 file for full details. With those caveats stated, the pre-built
 binaries are here:
 
-- [Inkstone v. 0.0.8 for Android armv7](https://www.dropbox.com/s/sdobc0hvnidbjna/inkstone-armv7.apk?dl=1)
-- [Inkstone v. 0.0.8 for Android x86](https://www.dropbox.com/s/hfo7rdp0pjghtnw/inkstone-x86.apk?dl=1)
+- [Inkstone v. 0.1.0 for Android armv7](https://www.dropbox.com/s/sdobc0hvnidbjna/inkstone-armv7.apk?dl=1)
+- [Inkstone v. 0.1.0 for Android x86](https://www.dropbox.com/s/hfo7rdp0pjghtnw/inkstone-x86.apk?dl=1)
 
 Most Android phones use armv7. Trying to install the APK for the wrong
 architecture will just result in an error message, so if you're not sure
