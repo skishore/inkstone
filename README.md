@@ -86,6 +86,11 @@ However, I can't test or debug the iOS build because I don't have an
 iPhone. If people are interested, I'd love to buy one and try it out!
 Apple devices are expensive, though, as are Apple developer licenses...
 
+### Open source credits
+
+[Inkstone was made possible by a number of other open-source projects,
+a full listing of which can be found here.](https://www.skishore.me/inkstone/docs/credits.html)
+
 ### Upcoming features
 
 See `todo.txt` for a list of planned features. If there's something you'd
