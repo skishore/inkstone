@@ -1,6 +1,7 @@
 #!/bin/bash
 
 DIRECTORY="/Users/skishore/Dropbox/Projects/inkstone"
+ZIPALIGN="/Users/skishore/Library/Android/sdk/build-tools/23.0.1/zipalign"
 
 # Clear the build directory.
 rm -r .build
@@ -22,8 +23,10 @@ cd ../build/outputs/apk
 # Sign the output. Will prompt for passwords.
 jarsigner -verbose -sigalg SHA1withRSA -digestalg SHA1 -keystore ~/.keystore project-armv7-release-unsigned.apk inkstone
 jarsigner -verbose -sigalg SHA1withRSA -digestalg SHA1 -keystore ~/.keystore project-x86-release-unsigned.apk inkstone
+$ZIPALIGN -f 4 project-armv7-release-unsigned.apk project-armv7-release.apk
+$ZIPALIGN -f 4 project-x86-release-unsigned.apk project-x86-release.apk
 
 # Copy the output to a staging location in Dropbox.
-cp project-armv7-release-unsigned.apk $DIRECTORY/inkstone-armv7.new.apk
-cp project-x86-release-unsigned.apk $DIRECTORY/inkstone-x86.new.apk
+cp project-armv7-release.apk $DIRECTORY/inkstone-armv7.new.apk
+cp project-x86-release.apk $DIRECTORY/inkstone-x86.new.apk
 popd
