@@ -15,7 +15,8 @@ or earlier.
 - Version 0.0.5 includes the option to **study traditional characters**.
 
 See the [Installing from binary](#installing-from-binary)
-section for updated APKs.
+section for updated APKs, or
+[download the app from the Google Play Store](https://play.google.com/store/apps/details?id=com.id126c0rsxlvjwv18cf44u).
 
 ### Introduction
 
