@@ -75,29 +75,34 @@ const createCanvas = (element, handwriting) => {
   canvas.style.width = canvas.style.height = `${element.width()}px`;
   element.append(canvas);
 
+  const touch_supported = 'ontouchstart' in window;
   const zoom = kCanvasSize / element.width();
 
-  const getPosition = (touch) => {
+  const getPosition = (event) => {
+    if (touch_supported) event = event.touches[0];
+    if (!event) return;
     const bound = canvas.getBoundingClientRect();
-    const point = [touch.clientX - bound.left, touch.clientY - bound.top];
+    const point = [event.clientX - bound.left, event.clientY - bound.top];
     return point.map((x) => Math.round(zoom * x));
   }
 
   let mousedown = false;
 
-  canvas.addEventListener('touchstart', (event) => {
+  const start_event = touch_supported ? 'touchstart' : 'mousedown';
+  canvas.addEventListener(start_event, (event) => {
     mousedown = true;
     if (event.cancelable) event.preventDefault();
-    if (event.touches.length === 0) return;
-    handwriting._pushPoint(getPosition(event.touches[0]));
+    handwriting._pushPoint(getPosition(event));
   });
 
-  canvas.addEventListener('touchmove', (event) => {
-    if (!mousedown || event.touches.length === 0) return;
-    handwriting._pushPoint(getPosition(event.touches[0]));
+  const move_event = touch_supported ? 'touchmove' : 'mousemove';
+  canvas.addEventListener(move_event, (event) => {
+    if (!mousedown) return;
+    handwriting._pushPoint(getPosition(event));
   }, {passive: true});
 
-  canvas.addEventListener('touchend', (event) => {
+  const end_event = touch_supported ? 'touchend' : 'mouseup';
+  canvas.addEventListener(end_event, (event) => {
     mousedown = false;
     handwriting._endStroke();
   });
