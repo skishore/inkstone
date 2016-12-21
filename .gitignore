@@ -1,6 +1,7 @@
 *.pyc
 *.swp
 .DS_Store
-.sass-cache
 .build
 .backup
+.electrify
+.sass-cache
