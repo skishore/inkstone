@@ -1,0 +1,8 @@
+{
+  "name": "Inkstone",
+  "main": "index.js",
+  "version": "0.1.0",
+  "dependencies": {
+    "electrify": "2.1.4"
+  }
+}

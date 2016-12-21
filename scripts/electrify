@@ -1,0 +1,18 @@
+#!/bin/bash
+
+APP=".electrify/.dist/Inkstone-darwin-x64/Inkstone.app"
+DIRECTORY="$APP/Contents/Resources/app"
+
+# Run the Electrify packager. Since Meteor copies the cordova-build-override
+# directory, we manually exclude the saved character data files in our build.
+mv cordova-build-override/www/assets/characters .characters
+mkdir cordova-build-override/www/assets/characters
+electrify package
+cp -R cordova-build-override/* $DIRECTORY/.
+rmdir cordova-build-override/www/assets/characters
+mv .characters cordova-build-override/www/assets/characters
+
+rm -r $DIRECTORY/db/*
+hdiutil create -volname Inkstone -srcfolder $APP -ov -format UDZO Inkstone.dmg
+mv Inkstone.dmg /Users/skishore/Dropbox/Projects/inkstone/.
+#rm -rf .electrify/.dist

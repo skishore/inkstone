@@ -19,10 +19,12 @@
  */
 
 const fs = Npm.require('fs');
+const pa = Npm.require('path');
 
 const asset = (path) => {
-  const directory = 'cordova-build-override/www/assets';
-  return `${process.env.PWD}/${directory}/${path}`;
+  const directory = 'www/assets';
+  const root = pa.resolve(pa.dirname(process.argv[1]), '..');
+  return `${root}/${directory}/${path}`;
 }
 
 Meteor.methods({
