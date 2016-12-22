@@ -35,7 +35,7 @@ const computeMissingAssets = (characters) => {
   const targets = {};
   for (let character of Object.keys(characters)) {
     const asset = assetForCharacter(character);
-    targets[asset] = (targets[asset] || 0) + 1;
+    targets[asset] = (targets[asset] || 0) + characters[character];
   }
   const result = [];
   for (const asset of Object.keys(targets)) {
