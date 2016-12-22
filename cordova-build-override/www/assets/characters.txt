@@ -9505,3 +9505,7 @@
 龶
 龹
 龺
+# The following characters have updated stroke-order data.
+嚥
+燕
+讌
