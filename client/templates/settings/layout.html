@@ -56,6 +56,27 @@
         {{> ionToggle variable="settings.reveal_order" label="Reveal Order"}}
         {{> ionToggle variable="settings.snap_strokes" label="Snap Strokes"}}
       </div>
+      <div class="block danger">
+        {{#ionItem class="item-divider"}}
+          Danger Zone
+        {{/ionItem}}
+        {{#ionItem class="item-button clear-progress"}}
+          Clear all progress
+        {{/ionItem}}
+        {{#ionItem class="item-button redownload-assets"}}
+          Redownload assets
+        {{/ionItem}}
+      </div>
     {{/ionList}}
   {{/ionic}}
+</template>
+
+<template name="confirm_dangerous_action">
+  <div id="confirm-dangerous-action">
+    <div class="warning">
+      This action cannot be undone. To continue,
+      type "{{code}}" into the box below and press "Yes".
+    </div>
+    <input class="code" type="text">
+  </div>
 </template>

@@ -22,10 +22,17 @@ import {assert} from '/lib/base';
 const registry = {};
 let storage = localStorage;
 
+const clearTables = (tables) => {
+  const models = tables.map((key) => registry[key]);
+  assert(_.all(models));
+  models.forEach((model) => model.clear());
+  window.location.reload();
+}
+
 const mockPersistenceLayer = (replacement) => {
   Tracker.flush();
   storage = replacement;
-  Object.keys(registry).map((key) => registry[key]._load());
+  Object.keys(registry).forEach((key) => registry[key]._load());
 }
 
 class PersistentDict {
@@ -102,4 +109,4 @@ class PersistentVar {
   }
 }
 
-export {mockPersistenceLayer, PersistentDict, PersistentVar};
+export {clearTables, mockPersistenceLayer, PersistentDict, PersistentVar};

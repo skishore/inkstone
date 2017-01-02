@@ -95,10 +95,10 @@ const toListTemplate = (lists) => {
 // Meteor template and event bindings follow.
 
 Template.lists.events({
-  'click .delete': () => {
+  'click .item-button.delete': () => {
     Router.go('delete_lists');
   },
-  'click .import': () => {
+  'click .item-button.import': () => {
     Popup.show({title: 'Import a word list', template: 'imports'});
   },
 });

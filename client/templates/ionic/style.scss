@@ -19,6 +19,7 @@
 
 $base-background-color: #e4e4e4;
 $box-shadow-size: 1vw 1vw 4vw;
+$danger-color: #802828;
 $loading-icon-size: 20vw;
 
 $font-family-base:                Georgia, serif !default;
@@ -106,7 +107,22 @@ $toggle-height:                   7.75vw !default;
       margin: 5% auto;
       width: 90%;
 
+      &.danger {
+        > .item {
+          color: $danger-color;
+        }
+
+        > .item.item-divider {
+          background-color: $danger-color;
+          color: white;
+        }
+      }
+
       > .item {
+        &.item-button:active {
+          background-color: #80d8ff;
+        }
+
         &.item-divider {
           border-width: 0.25vw 0 0 0;
           background-color: white;

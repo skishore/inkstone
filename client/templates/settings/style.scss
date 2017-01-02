@@ -19,6 +19,15 @@
 
 @import '{}/client/style.scss';
 
-.customization-option:active {
-  background-color: $active-color;
+#confirm-dangerous-action {
+  > .warning {
+    margin-bottom: 3 * $font-size / 4;
+  }
+
+  > input {
+    background-color: #eee;
+    border: 1px solid $base-color;
+    height: 9vw;
+    padding: 0 2vw;
+  }
 }
