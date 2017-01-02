@@ -26,7 +26,9 @@ const kCharacterSets = [
   {label: 'Simplified', value: 'simplified'},
   {label: 'Traditional', value: 'traditional'},
 ];
-const kCode = '4-7 Alpha Tango';
+const kCodes = ['4-7 Alpha Tango', '2-2 Beta Charlie', '3-7 Gamma Echo'];
+
+const code = new ReactiveVar();
 
 const confirmAndExecute = (title, text, action) => {
   const callback = () => confirmWithCode(title, action);
@@ -34,13 +36,14 @@ const confirmAndExecute = (title, text, action) => {
     {callback: () => Meteor.defer(callback), label: 'Yes'},
     {class: 'bold', label: 'No'},
   ];
+  code.set(_.sample(kCodes));
   Popup.show({title: title, text: text, buttons: buttons});
 }
 
 const confirmWithCode = (title, action) => {
   const callback = () => {
-    const code = $('#confirm-dangerous-action > input.code').val();
-    if (code === kCode) {
+    const typed = $('#confirm-dangerous-action > input.code').val();
+    if (typed === code.get()) {
       Popup.hide();
       Backdrop.show();
       action();
@@ -51,7 +54,8 @@ const confirmWithCode = (title, action) => {
         {callback: () => Meteor.defer(retry), label: 'Retry'},
         {class: 'bold', label: 'Cancel'},
       ];
-      const text = `The code you typed did not match "${kCode}" exactly. ` +
+      const text = 'The code you typed did not match ' +
+                   `"${code.get()}" exactly. ` +
                    'If you intended to type this code, make sure you use ' +
                    'the same capitalization and punctuation.';
       Popup.show({title: 'Incorrect code', text: text, buttons: buttons});
@@ -65,7 +69,7 @@ const confirmWithCode = (title, action) => {
   Popup.show({title: title, template: template, buttons: buttons});
 }
 
-Template.confirm_dangerous_action.helpers({code: () => kCode});
+Template.confirm_dangerous_action.helpers({code: () => code.get()});
 
 Template.settings.events({
   'click .item-button.clear-progress': () => confirmAndExecute(
