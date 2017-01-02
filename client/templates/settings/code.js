@@ -62,8 +62,8 @@ const confirmWithCode = (title, action) => {
     }
   }
   const buttons = [
-    {callback: () => Meteor.defer(callback), label: 'Yes'},
-    {class: 'bold', label: 'No'},
+    {callback: () => Meteor.defer(callback), label: 'Okay'},
+    {class: 'bold', label: 'Cancel'},
   ];
   const template = 'confirm_dangerous_action';
   Popup.show({title: title, template: template, buttons: buttons});
@@ -76,8 +76,8 @@ Template.settings.events({
       'Clear all progress',
       'Do you want to completely reset your progress on all word lists?',
       () => clearTables(['lists', 'timing', 'vocabulary'])),
-  'click .item-button.redownload-assets': () => confirmAndExecute(
-      'Redownload assets',
+  'click .item-button.reinstall-assets': () => confirmAndExecute(
+      'Reinstall assets',
       'Do you want to download all character data files again?',
       () => clearTables(['assets'])),
 });
