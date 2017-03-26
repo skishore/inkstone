@@ -6,6 +6,8 @@ The app version that you're on is displayed on the main page below the
 "Inkstone" title. If you don't see it there, you're at version 0.0.4
 or earlier.
 
+- Version 0.1.1 adds a "clear all data" button and the option to rerun a
+  stroke order animation by clicking on it.
 - Version 0.1.0 adds an asset download pane and a canvas width setting.
 - Version 0.0.8 adds support for
   [handwriting shortcuts](http://i.imgur.com/suDHz1v.gif).
@@ -14,6 +16,8 @@ or earlier.
 - Version 0.0.6 makes it possible to adjust scheduling settings freely.
 - Version 0.0.5 includes the option to **study traditional characters**.
 
+In addition to the features mentioned above, most versions include some fixes
+and additions to the character data.
 See the [Installing from binary](#installing-from-binary)
 section for updated APKs, or
 [download the app from the Google Play Store](https://play.google.com/store/apps/details?id=com.id126c0rsxlvjwv18cf44u).
@@ -47,8 +51,8 @@ for this program, to the extent permitted by applicable law**. See that
 file for full details. With those caveats stated, the pre-built
 binaries are here:
 
-- [Inkstone v. 0.1.0 for Android armv7](https://www.dropbox.com/s/sdobc0hvnidbjna/inkstone-armv7.apk?dl=1)
-- [Inkstone v. 0.1.0 for Android x86](https://www.dropbox.com/s/hfo7rdp0pjghtnw/inkstone-x86.apk?dl=1)
+- [Inkstone v. 0.1.1 for Android armv7](https://www.dropbox.com/s/sdobc0hvnidbjna/inkstone-armv7.apk?dl=1)
+- [Inkstone v. 0.1.1 for Android x86](https://www.dropbox.com/s/hfo7rdp0pjghtnw/inkstone-x86.apk?dl=1)
 
 Most Android phones use armv7. Trying to install the APK for the wrong
 architecture will just result in an error message, so if you're not sure
