@@ -79,8 +79,7 @@ const flushNonReactiveUIState = () => {
   $('#answer > .body').scrollTop(0);
 
   // Clear the "how long have CSS animations run for" state on the animation.
-  const animation = $('#answer > .body > .animation');
-  animation.children().detach().appendTo(animation);
+  resetAnimation();
 }
 
 const linkify = (value) => {
@@ -106,6 +105,11 @@ const hide = () => {
 const lower = (string) => {
   if (string.length === 0) return string;
   return string[0].toLowerCase() + string.substr(1);
+}
+
+const resetAnimation = () => {
+  const animation = $('#answer > .body > .animation');
+  animation.children().detach().appendTo(animation);
 }
 
 const show = (row) => {
@@ -148,6 +152,7 @@ window.onhashchange = onHashChange;
 Meteor.startup(onHashChange);
 
 Template.answer.events({
+  'click .animation': resetAnimation,
   'click .header .back, touchstart .header .back': (event) => {
     Meteor.defer(() => window.location.hash = '');
   },
