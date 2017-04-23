@@ -19,15 +19,31 @@
 
 @import '{}/client/style.scss';
 
-#confirm-dangerous-action {
+#backup, #confirm-dangerous-action, #restore {
   > .warning {
     margin-bottom: 3 * $font-size / 4;
   }
 
-  > input {
+  > input[type="file"] {
+    border: 1px solid white;
+    border-radius: $font-size / 4;
+    font-size: 7 * $font-size / 8;
+    height: 3 * $font-size / 2;
+    line-height: 3 * $font-size / 2;
+
+    &.error {
+      border-color: red;
+    }
+  }
+
+  > input[type="text"] {
     background-color: #eee;
     border: 1px solid $base-color;
     height: 9vw;
     padding: 0 2vw;
+
+    &.error {
+      border-color: red;
+    }
   }
 }

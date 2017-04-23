@@ -28,6 +28,14 @@
     {{#ionList}}
       <div class="block">
         {{#ionItem class="item-divider"}}
+          Backups
+        {{/ionItem}}
+        {{#ionItem class="item-button backup"}}
+          Backup to a file
+        {{/ionItem}}
+      </div>
+      <div class="block">
+        {{#ionItem class="item-divider"}}
           Graphics
         {{/ionItem}}
         {{> ionInput variable="settings.canvas_width" type="number"
@@ -66,9 +74,21 @@
         {{#ionItem class="item-button reinstall-assets"}}
           Reinstall assets
         {{/ionItem}}
+        {{#ionItem class="item-button restore"}}
+          Restore from a file
+        {{/ionItem}}
       </div>
     {{/ionList}}
   {{/ionic}}
+</template>
+
+<template name="backup">
+  <div id="backup">
+    <div class="warning">
+      Enter a name for this backup file:
+    </div>
+    <input class="code" type="text" value="{{name}}">
+  </div>
 </template>
 
 <template name="confirm_dangerous_action">
@@ -78,5 +98,14 @@
       enter "{{code}}" in the box below and tap "Okay".
     </div>
     <input class="code" type="text">
+  </div>
+</template>
+
+<template name="restore">
+  <div id="restore">
+    <div class="warning">
+      Restoring from a file will completely overwrite your progress!
+    </div>
+    <input name="file" type="file">
   </div>
 </template>
