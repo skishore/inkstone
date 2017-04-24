@@ -22,11 +22,25 @@ import {assert} from '/lib/base';
 const registry = {};
 let storage = localStorage;
 
-const clearTables = (tables) => {
+const clearTables = (tables, callback) => {
   const models = tables.map((key) => registry[key]);
   assert(_.all(models));
   models.forEach((model) => model.clear());
-  window.location.reload();
+  // WARNING: The code below is very delicate!
+  //
+  // Tracker.afterFlush and Meteor.defer are both required because of our
+  // implementation of persistence: when we call model.clear(), the model sets
+  // a reactive sentinel value that triggers a Meteor autorun which *defers*
+  // an update to our backing storage. See Model._save for details.
+  //
+  // In addition, after any direct updates to localStorage, we must call
+  // window.location.reload() because in-memory caches will be out-of-date.
+  Tracker.afterFlush(() => {
+    Meteor.defer(() => {
+      if (callback) callback();
+      window.location.reload();
+    });
+  });
 }
 
 const mockPersistenceLayer = (replacement) => {

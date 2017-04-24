@@ -17,11 +17,14 @@
  *  along with Inkstone.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+import {readList, writeList} from '/client/assets';
 import {Backdrop} from '/client/backdrop';
+import {Lists} from '/client/model/lists';
 import {clearTables} from '/client/model/persistence';
 import {Settings} from '/client/model/settings';
 import {Popup} from '/client/templates/popup/code';
 
+const kBackupTables = ['lists', 'settings', 'vocabulary'];
 const kCharacterSets = [
   {label: 'Simplified', value: 'simplified'},
   {label: 'Traditional', value: 'traditional'},
@@ -100,8 +103,17 @@ const startDownload = (data, filename) => {
 
 const submitBackup = () => {
   const filename = $('.popup input[type="text"]').val();
-  startDownload(JSON.stringify(localStorage), filename);
-  Popup.hide();
+  const database = JSON.parse(JSON.stringify(localStorage));
+  // Our backups currently include two things:
+  //   - a copy of localStorage
+  //   - a map from user-provided list IDs to their entries
+  const data = {database: database, lists: {}};
+  const lists = _.keys(Lists.getImportedLists());
+  Promise.all(lists.map(readList)).then((values) => {
+    lists.map((x, i) => data.lists[x] = values[i]);
+    startDownload(JSON.stringify(data), filename);
+    Popup.hide();
+  }).catch((error) => console.error(error));
 }
 
 const submitRestore = () => {
@@ -109,16 +121,20 @@ const submitRestore = () => {
   const reader = new FileReader;
   // TODO(skishore): We need proper failure handling here!
   // TODO(skishore): We need proper failure handling in importing local lists!
-  // TODO(skishore): We need to support backups with saved lists!
   reader.onloadend = () => {
     const data = JSON.parse(reader.result);
-    for (const key of ['table.assets.data', 'table.timing.value']) {
-      if (!data[key]) throw Error(`Missing key: ${key}`);
-      delete data[key];
-    }
-    console.log(data);
-    Backdrop.hide(500);
+    if (!data.database || !data.lists) throw Error('Malformatted backup!');
+    const lists = _.keys(data.lists);
+    Promise.all(lists.map((x) => writeList(x, data.lists[x]))).then(() => {
+      clearTables(['timing'].concat(kBackupTables), () => {
+        const keys = _.keys(data.database);
+        const preserved = kBackupTables.map((x) => `table.${x}.`);
+        keys.filter((x) => preserved.some((y) => x.startsWith(y)))
+            .map((x) => localStorage[x] = data.database[x]);
+      });
+    }).catch((error) => console.error(error));
   }
+  Popup.hide();
   Backdrop.show();
   reader.readAsText(file);
 }
