@@ -246,12 +246,14 @@ const submitLocalList = () => {
   Popup.hide();
   Backdrop.show();
   const reader = new FileReader;
-  reader.onloadend = () => {
+  new Promise((resolve, reject) => {
+    reader.onerror = reject;
+    reader.onloadend = resolve;
+  }).then(() => {
     const metadata = {category: submission.category, name: submission.name};
-    saveList(reader.result, metadata)
-        .then((x) => showListSavedMessage(x, /*success=*/true))
-        .catch((x) => showListSavedMessage(x, /*success=*/false));
-  }
+    return saveList(reader.result, metadata);
+  }).then((x) => showListSavedMessage(x, /*success=*/true))
+    .catch((x) => showListSavedMessage(x, /*success=*/false));
   reader.readAsText(submission.file);
 }
 
