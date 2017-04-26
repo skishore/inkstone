@@ -24,6 +24,7 @@ import {clearTables} from '/client/model/persistence';
 import {Settings} from '/client/model/settings';
 import {Popup} from '/client/templates/popup/code';
 
+const kBackdropTimeout = 500;
 const kBackupTables = ['lists', 'settings', 'vocabulary'];
 const kCharacterSets = [
   {label: 'Simplified', value: 'simplified'},
@@ -94,6 +95,12 @@ const makeButtons = (callback) => [
   {callback: callback, class: 'bold', label: 'Submit'},
 ];
 
+const onError = (title) => (error) => {
+  console.error(error);
+  const buttons = [{class: 'bold', label: 'Okay'}];
+  Popup.show({buttons: buttons, text: `${error}`, title: title});
+}
+
 const startDownload = (data, filename) => {
   const link = document.createElement('a');
   link.href = `data:text/plain;charset:utf-8;base64,${encodeBase64(data)}`;
@@ -113,29 +120,38 @@ const submitBackup = () => {
     lists.map((x, i) => data.lists[x] = values[i]);
     startDownload(JSON.stringify(data), filename);
     Popup.hide();
-  }).catch((error) => console.error(error));
+  }).catch(onError('Backup failed'));
 }
 
 const submitRestore = () => {
-  const file = $('.popup input[type="file"]')[0].files[0];
+  const element = $('.popup input[type="file"]');
+  const file = element[0].files[0];
+  if (!file) return element.addClass('error');
+
+  Popup.hide(50);
+  Backdrop.show();
+  element.removeClass('error');
   const reader = new FileReader;
-  // TODO(skishore): We need proper failure handling here!
-  // TODO(skishore): We need proper failure handling in importing local lists!
-  reader.onloadend = () => {
+
+  new Promise((resolve, reject) => {
+    reader.onerror = reject;
+    reader.onloadend = resolve;
+  }).then(() => {
     const data = JSON.parse(reader.result);
-    if (!data.database || !data.lists) throw Error('Malformatted backup!');
+    if (!data.database) throw Error('Missing "database" key.');
+    if (!data.lists) throw Error('Missing "lists" key.');
     const lists = _.keys(data.lists);
-    Promise.all(lists.map((x) => writeList(x, data.lists[x]))).then(() => {
+    return Promise.all(lists.map((x) => writeList(x, data.lists[x])))
+                  .then(() => {
       clearTables(['timing'].concat(kBackupTables), () => {
         const keys = _.keys(data.database);
         const preserved = kBackupTables.map((x) => `table.${x}.`);
         keys.filter((x) => preserved.some((y) => x.startsWith(y)))
             .map((x) => localStorage[x] = data.database[x]);
       });
-    }).catch((error) => console.error(error));
-  }
-  Popup.hide();
-  Backdrop.show();
+    });
+  }).catch((error) => Backdrop.hide(
+      kBackdropTimeout, () => onError('Restore failed')(error)));
   reader.readAsText(file);
 }
 
