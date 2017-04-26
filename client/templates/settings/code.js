@@ -17,7 +17,7 @@
  *  along with Inkstone.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-import {readList, writeList} from '/client/assets';
+import {download, readList, writeList} from '/client/assets';
 import {Backdrop} from '/client/backdrop';
 import {Lists} from '/client/model/lists';
 import {clearTables} from '/client/model/persistence';
@@ -74,16 +74,6 @@ const confirmWithCode = (title, action) => {
   Popup.show({title: title, template: template, buttons: buttons});
 }
 
-const decodeBase64 = window.decodeBase64 = (uri) => {
-  const d = (ch) => '%' + ('00' + ch.charCodeAt(0).toString(16)).slice(-2);
-  return decodeURIComponent(Array.from(atob(uri)).map(d).join(''));
-}
-
-const encodeBase64 = window.encodeBase64 = (data) => {
-  return btoa(encodeURIComponent(data).replace(
-      /%([0-9A-F]{2})/g, (match, x) => String.fromCharCode('0x' + x)));
-}
-
 const getDateString = () => {
   const d = new Date();
   const p = (x) => { const y = '' + x; return (y.length < 2 ? '0' : '') + y; }
@@ -101,13 +91,6 @@ const onError = (title) => (error) => {
   Popup.show({buttons: buttons, text: `${error}`, title: title});
 }
 
-const startDownload = (data, filename) => {
-  const link = document.createElement('a');
-  link.href = `data:text/plain;charset:utf-8;base64,${encodeBase64(data)}`;
-  link.download = filename;
-  link.click();
-}
-
 const submitBackup = () => {
   const filename = $('.popup input[type="text"]').val();
   const database = JSON.parse(JSON.stringify(localStorage));
@@ -118,7 +101,7 @@ const submitBackup = () => {
   const lists = _.keys(Lists.getImportedLists());
   Promise.all(lists.map(readList)).then((values) => {
     lists.map((x, i) => data.lists[x] = values[i]);
-    startDownload(JSON.stringify(data), filename);
+    download(filename, JSON.stringify(data));
     Popup.hide();
   }).catch(onError('Backup failed'));
 }

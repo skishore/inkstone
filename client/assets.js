@@ -29,6 +29,52 @@ const kLoaded = new Promise((resolve, _) => onAssetsLoaded = resolve);
 
 const kStartup = new Promise((resolve, _) => Meteor.startup(resolve));
 
+const base64 = {
+  decode: (uri) => {
+    const d = (ch) => '%' + ('00' + ch.charCodeAt(0).toString(16)).slice(-2);
+    return decodeURIComponent(Array.from(atob(uri)).map(d).join(''));
+  },
+  encode: (data) => {
+    return btoa(encodeURIComponent(data).replace(
+        /%([0-9A-F]{2})/g, (match, x) => String.fromCharCode('0x' + x)));
+  },
+};
+
+// Input: a target filename and the data to download to it.
+// Output: a Promise that resolves to a description of where to find the
+//         downloaded file: in Downloads, on web, or in ~/Inkstone on mobile.
+const download = (filename, data) => {
+  return kStartup.then(() => new Promise((resolve, reject) => {
+    if (Meteor.isCordova) {
+      const fragments = [cordova.file.externalRootDirectory, 'Inkstone'];
+      const target =  `${fragments.join('')}/${filename}`;
+      const success = () => resolve(target.substr('file://'.length));
+      fileWriteHelper(fragments, filename, data, success, reject);
+    } else {
+      const link = document.createElement('a');
+      link.href = `data:text/plain;charset:utf-8;base64,${base64.encode(data)}`;
+      link.download = filename;
+      link.click();
+      resolve('Downloads folder.');
+    }
+  }));
+}
+
+// Input: a list of path fragments in a Cordova filesystem, a file to write
+//        at the directory given by those fragments, the data to write to it,
+//        and two Promise "resolve/reject" callbacks to execute on completion.
+const fileWriteHelper = (fragments, filename, data, resolve, reject) => {
+  getDirectoryEntry(fragments).then((entry) => {
+    entry.getFile(filename, {create: true}, (file) => {
+      file.createWriter((writer) => {
+        writer.onerror = reject;
+        writer.onwriteend = () => resolve(true);
+        writer.write(new Blob([data]), {type: 'text/plain'});
+      }, reject);
+    }, reject);
+  }).catch(reject);
+}
+
 const isImportedAsset = (asset) => {
   return asset.startsWith('characters/') || asset.startsWith('lists/s/');
 }
@@ -192,15 +238,7 @@ const writeAsset = (path, data) => {
         const prefix = [cordova.file.dataDirectory, 'www', 'assets'];
         const fragments = prefix.concat(path.split('/'));
         const filename = fragments.pop();
-        return getDirectoryEntry(fragments).then((entry) => {
-          entry.getFile(filename, {create: true}, (file) => {
-            file.createWriter((writer) => {
-              writer.onerror = reject;
-              writer.onwriteend = () => resolve(true);
-              writer.write(new Blob([data]), {type: 'text/plain'});
-            }, reject);
-          }, reject);
-        }).catch(reject);
+        fileWriteHelper(fragments, filename, data, resolve, reject);
       } catch (e) {
         reject(e);
       }
@@ -276,6 +314,7 @@ const kRadicals = readAsset('radicals.json')
 
 export {
   kCharacters,
+  download,
   onAssetsLoaded,
   readCharacter,
   readItem,
