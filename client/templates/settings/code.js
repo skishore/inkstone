@@ -85,10 +85,9 @@ const makeButtons = (callback) => [
   {callback: callback, class: 'bold', label: 'Submit'},
 ];
 
-const onError = (title) => (error) => {
-  console.error(error);
+const show = (title) => (message) => {
   const buttons = [{class: 'bold', label: 'Okay'}];
-  Popup.show({buttons: buttons, text: `${error}`, title: title});
+  Popup.show({buttons: buttons, text: `${message}`, title: title});
 }
 
 const submitBackup = () => {
@@ -101,9 +100,9 @@ const submitBackup = () => {
   const lists = _.keys(Lists.getImportedLists());
   Promise.all(lists.map(readList)).then((values) => {
     lists.map((x, i) => data.lists[x] = values[i]);
-    download(filename, JSON.stringify(data));
-    Popup.hide();
-  }).catch(onError('Backup failed'));
+    return download(filename, JSON.stringify(data));
+  }).then((x) => show('Backup successful')(`Backup saved to ${x}`))
+    .catch(show('Backup failed'));
 }
 
 const submitRestore = () => {
@@ -134,7 +133,7 @@ const submitRestore = () => {
       });
     });
   }).catch((error) => Backdrop.hide(
-      kBackdropTimeout, () => onError('Restore failed')(error)));
+      kBackdropTimeout, () => show('Restore failed')(error)));
   reader.readAsText(file);
 }
 
