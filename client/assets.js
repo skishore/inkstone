@@ -48,8 +48,9 @@ const download = (filename, data) => {
     if (Meteor.isCordova) {
       const fragments = [cordova.file.externalRootDirectory, 'Inkstone'];
       const target =  `${fragments.join('')}/${filename}`;
-      const success = () => resolve(target.substr('file://'.length));
-      fileWriteHelper(fragments, filename, data, success, reject);
+      fileWriteHelper(fragments, filename, data, /*exclusive=*/true)
+          .then(() => resolve(target.substr('file://'.length)))
+          .catch((error) => reject(error));
     } else {
       const link = document.createElement('a');
       link.href = `data:text/plain;charset:utf-8;base64,${base64.encode(data)}`;
@@ -62,17 +63,20 @@ const download = (filename, data) => {
 
 // Input: a list of path fragments in a Cordova filesystem, a file to write
 //        at the directory given by those fragments, the data to write to it,
-//        and two Promise "resolve/reject" callbacks to execute on completion.
-const fileWriteHelper = (fragments, filename, data, resolve, reject) => {
-  getDirectoryEntry(fragments).then((entry) => {
-    entry.getFile(filename, {create: true}, (file) => {
+//        and an "exclusive" bit that should be set if overwriting the file
+//        is an error.
+// Output: a Promise that resolves to true if the write is successful.
+const fileWriteHelper = (fragments, filename, data, exclusive) => {
+  const directory = getDirectoryEntry(fragments);
+  return directory.then((entry) => new Promise((resolve, reject) => {
+    entry.getFile(filename, {create: true, exclusive: exclusive}, (file) => {
       file.createWriter((writer) => {
         writer.onerror = reject;
         writer.onwriteend = () => resolve(true);
         writer.write(new Blob([data]), {type: 'text/plain'});
       }, reject);
-    }, reject);
-  }).catch(reject);
+    }, (error) => reject(exclusive ? 'Error: file already exists.' : error));
+  }));
 }
 
 const isImportedAsset = (asset) => {
@@ -136,7 +140,7 @@ const readAsset = (path) => {
 
 // Input: a single Chinese character
 // Output: a Promise that resolves to that character's data, with all of the
-// data required in writeCharacter, below
+//         data required in writeCharacter, below
 const readCharacter = (character) => {
   if (!character) return Promise.reject('No character provided.');
   const path = `characters/${character.codePointAt(0)}`;
@@ -238,7 +242,8 @@ const writeAsset = (path, data) => {
         const prefix = [cordova.file.dataDirectory, 'www', 'assets'];
         const fragments = prefix.concat(path.split('/'));
         const filename = fragments.pop();
-        fileWriteHelper(fragments, filename, data, resolve, reject);
+        fileWriteHelper(fragments, filename, data, /*exclusive=*/false)
+            .then(resolve).catch(reject);
       } catch (e) {
         reject(e);
       }
