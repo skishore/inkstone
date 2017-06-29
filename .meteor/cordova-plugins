@@ -1,2 +1,3 @@
-cordova-plugin-file@4.2.0
-cordova-plugin-inappbrowser@1.4.0
+cordova-plugin-file@4.3.3
+cordova-plugin-inappbrowser@1.7.1
+cordova-plugin-meteor-webapp@1.4.1
