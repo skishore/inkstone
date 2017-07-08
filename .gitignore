@@ -1,0 +1,8 @@
+*.pyc
+*.swp
+.DS_Store
+.build
+.backup
+.electrify
+.sass-cache
+node_modules
