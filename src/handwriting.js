@@ -1,23 +1,11 @@
 /*
  *  Copyright 2016 Shaunak Kishore (kshaunak "at" gmail.com)
  *
- *  This file is part of Inkstone.
- *
- *  Inkstone is free software: you can redistribute it and/or modify
- *  it under the terms of the GNU General Public License as published by
- *  the Free Software Foundation, either version 3 of the License, or
- *  (at your option) any later version.
- *
- *  Inkstone is distributed in the hope that it will be useful,
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *  GNU General Public License for more details.
- *
- *  You should have received a copy of the GNU General Public License
- *  along with Inkstone.  If not, see <http://www.gnu.org/licenses/>.
+ *  This file is part of the Inkstone Handwriting Library. Please contact
+ *  the author (email above) for information on licensing this library.
  */
 
-import {Settings} from '/client/model/settings';
+(function(){
 
 const kCanvasSize = 512;
 
@@ -72,11 +60,11 @@ const convertShapeStyles = (shape, end) => {
 const createCanvas = (element, handwriting) => {
   const canvas = document.createElement('canvas');
   canvas.width = canvas.height = kCanvasSize;
-  canvas.style.width = canvas.style.height = `${element.width()}px`;
-  element.append(canvas);
+  canvas.style.width = canvas.style.height = `${element.clientWidth}px`;
+  element.appendChild(canvas);
 
   const touch_supported = 'ontouchstart' in window;
-  const zoom = kCanvasSize / element.width();
+  const zoom = kCanvasSize / element.clientWidth;
 
   const getPosition = (event) => {
     if (touch_supported) event = event.touches[0];
@@ -173,7 +161,7 @@ const renderCross = (size, container) => {
   container.cache(0, 0, size, size);
 }
 
-// A helper brush class that allows us to draw nice ink facsimiles.
+// A basic brush class that draws a fixed-width stroke.
 
 class BasicBrush {
   constructor(container, point, options) {
@@ -227,13 +215,14 @@ const Layer = {
 
 class Handwriting {
   constructor(element, options) {
+    options = options || {settings: {}};
     this._onclick = options.onclick;
     this._ondouble = options.ondouble;
     this._onstroke = options.onstroke;
-
-    this._settings = {};
-    ['double_tap_speed', 'reveal_order', 'snap_strokes'].forEach(
-        (x) => this._settings[x] = Settings.get(x));
+    this._settings = {
+      double_tap_speed: !!options.settings.double_tap_speed,
+      reveal_order: !!options.settings.reveal_order,
+    };
 
     const canvas = createCanvas(element, this);
     this._stage = new createjs.Stage(canvas);
@@ -260,17 +249,17 @@ class Handwriting {
     }
     this._corner_characters = 0;
     this._drawable = true;
-    this._emplacements = [];
     this._pending_animations = 0;
     this._running_animations = 0;
     this._reset();
   }
   emplace(args) {
-    if (this._settings.snap_strokes) {
-      this._emplace(args);
-    } else {
-      this._emplacements.push(args);
-    }
+    [path, rotate, source, target] = args;
+    const child = pathToShape(path, this._size, kStrokeColor);
+    const endpoint = animate(child, this._size, rotate, source, target);
+    this._layers[Layer.STROKE].children.pop();
+    this._layers[Layer.COMPLETE].addChild(child);
+    this._animate(child, endpoint, 150);
   }
   fade() {
     const stroke = this._layers[Layer.STROKE];
@@ -285,8 +274,6 @@ class Handwriting {
                   () => child.parent.removeChild(child));
   }
   glow(result) {
-    this._emplacements.forEach((args) => this._emplace(args));
-    this._emplacements = [];
     const color = kResultColors[result] || kRevealColor;
     for (let child of this._layers[Layer.COMPLETE].children) {
       convertShapeStyles(child, color);
@@ -365,14 +352,6 @@ class Handwriting {
     this._last_click_timestamp = timestamp;
     handler && handler();
   }
-  _emplace(args) {
-    [path, rotate, source, target] = args;
-    const child = pathToShape(path, this._size, kStrokeColor);
-    const endpoint = animate(child, this._size, rotate, source, target);
-    this._layers[Layer.STROKE].children.pop();
-    this._layers[Layer.COMPLETE].addChild(child);
-    this._animate(child, endpoint, 150);
-  }
   _drawStroke() {
     if (this._stroke.length < 2) {
       return;
@@ -433,4 +412,7 @@ class Handwriting {
   }
 }
 
-export {Handwriting};
+this.inkstone = this.inkstone || {};
+this.inkstone.Handwriting = Handwriting;
+
+})();

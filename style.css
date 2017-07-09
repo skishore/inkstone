@@ -1,0 +1,12 @@
+body {
+  background-color: cornflowerblue;
+  margin: 0;
+  text-align: center;
+}
+
+body > div#demo {
+  background-color: white;
+  margin: 10vh auto;
+  height: 80vh;
+  width: 80vh;
+}
