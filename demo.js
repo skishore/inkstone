@@ -28,8 +28,7 @@ const getUrl = (url) => {
 window.onload = () => {
   const element = document.getElementById('demo');
   if (!element) throw Error('Unable to find #demo element.');
-  Promise.all(Array.from(kDemoWord).map(getCharacterData)).then((data) => {
-    const handwriting = new inkstone.Handwriting(element);
-    const matcher = new inkstone.Matcher(data[0]);
-  }).catch((x) => console.error(x));
+  Promise.all(Array.from(kDemoWord).map(getCharacterData))
+         .then((data) => new inkstone.Teach(data, element))
+         .catch((x) => console.error(x));
 }

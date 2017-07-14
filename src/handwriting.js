@@ -215,12 +215,13 @@ const Layer = {
 
 class Handwriting {
   constructor(element, options) {
-    options = options || {settings: {}};
+    options = options || {};
+    options.settings = options.settings || {};
     this._onclick = options.onclick;
     this._ondouble = options.ondouble;
     this._onstroke = options.onstroke;
     this._settings = {
-      double_tap_speed: !!options.settings.double_tap_speed,
+      double_tap_speed: options.settings.double_tap_speed || 500,
       reveal_order: !!options.settings.reveal_order,
     };
 
@@ -253,8 +254,7 @@ class Handwriting {
     this._running_animations = 0;
     this._reset();
   }
-  emplace(args) {
-    [path, rotate, source, target] = args;
+  emplace(path, rotate, source, target) {
     const child = pathToShape(path, this._size, kStrokeColor);
     const endpoint = animate(child, this._size, rotate, source, target);
     this._layers[Layer.STROKE].children.pop();

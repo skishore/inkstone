@@ -80,7 +80,7 @@ class Matcher {
     }
     // Run a corner detection algorithm tuned for recall to simplify the
     // medians of the user's strokes.
-    stroke = (new inkstone.matcher.Shortstraw).run(stroke);
+    stroke = (new Shortstraw).run(stroke);
 
     let best_result = {indices: [], score: -Infinity};
     this._candidates.forEach((candidate, i) => {

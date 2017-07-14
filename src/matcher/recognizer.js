@@ -145,6 +145,6 @@ const scorePairing = (source, target, is_initial_segment) => {
 this.inkstone = this.inkstone || {};
 this.inkstone.matcher = this.inkstone.matcher || {};
 this.inkstone.matcher.match = match;
-this.inkstone.matcher.recognizer = recognize;
+this.inkstone.matcher.recognize = recognize;
 
 })();
