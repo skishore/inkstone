@@ -26,6 +26,9 @@ const getUrl = (url) => {
 }
 
 window.onload = () => {
+  const header = document.getElementById('header');
+  if (!header) throw Error('Unable to find #header element.');
+  header.innerText = 'Write hello (nĭhăo) below:';
   const element = document.getElementById('demo');
   if (!element) throw Error('Unable to find #demo element.');
   Promise.all(Array.from(kDemoWord).map(getCharacterData))
