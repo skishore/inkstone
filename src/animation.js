@@ -36,10 +36,16 @@ const addGlobalStyleForAnimations = (animations) => {
       }
     `);
   }
+  const head = document.getElementsByTagName('head')[0];
+  if (!head) throw new Error('Unable to locate <head> element!');
+  const global_style_id = `${kIdPrefix}-global-style`;
+  const previous = document.getElementById(global_style_id);
+  if (previous) head.removeChild(previous);
   const style = document.createElement('style');
+  style.id = global_style_id;
   style.innerHTML = rules.join('');
   style.type = 'text/css';
-  document.getElementsByTagName('head')[0].appendChild(style);
+  head.appendChild(style);
 }
 
 const counter = (() => { let x = 0; return () => x++; })();
@@ -116,6 +122,8 @@ const getAnimationData = (strokes, medians, options) => {
 // Builds a stroke-order animation and inserts it over the given DOM element.
 // This code is a line-by-line translation of the Meteor animation template in
 // in the base Inkstone code, but here, we are working without frameworks.
+//
+// Returns a Promise that resolves when the animation is complete.
 const animate = (character, element) => {
   const prefix = `${kIdPrefix}-${counter()}`;
   const data = getAnimationData(
@@ -127,10 +135,13 @@ const animate = (character, element) => {
     viewBox: '0 0 1024 1024',
     width: element.clientWidth,
   });
+  svg.style.position = 'absolute';
+  svg.style.left = svg.style.top = 0;
   const g = createSVGNode('g', {transform: 'scale(1, -1) translate(0, -900)'});
   for (const stroke of data.strokes) {
     g.appendChild(createSVGNode('path', {d: stroke, fill: 'lightgray'}));
   }
+  let last_animation = null;
   for (const animation of data.animations) {
     const clipPath = createSVGNode('clipPath', {id: animation.clip_id});
     clipPath.appendChild(createSVGNode('path', {d: animation.stroke}));
@@ -143,10 +154,16 @@ const animate = (character, element) => {
       'stroke-dasharray': `${animation.length} ${animation.spacing}`,
       'stroke-linecap': 'round',
     });
+    last_animation = path;
     g.appendChild(path);
   }
   svg.appendChild(g);
   element.appendChild(svg);
+
+  if (!last_animation) return new Promise.resolve();
+  return new Promise((resolve, reject) => {
+    last_animation.addEventListener('animationend', resolve);
+  });
 }
 
 this.inkstone = this.inkstone || {};

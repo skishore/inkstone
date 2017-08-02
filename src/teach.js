@@ -10,6 +10,11 @@
 const kMaxMistakes = 3;
 const kMaxPenalties = 4;
 
+// Returns a Promise that resolves after the given time, in milliseconds.
+const delay = (duration) => new Promise((resolve, reject) => {
+  setTimeout(resolve, duration);
+});
+
 const getResult = (x) => Math.min(Math.floor(2 * x / kMaxPenalties) + 1, 3);
 
 class Character {
@@ -114,19 +119,36 @@ class Teach {
       ondouble: this.onDouble.bind(this),
       onstroke: this.onStroke.bind(this),
     };
+    this.animating/*:boolean*/ = false;
     this.character/*:Character|null*/ = null;
     this.data/*:Array<CharacterData>*/ = data;
+    this.element/*:HTMLElement*/ = element;
     this.handwriting = new inkstone.Handwriting(element, handlers);
     this.mistakes/*:Array<number>*/ = [];
-    this.onClick();
+    this.maybeAdvance();
   }
   // Private methods - these methods should not be called by clients.
   maybeAdvance() {
+    if (this.animating) return;
     if (this.mistakes.length === this.data.length) return;
-    if (this.mistakes.length > 0) this.handwriting.moveToCorner();
+
+    // Perform the animation of moving the character to the corner,
+    // followed by the animation demonstrating the next character.
+    this.animating = true;
+    const corner = this.mistakes.length > 0 ?
+        this.handwriting.moveToCorner().then(() => delay(150)) :
+        Promise.resolve();
     const data = this.data[this.mistakes.length];
-    const ondone = this.onCharacterDone.bind(this);
-    this.character = new Character(data, this.handwriting, ondone);
+    const demo = corner.then(() => inkstone.animate(data, this.element));
+
+    // After all animations are done, let the user write the next character.
+    demo.then(() => {
+      this.animating = false;
+      Array.from(this.element.getElementsByTagName('svg'))
+           .map((x) => this.element.removeChild(x));
+      const ondone = this.onCharacterDone.bind(this);
+      this.character = new Character(data, this.handwriting, ondone);
+    });
   }
   onCharacterDone(mistakes) {
     this.character = null;

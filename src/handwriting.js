@@ -297,6 +297,8 @@ class Handwriting {
       this._animate(child, {alpha: 1}, 150);
     }
   }
+  // Moves the current character to the corner of the canvas. Returns a
+  // Promise that resolves when the animation is complete.
   moveToCorner() {
     const children = this._layers[Layer.COMPLETE].children.slice();
     const container = new createjs.Container();
@@ -306,9 +308,11 @@ class Handwriting {
     const endpoint = {scaleX: kCornerSize, scaleY: kCornerSize};
     endpoint.x = kCornerSize * this._size * this._corner_characters;
     this._layers[Layer.CORNER].addChild(container);
-    this._animate(container, endpoint, 150);
     this._corner_characters += 1;
     this._drawable = true;
+    return new Promise((resolve, reject) => {
+      this._animate(container, endpoint, 150, resolve);
+    });
   }
   reveal(paths) {
     const layer = this._layers[Layer.WATERMARK];
