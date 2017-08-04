@@ -2,6 +2,8 @@ const kDemoWord = '你好';
 
 const kOptions = {
   display: {
+    animation_color: '#00c0ff',
+    animation_speed: 1,
     drawing_color: '#888888',
     hint_color: '#00c0ff',
     font_color: '#00c0ff',

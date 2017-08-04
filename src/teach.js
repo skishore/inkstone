@@ -129,6 +129,8 @@ class Teach {
   //
   //  - options: an options dictionary, with the following keys:
   //    - display: an object with the keys:
+  //      - animation_color: CSS color of stroke animation
+  //      - animation_speed: Speed of stroke animation
   //      - hint_color: CSS color of stroke hints
   //      - drawing_color: CSS color of user input
   //      - font_color: CSS color of hint text
@@ -215,7 +217,8 @@ class Teach {
     // then allow the user to write the character themselves.
     this.animating = true;
     const animation = this.cursor.repetition < mode.demo ?
-        inkstone.animate(data, this.element) : Promise.resolve();
+        inkstone.animate(data, this.element, this.options.display) :
+        Promise.resolve();
     animation.then(() => {
       this.animating = false;
       Array.from(this.element.getElementsByTagName('svg'))

@@ -8,24 +8,24 @@
 const kIdPrefix = 'inkstone-stroke-order-animation';
 const kWidth = 128;
 
-const addGlobalStyleForAnimations = (animations) => {
+const addGlobalStyleForAnimations = (animations, options) => {
   const rules = [];
   for (const animation of animations) {
     rules.push(`
       @keyframes ${animation.keyframes} {
         from {
-          stroke: #0098f8;
+          stroke: ${options.animation_color};
           stroke-dashoffset: ${animation.offset};
           stroke-width: ${animation.width};
         }
         ${animation.fraction} {
           animation-timing-function: step-end;
-          stroke: #0098f8;
+          stroke: ${options.animation_color};
           stroke-dashoffset: 0;
           stroke-width: ${animation.width};
         }
         to {
-          stroke: black;
+          stroke: ${options.stroke_color};
           stroke-width: 1024;
         }
       }
@@ -124,11 +124,15 @@ const getAnimationData = (strokes, medians, options) => {
 // in the base Inkstone code, but here, we are working without frameworks.
 //
 // Returns a Promise that resolves when the animation is complete.
-const animate = (character, element) => {
+const animate = (character, element, options) => {
   const prefix = `${kIdPrefix}-${counter()}`;
-  const data = getAnimationData(
-      character.strokes, character.medians, {prefix: prefix});
-  addGlobalStyleForAnimations(data.animations);
+  const data = getAnimationData(character.strokes, character.medians, {
+    initial_delay: 0.9 / options.animation_speed,
+    per_stroke_delay: 0.3 / options.animation_speed,
+    prefix: prefix,
+    speed: options.animation_speed * 0.03,
+  });
+  addGlobalStyleForAnimations(data.animations, options);
   const svg = createSVGNode('svg', {
     height: element.clientWidth,
     version: '1.1',
@@ -139,7 +143,10 @@ const animate = (character, element) => {
   svg.style.left = svg.style.top = 0;
   const g = createSVGNode('g', {transform: 'scale(1, -1) translate(0, -900)'});
   for (const stroke of data.strokes) {
-    g.appendChild(createSVGNode('path', {d: stroke, fill: 'lightgray'}));
+    g.appendChild(createSVGNode('path', {
+      d: stroke,
+      fill: options.watermark_color,
+    }));
   }
   let last_animation = null;
   for (const animation of data.animations) {
