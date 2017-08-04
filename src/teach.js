@@ -41,7 +41,7 @@ class Character {
     // The user's input does not match any of the character's strokes.
     if (result.indices.length === 0) {
       this.attempts += 1;
-      this.handwriting.fade();
+      this.handwriting.fadeStroke();
       if (this.attempts >= kMaxAttempts) {
         this.mistakes += 1;
         this.handwriting.flash(this.data.strokes[this.missing[0]]);
@@ -168,6 +168,7 @@ class Teach {
       this.cursor.nextMode();
       this.nextMode();
     } else if (this.cursor.repetition + 1 < mode.repeat) {
+      this.handwriting.warn('Again!');
       this.cursor.nextRepetition();
       this.nextRepetition();
     } else if (this.cursor.character + 1 < this.data.length) {
@@ -208,7 +209,7 @@ class Teach {
       this.animating = false;
       Array.from(this.element.getElementsByTagName('svg'))
            .map((x) => this.element.removeChild(x));
-      this.handwriting.clear();
+      this.handwriting.fadeCharacter();
       const ondone = this.onCharacterDone.bind(this);
       this.character = new Character(data, this.handwriting, ondone);
       if (this.cursor.repetition < mode.watermark) {

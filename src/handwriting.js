@@ -260,7 +260,15 @@ class Handwriting {
     this._layers[Layer.COMPLETE].addChild(child);
     this._animate(child, endpoint, 150);
   }
-  fade() {
+  fadeCharacter() {
+    const children = this._layers[Layer.COMPLETE].children;
+    while (children.length > 0) {
+      this._layers[Layer.WATERMARK].addChild(children.shift());
+    }
+    this._fadeWatermark(150);
+    this._drawable = true;
+  }
+  fadeStroke() {
     const stroke = this._layers[Layer.STROKE];
     const child = stroke.children[stroke.children.length - 1];
     this._animate(child, {alpha: 0}, 150,
@@ -342,7 +350,7 @@ class Handwriting {
     if (this._stroke.length < 2) {
       return;
     }
-    this._fadeWatermark();
+    this._fadeWatermark(1500);
     const n = this._stroke.length;
     if (!this._brush) {
       const layer = this._layers[Layer.STROKE];
@@ -368,13 +376,14 @@ class Handwriting {
     handler();
     this._reset();
   }
-  _fadeWatermark() {
+  _fadeWatermark(delay) {
     const children = this._layers[Layer.WATERMARK].children;
-    if (children.length === 0) return;
-    const child = children.pop();
-    this._layers[Layer.FADE].addChild(child);
-    this._animate(child, {alpha: 0}, 1500,
-                  () => child.parent && child.parent.removeChild(child));
+    while (children.length > 0) {
+      const child = children.pop();
+      this._layers[Layer.FADE].addChild(child);
+      this._animate(child, {alpha: 0}, delay,
+                    () => child.parent && child.parent.removeChild(child));
+    }
   }
   _pushPoint(point) {
     if (point[0] != null && point[1] != null) {
