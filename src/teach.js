@@ -15,7 +15,9 @@ const delay = (duration) => new Promise((resolve, reject) => {
   setTimeout(resolve, duration);
 });
 
-const getResult = (x) => Math.min(Math.floor(2 * x / kMaxMistakes) + 1, 3);
+// Compute a result given the number of mistakes the user made. The result
+// can be 0 (GOOD), 1 (FAIR), or 2 (POOR).
+const getResult = (x) => Math.min(Math.floor(2 * x / kMaxMistakes), 2);
 
 class Character {
   constructor(data, handwriting, ondone, options) {
@@ -129,10 +131,12 @@ class Teach {
   //    - display: an object with the keys:
   //      - hint_color: CSS color of stroke hints
   //      - drawing_color: CSS color of user input
-  //      - stroke_color: CSS color of completed strokes
-  //      - watermark_color: CSS color of the watermark
   //      - font_color: CSS color of hint text
   //      - font_size: CSS size of hint text
+  //      - result_colors: List of three CSS colors for GOOD, FAIR, and POOR
+  //                       drawing performance, respectively
+  //      - stroke_color: CSS color of completed strokes
+  //      - watermark_color: CSS color of the watermark
   //    - listener: callback that we will pass events of the following types:
   //      - {type: 'mode', character: string, mistakes: number, mode: number}
   //      - {type: 'done'}

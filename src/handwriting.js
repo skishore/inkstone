@@ -16,9 +16,6 @@ const kStrokeWidth = 1 / 32;
 
 const kDoubleTapSpeed = 500;
 
-// Colors for EXCELLENT, GOOD, FAIR, and POOR result values.
-const kResultColors = ['#84b4d8', '#88c874', '#c0c080', '#e87878'];
-
 let ticker = null;
 
 // Helper methods used by the handwriting class.
@@ -274,7 +271,7 @@ class Handwriting {
                   () => child.parent.removeChild(child));
   }
   glow(result) {
-    const color = kResultColors[result] || this.options.watermark_color;
+    const color = this.options.result_colors[result];
     for (let child of this._layers[Layer.COMPLETE].children) {
       convertShapeStyles(child, color);
     }

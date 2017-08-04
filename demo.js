@@ -4,10 +4,11 @@ const kOptions = {
   display: {
     drawing_color: '#888888',
     hint_color: '#00c0ff',
-    stroke_color: '#000000',
-    watermark_color: '#cccccc',
     font_color: '#00c0ff',
     font_size: '48px',
+    result_colors: ['#88c874', '#c0c080', '#e87878'],
+    stroke_color: '#000000',
+    watermark_color: '#cccccc',
   },
   listener: (x) => console.log(x),
   messages: {
