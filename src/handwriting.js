@@ -222,7 +222,6 @@ class Handwriting {
     this._onstroke = options.onstroke;
     this._settings = {
       double_tap_speed: options.settings.double_tap_speed || 500,
-      reveal_order: !!options.settings.reveal_order,
     };
 
     const canvas = createCanvas(element, this);
@@ -278,24 +277,7 @@ class Handwriting {
     for (let child of this._layers[Layer.COMPLETE].children) {
       convertShapeStyles(child, color);
     }
-    this.highlight();
     this._drawable = false;
-  }
-  highlight(path) {
-    if (this._layers[Layer.WATERMARK].children.length === 0 ||
-        !this._settings.reveal_order) {
-      return;
-    }
-    const layer = this._layers[Layer.HIGHLIGHT];
-    for (let child of layer.children) {
-      this._animate(child, {alpha: 0}, 150, () => layer.removeChild(child));
-    }
-    if (path) {
-      const child = pathToShape(path, this._size, kHintColor);
-      child.alpha = 0;
-      layer.addChild(child);
-      this._animate(child, {alpha: 1}, 150);
-    }
   }
   // Moves the current character to the corner of the canvas. Returns a
   // Promise that resolves when the animation is complete.
@@ -360,9 +342,7 @@ class Handwriting {
     if (this._stroke.length < 2) {
       return;
     }
-    if (!this._settings.reveal_order) {
-      this._fadeWatermark();
-    }
+    this._fadeWatermark();
     const n = this._stroke.length;
     if (!this._brush) {
       const layer = this._layers[Layer.STROKE];
