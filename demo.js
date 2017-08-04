@@ -1,5 +1,26 @@
 const kDemoWord = '你好';
 
+const kOptions = {
+  listener: (x) => console.log(x),
+  modes: [
+    {
+      repeat: 2,
+      watermark: 1,
+      demo: 0,
+      single_tap: 2,
+      double_tap: 2,
+      max_mistakes: 4,
+    }, {
+      repeat: 2,
+      watermark: 2,
+      demo: 2,
+      single_tap: Infinity,
+      double_tap: Infinity,
+      max_mistakes: Infinity,
+    },
+  ],
+};
+
 // Takes a Chinese character and returns a Promise that will resolve to the
 // data for that to that character. This method may be replaced by other
 // asset-loading mechanisms in real deployments of this library.
@@ -32,6 +53,6 @@ window.onload = () => {
   const element = document.getElementById('demo');
   if (!element) throw Error('Unable to find #demo element.');
   Promise.all(Array.from(kDemoWord).map(getCharacterData))
-         .then((data) => new inkstone.Teach(data, element))
+         .then((data) => new inkstone.Teach(data, element, kOptions))
          .catch((x) => console.error(x));
 }

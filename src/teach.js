@@ -7,44 +7,43 @@
 
 (function(){
 
-const kMaxMistakes = 3;
-const kMaxPenalties = 4;
+const kMaxAttempts = 3;
+const kMaxMistakes = 4;
 
 // Returns a Promise that resolves after the given time, in milliseconds.
 const delay = (duration) => new Promise((resolve, reject) => {
   setTimeout(resolve, duration);
 });
 
-const getResult = (x) => Math.min(Math.floor(2 * x / kMaxPenalties) + 1, 3);
+const getResult = (x) => Math.min(Math.floor(2 * x / kMaxMistakes) + 1, 3);
 
 class Character {
   constructor(data, handwriting, ondone) {
+    this.attempts/*:number*/ = 0;
     this.data/*:CharacterData*/ = data;
     this.handwriting/*:Handwriting*/ = handwriting;
     this.matcher/*:Matcher*/ = new inkstone.Matcher(data);
     this.missing/*:Array<number>*/ = _.range(data.strokes.length);
     this.mistakes/*:number*/ = 0;
-    this.penalties/*:number*/ = 0;
     this.ondone/*:(mistakes: number) => void*/ = ondone;
   }
   onClick() {
-    this.penalties += kMaxPenalties;
+    this.mistakes += 2;
     this.handwriting.flash(this.data.strokes[this.missing[0]]);
   }
   onDouble() {
-    if (this.penalties < kMaxPenalties) return;
+    if (this.mistakes === 0) return;
     this.handwriting.reveal(this.data.strokes);
-    this.handwriting.highlight(this.data.strokes[this.missing[0]]);
   }
   onStroke(stroke) {
     const result = this.matcher.match(stroke, this.missing);
 
     // The user's input does not match any of the character's strokes.
     if (result.indices.length === 0) {
-      this.mistakes += 1;
+      this.attempts += 1;
       this.handwriting.fade();
-      if (this.mistakes >= kMaxMistakes) {
-        this.penalties += kMaxPenalties;
+      if (this.attempts >= kMaxAttempts) {
+        this.mistakes += 1;
         this.handwriting.flash(this.data.strokes[this.missing[0]]);
       }
       return;
@@ -56,7 +55,7 @@ class Character {
 
     // The user's input matches strokes that were already drawn.
     if (missing.length === this.missing.length) {
-      this.penalties += 1;
+      this.mistakes += 1;
       this.handwriting.undo();
       this.handwriting.flash(path);
       return;
@@ -68,7 +67,7 @@ class Character {
     this.handwriting.emplace(path, rotate, result.source_segment,
                              result.target_segment);
     if (result.warning) {
-      this.penalties += result.penalties;
+      this.mistakes += 1;
       this.handwriting.warn(result.warning);
     }
 
@@ -76,14 +75,41 @@ class Character {
     // drew a stroke out of order, penalize them and give them a hint.
     const index = _.min(result.indices);
     if (this.missing.length === 0) {
-      this.handwriting.glow(getResult(this.penalties));
-      this.ondone(this.penalties);
+      this.handwriting.glow(getResult(this.mistakes));
+      this.ondone(this.mistakes);
     } else if (this.missing[0] < index) {
-      this.penalties += 2 * (index - this.missing[0]);
+      this.mistakes += 2 * (index - this.missing[0]);
       this.handwriting.flash(this.data.strokes[this.missing[0]]);
     } else {
-      this.mistakes = 0;
-      this.handwriting.highlight(this.data.strokes[this.missing[0]]);
+      this.attempts = 0;
+    }
+  }
+}
+
+class Cursor {
+  constructor() {
+    this.reset();
+  }
+  nextCharacter() {
+    this.reset({character: this.character + 1});
+  }
+  nextMode() {
+    this.reset({character: this.character, mode: this.mode + 1});
+  }
+  nextRepetition() {
+    this.repetition += 1;
+  }
+  reset(values) {
+    this.character = 0;
+    this.mode = 0;
+    this.repetition = 0;
+    this.num_single_taps = 0;
+    this.num_double_taps = 0;
+    this.num_mistakes = 0;
+    if (values) {
+      for (const key in values) {
+        this[key] = values[key];
+      }
     }
   }
 }
@@ -105,6 +131,9 @@ class Teach {
   //      - drawing_color: CSS color of user input
   //      - font_color: CSS color of hint text
   //      - font_size: CSS size of hint text
+  //    - listener: callback that we will pass events of the following types:
+  //      - {type: 'mode', character: string, mistakes: number, mode: number}
+  //      - {type: 'done'}
   //    - modes: an Array of drawing modes, which are objects with keys:
   //      - repeat: the number of times to repeat a character in that mode
   //      - watermark: the number of repetitions with a watermark
@@ -121,47 +150,105 @@ class Teach {
     };
     this.animating/*:boolean*/ = false;
     this.character/*:Character|null*/ = null;
+    this.cursor = new Cursor();
     this.data/*:Array<CharacterData>*/ = data;
     this.element/*:HTMLElement*/ = element;
     this.handwriting = new inkstone.Handwriting(element, handlers);
-    this.mistakes/*:Array<number>*/ = [];
-    this.maybeAdvance();
+    this.listener/*Function|null*/ = options.listener;
+    this.modes/*:Array<Mode>*/ = options.modes;
+    this.nextCharacter();
   }
   // Private methods - these methods should not be called by clients.
   maybeAdvance() {
-    if (this.animating) return;
-    if (this.mistakes.length === this.data.length) return;
-
+    if (this.animating || this.character) return;
+    const mode = this.modes[this.cursor.mode];
+    if (this.cursor.mode + 1 < this.modes.length &&
+        this.cursor.num_mistakes >= mode.max_mistakes) {
+      this.recordStep();
+      this.cursor.nextMode();
+      this.nextMode();
+    } else if (this.cursor.repetition + 1 < mode.repeat) {
+      this.cursor.nextRepetition();
+      this.nextRepetition();
+    } else if (this.cursor.character + 1 < this.data.length) {
+      this.recordStep();
+      this.cursor.nextCharacter();
+      this.nextCharacter();
+    } else if (this.listener) {
+      this.recordStep();
+      this.listener({type: 'done'});
+      this.listener = null;
+    }
+  }
+  nextCharacter() {
     // Perform the animation of moving the character to the corner,
-    // followed by the animation demonstrating the next character.
+    // then start on the first repetition of the next character.
     this.animating = true;
-    const corner = this.mistakes.length > 0 ?
+    const animation = this.cursor.character > 0 ?
         this.handwriting.moveToCorner().then(() => delay(150)) :
         Promise.resolve();
-    const data = this.data[this.mistakes.length];
-    const demo = corner.then(() => inkstone.animate(data, this.element));
+    animation.then(() => {
+      this.animating = false;
+      this.nextRepetition();
+    });
+  }
+  nextMode() {
+    this.nextRepetition();
+  }
+  nextRepetition() {
+    const data = this.data[this.cursor.character];
+    const mode = this.modes[this.cursor.mode];
 
-    // After all animations are done, let the user write the next character.
-    demo.then(() => {
+    // Perform the animation demonstrating the character's stroke order,
+    // then allow the user to write the character themselves.
+    this.animating = true;
+    const animation = this.cursor.repetition < mode.demo ?
+        inkstone.animate(data, this.element) : Promise.resolve();
+    animation.then(() => {
       this.animating = false;
       Array.from(this.element.getElementsByTagName('svg'))
            .map((x) => this.element.removeChild(x));
+      this.handwriting.clear();
       const ondone = this.onCharacterDone.bind(this);
       this.character = new Character(data, this.handwriting, ondone);
+      if (this.cursor.repetition < mode.watermark) {
+        this.handwriting.reveal(data.strokes);
+        this.handwriting._stage.update();
+      }
     });
   }
   onCharacterDone(mistakes) {
     this.character = null;
-    this.mistakes.push(mistakes);
+    this.cursor.num_mistakes += mistakes;
   }
   onClick() {
-    this.character ? this.character.onClick() : this.maybeAdvance();
+    if (!this.character) return this.maybeAdvance();
+    const mode = this.modes[this.cursor.mode];
+    if (this.cursor.num_single_taps < mode.single_tap) {
+      this.cursor.num_single_taps += 1;
+      this.character.onClick();
+    }
   }
   onDouble() {
-    this.character ? this.character.onDouble() : this.maybeAdvance();
+    if (!this.character) return this.maybeAdvance();
+    const mode = this.modes[this.cursor.mode];
+    if (this.cursor.num_double_taps < mode.double_tap) {
+      this.cursor.num_double_taps += 1;
+      this.character.onDouble();
+    }
   }
   onStroke(stroke) {
-    this.character ? this.character.onStroke(stroke) : this.maybeAdvance();
+    if (!this.character) return this.maybeAdvance();
+    this.character.onStroke(stroke);
+  }
+  recordStep() {
+    if (!this.listener) return;
+    this.listener({
+      type: 'step',
+      character: this.data[this.cursor.character].character,
+      mistakes: this.cursor.num_mistakes,
+      mode: this.cursor.mode,
+    });
   }
 }
 
