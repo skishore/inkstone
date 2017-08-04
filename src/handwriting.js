@@ -321,6 +321,7 @@ class Handwriting {
     this._reset();
   }
   warn(warning) {
+    if (!warning) return;
     const child = new createjs.Text(warning, '48px Georgia', kHintColor);
     const bounds = child.getBounds();
     child.x = (kCanvasSize - bounds.width) / 2;

@@ -18,7 +18,7 @@ const delay = (duration) => new Promise((resolve, reject) => {
 const getResult = (x) => Math.min(Math.floor(2 * x / kMaxMistakes) + 1, 3);
 
 class Character {
-  constructor(data, handwriting, ondone) {
+  constructor(data, handwriting, ondone, options) {
     this.attempts/*:number*/ = 0;
     this.data/*:CharacterData*/ = data;
     this.handwriting/*:Handwriting*/ = handwriting;
@@ -26,6 +26,7 @@ class Character {
     this.missing/*:Array<number>*/ = _.range(data.strokes.length);
     this.mistakes/*:number*/ = 0;
     this.ondone/*:(mistakes: number) => void*/ = ondone;
+    this.options/*:Options*/ = options;
   }
   onClick() {
     this.mistakes += 2;
@@ -68,7 +69,7 @@ class Character {
                              result.target_segment);
     if (result.warning) {
       this.mistakes += 1;
-      this.handwriting.warn(result.warning);
+      this.handwriting.warn(this.options.messages[result.warning]);
     }
 
     // If the user finished the character, mark it complete. Otherwise, if they
@@ -134,6 +135,10 @@ class Teach {
   //    - listener: callback that we will pass events of the following types:
   //      - {type: 'mode', character: string, mistakes: number, mode: number}
   //      - {type: 'done'}
+  //    - messages: a dictionary providing messages for the following cases:
+  //      - again: "Again!" - used between repetitions
+  //      - should_hook: "Should hook." - used during writing
+  //      - stroke_backward: "Stroke backward." - used during writing
   //    - modes: an Array of drawing modes, which are objects with keys:
   //      - repeat: the number of times to repeat a character in that mode
   //      - watermark: the number of repetitions with a watermark
@@ -152,33 +157,33 @@ class Teach {
     this.character/*:Character|null*/ = null;
     this.cursor = new Cursor();
     this.data/*:Array<CharacterData>*/ = data;
+    this.done/*:boolean*/ = false;
     this.element/*:HTMLElement*/ = element;
     this.handwriting = new inkstone.Handwriting(element, handlers);
-    this.listener/*Function|null*/ = options.listener;
-    this.modes/*:Array<Mode>*/ = options.modes;
+    this.options/*:Options*/ = options;
     this.nextCharacter();
   }
   // Private methods - these methods should not be called by clients.
   maybeAdvance() {
     if (this.animating || this.character) return;
-    const mode = this.modes[this.cursor.mode];
-    if (this.cursor.mode + 1 < this.modes.length &&
+    const mode = this.options.modes[this.cursor.mode];
+    if (this.cursor.mode + 1 < this.options.modes.length &&
         this.cursor.num_mistakes >= mode.max_mistakes) {
       this.recordStep();
       this.cursor.nextMode();
       this.nextMode();
     } else if (this.cursor.repetition + 1 < mode.repeat) {
-      this.handwriting.warn('Again!');
+      this.handwriting.warn(this.options.messages.again);
       this.cursor.nextRepetition();
       this.nextRepetition();
     } else if (this.cursor.character + 1 < this.data.length) {
       this.recordStep();
       this.cursor.nextCharacter();
       this.nextCharacter();
-    } else if (this.listener) {
+    } else if (!this.done) {
       this.recordStep();
-      this.listener({type: 'done'});
-      this.listener = null;
+      this.options.listener({type: 'done'});
+      this.done = true;
     }
   }
   nextCharacter() {
@@ -198,7 +203,7 @@ class Teach {
   }
   nextRepetition() {
     const data = this.data[this.cursor.character];
-    const mode = this.modes[this.cursor.mode];
+    const mode = this.options.modes[this.cursor.mode];
 
     // Perform the animation demonstrating the character's stroke order,
     // then allow the user to write the character themselves.
@@ -211,7 +216,8 @@ class Teach {
            .map((x) => this.element.removeChild(x));
       this.handwriting.fadeCharacter();
       const ondone = this.onCharacterDone.bind(this);
-      this.character = new Character(data, this.handwriting, ondone);
+      this.character = new Character(
+          data, this.handwriting, ondone, this.options);
       if (this.cursor.repetition < mode.watermark) {
         this.handwriting.reveal(data.strokes);
         this.handwriting._stage.update();
@@ -224,7 +230,7 @@ class Teach {
   }
   onClick() {
     if (!this.character) return this.maybeAdvance();
-    const mode = this.modes[this.cursor.mode];
+    const mode = this.options.modes[this.cursor.mode];
     if (this.cursor.num_single_taps < mode.single_tap) {
       this.cursor.num_single_taps += 1;
       this.character.onClick();
@@ -232,7 +238,7 @@ class Teach {
   }
   onDouble() {
     if (!this.character) return this.maybeAdvance();
-    const mode = this.modes[this.cursor.mode];
+    const mode = this.options.modes[this.cursor.mode];
     if (this.cursor.num_double_taps < mode.double_tap) {
       this.cursor.num_double_taps += 1;
       this.character.onDouble();
@@ -243,8 +249,7 @@ class Teach {
     this.character.onStroke(stroke);
   }
   recordStep() {
-    if (!this.listener) return;
-    this.listener({
+    this.options.listener && this.options.listener({
       type: 'step',
       character: this.data[this.cursor.character].character,
       mistakes: this.cursor.num_mistakes,

@@ -2,6 +2,11 @@ const kDemoWord = '你好';
 
 const kOptions = {
   listener: (x) => console.log(x),
+  messages: {
+    again: 'Again!',
+    should_hook: 'Should hook.',
+    stroke_backward: 'Stroke backward.',
+  },
   modes: [
     {
       repeat: 2,

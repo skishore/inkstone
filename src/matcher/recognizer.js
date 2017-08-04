@@ -107,7 +107,7 @@ const performAlignment = (source, target) => {
       result.score = score;
       result.source = [source[0], source[source.length - 1]];
       result.target = [target[0], target[i]];
-      result.warning = i < target.length - 1 ? 'Should hook.' : null;
+      result.warning = i < target.length - 1 ? 'should_hook' : null;
     }
   }
   return result;
@@ -122,7 +122,7 @@ const recognize = (source, target, offset) => {
       result = alternative;
       result.penalties += 1;
       result.score -= kReversePenalty;
-      result.warning = 'Stroke backward.';
+      result.warning = 'stroke_backward';
     }
   }
   result.score -= Math.abs(offset) * kOutOfOrderPenalty;
