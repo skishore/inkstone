@@ -1,6 +1,14 @@
 const kDemoWord = '你好';
 
 const kOptions = {
+  display: {
+    drawing_color: '#888888',
+    hint_color: '#00c0ff',
+    stroke_color: '#000000',
+    watermark_color: '#cccccc',
+    font_color: '#00c0ff',
+    font_size: '48px',
+  },
   listener: (x) => console.log(x),
   messages: {
     again: 'Again!',

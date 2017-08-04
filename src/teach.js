@@ -125,11 +125,12 @@ class Teach {
   //  - element: a DOM node to construct the UI within. The height and width
   //             of the handwriting UI will be taken from this DOM element.
   //
-  //  - options: an options dictionary, with any subset of the following keys:
+  //  - options: an options dictionary, with the following keys:
   //    - display: an object with the keys:
-  //      - stroke_color: CSS color of drawn stroke
   //      - hint_color: CSS color of stroke hints
   //      - drawing_color: CSS color of user input
+  //      - stroke_color: CSS color of completed strokes
+  //      - watermark_color: CSS color of the watermark
   //      - font_color: CSS color of hint text
   //      - font_size: CSS size of hint text
   //    - listener: callback that we will pass events of the following types:
@@ -159,7 +160,8 @@ class Teach {
     this.data/*:Array<CharacterData>*/ = data;
     this.done/*:boolean*/ = false;
     this.element/*:HTMLElement*/ = element;
-    this.handwriting = new inkstone.Handwriting(element, handlers);
+    this.handwriting = new inkstone.Handwriting(
+        element, handlers, options.display);
     this.options/*:Options*/ = options;
     this.nextCharacter();
   }

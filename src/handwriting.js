@@ -14,10 +14,7 @@ const kCrossWidth = 1 / 256;
 const kMinDistance = 1 / 32;
 const kStrokeWidth = 1 / 32;
 
-const kBrushColor   = '#888888';
-const kHintColor    = '#00c0ff';
-const kRevealColor  = '#cccccc';
-const kStrokeColor  = '#000000';
+const kDoubleTapSpeed = 500;
 
 // Colors for EXCELLENT, GOOD, FAIR, and POOR result values.
 const kResultColors = ['#84b4d8', '#88c874', '#c0c080', '#e87878'];
@@ -166,7 +163,7 @@ const renderCross = (size, container) => {
 class BasicBrush {
   constructor(container, point, options) {
     options = options || {};
-    this._color = options.color || kBrushColor;
+    this._color = options.color || 'black';
     this._width = options.width || 1;
 
     this._shape = new createjs.Shape();
@@ -214,15 +211,11 @@ const Layer = {
 };
 
 class Handwriting {
-  constructor(element, options) {
-    options = options || {};
-    options.settings = options.settings || {};
-    this._onclick = options.onclick;
-    this._ondouble = options.ondouble;
-    this._onstroke = options.onstroke;
-    this._settings = {
-      double_tap_speed: options.settings.double_tap_speed || 500,
-    };
+  constructor(element, handlers, options) {
+    this._onclick = handlers.onclick;
+    this._ondouble = handlers.ondouble;
+    this._onstroke = handlers.onstroke;
+    this.options = options;
 
     const canvas = createCanvas(element, this);
     this._stage = new createjs.Stage(canvas);
@@ -254,7 +247,7 @@ class Handwriting {
     this._reset();
   }
   emplace(path, rotate, source, target) {
-    const child = pathToShape(path, this._size, kStrokeColor);
+    const child = pathToShape(path, this._size, this.options.stroke_color);
     const endpoint = animate(child, this._size, rotate, source, target);
     this._layers[Layer.STROKE].children.pop();
     this._layers[Layer.COMPLETE].addChild(child);
@@ -275,13 +268,13 @@ class Handwriting {
                   () => child.parent.removeChild(child));
   }
   flash(path) {
-    const child = pathToShape(path, this._size, kHintColor);
+    const child = pathToShape(path, this._size, this.options.hint_color);
     this._layers[Layer.HINT].addChild(child);
     this._animate(child, {alpha: 0}, 750,
                   () => child.parent.removeChild(child));
   }
   glow(result) {
-    const color = kResultColors[result] || kRevealColor;
+    const color = kResultColors[result] || this.options.watermark_color;
     for (let child of this._layers[Layer.COMPLETE].children) {
       convertShapeStyles(child, color);
     }
@@ -310,7 +303,7 @@ class Handwriting {
     const container = new createjs.Container();
     for (let path of paths) {
       const child = pathToShape(
-          path, this._size, kRevealColor, true /* uncached */);
+          path, this._size, this.options.watermark_color, /*uncached=*/true);
       container.addChild(child);
     }
     container.cache(0, 0, this._size, this._size);
@@ -322,7 +315,8 @@ class Handwriting {
   }
   warn(warning) {
     if (!warning) return;
-    const child = new createjs.Text(warning, '48px Georgia', kHintColor);
+    const font = `${this.options.font_size} Georgia`;
+    const child = new createjs.Text(warning, font, this.options.font_color);
     const bounds = child.getBounds();
     child.x = (kCanvasSize - bounds.width) / 2;
     child.y = kCanvasSize - 2 * bounds.height;
@@ -341,8 +335,7 @@ class Handwriting {
   }
   _click() {
     const timestamp = new Date().getTime();
-    const double_tap_speed = this._settings.double_tap_speed;
-    const cutoff = (this._last_click_timestamp || 0) + double_tap_speed;
+    const cutoff = (this._last_click_timestamp || 0) + kDoubleTapSpeed;
     const handler = timestamp < cutoff ? this._ondouble : this._onclick;
     this._last_click_timestamp = timestamp;
     handler && handler();
@@ -355,7 +348,10 @@ class Handwriting {
     const n = this._stroke.length;
     if (!this._brush) {
       const layer = this._layers[Layer.STROKE];
-      const options = {width: this._size * kStrokeWidth};
+      const options = {
+        color: this.options.drawing_color,
+        width: this._size * kStrokeWidth,
+      };
       this._brush = new BasicBrush(layer, this._stroke[n - 2], options);
     }
     this._brush.advance(this._stroke[n - 1]);
