@@ -216,6 +216,7 @@ class Teach {
     // Perform the animation demonstrating the character's stroke order,
     // then allow the user to write the character themselves.
     this.animating = true;
+    this.handwriting.fadeCharacter();
     const animation = this.cursor.repetition < mode.demo ?
         inkstone.animate(data, this.element, this.options.display) :
         Promise.resolve();
@@ -223,7 +224,6 @@ class Teach {
       this.animating = false;
       Array.from(this.element.getElementsByTagName('svg'))
            .map((x) => this.element.removeChild(x));
-      this.handwriting.fadeCharacter();
       const ondone = this.onCharacterDone.bind(this);
       this.character = new Character(
           data, this.handwriting, ondone, this.options);
