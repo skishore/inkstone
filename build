@@ -1,0 +1,2 @@
+#!/bin/bash
+find src -name "*.js" | xargs cat | uglifyjs > inkstone.min.js
