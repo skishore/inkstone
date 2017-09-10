@@ -17,7 +17,6 @@ body > div#header {
 body > div#demo {
   background-color: white;
   margin: 0 auto 10vh;
-  position: relative;
   height: 70vh;
   width: 70vh;
 }

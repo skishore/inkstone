@@ -160,14 +160,19 @@ class Teach {
       ondouble: this.onDouble.bind(this),
       onstroke: this.onStroke.bind(this),
     };
+    const inner = document.createElement('div');
+    inner.style.position = 'relative';
+    inner.style.width = inner.style.height = '100%';
+    element.appendChild(inner);
+
     this.animating/*:boolean*/ = false;
     this.character/*:Character|null*/ = null;
     this.cursor = new Cursor();
     this.data/*:Array<CharacterData>*/ = data;
     this.done/*:boolean*/ = false;
-    this.element/*:HTMLElement*/ = element;
+    this.element/*:HTMLElement*/ = inner;
     this.handwriting = new inkstone.Handwriting(
-        element, handlers, options.display);
+        inner, handlers, options.display);
     this.options/*:Options*/ = options;
     this.nextCharacter();
   }
