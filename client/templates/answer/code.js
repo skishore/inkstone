@@ -153,10 +153,10 @@ Meteor.startup(onHashChange);
 
 Template.answer.events({
   'click .animation': resetAnimation,
-  'click .header .back, touchstart .header .back': (event) => {
+  'click .header .back': (event) => {
     Meteor.defer(() => window.location.hash = '');
   },
-  'click .link, touchstart .link': (event) => {
+  'click .link': (event) => {
     const codepoint = $(event.currentTarget).attr('data-codepoint');
     window.location.hash = codepoint;
   },
