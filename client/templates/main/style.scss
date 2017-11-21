@@ -85,7 +85,12 @@ body {
     }
 
     #teach {
-      > .prompt, > .wrapper > .flashcard {
+      > .prompt {
+        box-shadow: 0px 4px 16px rgba(0, 0, 0, 0.5);
+        opacity: 0.92;
+      }
+
+      > .scroller > .wrapper > .flashcard {
         box-shadow: 4px 4px 16px rgba(0, 0, 0, 0.5);
         opacity: 0.92;
       }

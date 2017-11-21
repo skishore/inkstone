@@ -305,13 +305,13 @@ Template.teach.events({
       console.error('Unable to apply option:', this);
     }
   },
-  'click a.control.left': (event) => {
+  'click a.control.home': (event) => {
     // NOTE: We have to go forward here instead of going back because the
     // answer selection page adds spurious history entries for this page.
     Router.go('/');
     event.stopPropagation();
   },
-  'click a.control.right, click .prompt': () => {
+  'click a.control.show': () => {
     if (item.tasks.length === 1) {
       maybeShowAnswerForTask(item.tasks[0]);
     } else if (item.tasks.length > 1) {

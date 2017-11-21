@@ -35,29 +35,37 @@
 }
 
 #teach {
-  > .prompt {
-    background-color: white;
-    position: fixed;
-    text-align: center;
-    width: 100%;
+  > .controls {
+    background-color: $fade-color;
+    overflow: hidden;
+    white-space: nowrap;
+    width: 200vw;
 
     > .control {
-      color: $fade-color;
+      box-sizing: border-box;
+      color: white;
+      float: left;
       font-size: 8 * $font-size / 7;
-      left: 0;
-      padding: 3% 4%;
-      position: absolute;
+      height: 10vw;
+      line-height: 10vw;
+      width: 25vw;
       @include buttonlike;
 
       &:active {
-        color: $link-color;
+        background-color: $link-color;
       }
 
-      &.right {
-        left: auto;
-        right: 0;
+      &:not(:first-child) {
+        border-left: 1px dotted white;
       }
     }
+  }
+
+  > .prompt {
+    background-color: white;
+    position: absolute;
+    text-align: center;
+    width: 100%;
 
     > .pinyin, > .definition {
       font-size: $font-size;
@@ -71,7 +79,7 @@
     width: 100%;
     @include full-size;
     right: auto;
-    top: 37vw;
+    top: 47vw;
 
     > .wrapper {
       transform: translateY(50%);

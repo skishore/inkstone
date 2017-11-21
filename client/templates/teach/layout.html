@@ -19,13 +19,13 @@
 
 <template name="teach">
   <div id="teach">
+    <div class="controls">
+      <a class="control home"><i class="ion-android-home"></i></a>
+      <a class="control redo"><i class="ion-backspace"></i></a>
+      <a class="control blacklist"><i class="ion-close"></i></a>
+      <a class="control show"><i class="ion-search"></i></a>
+    </div>
     <div class="prompt">
-      <a class="control left">
-        <i class="ion-android-home"></i>
-      </a>
-      <a class="control right">
-        <i class="ion-university"></i>
-      </a>
       <div class="pinyin">{{get 'pinyin'}}</div>
       <div class="definition">{{get 'definition'}}</div>
     </div>
