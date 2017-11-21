@@ -253,16 +253,20 @@ class Handwriting {
 
     this.clear();
   }
-  clear() {
+  clear(fade) {
     createjs.Tween.removeAllTweens();
-    for (let layer of this._layers) {
-      layer.removeAllChildren();
-    }
     this._corner_characters = 0;
     this._drawable = true;
     this._emplacements = [];
     this._pending_animations = 0;
     this._running_animations = 0;
+    for (let layer of this._layers) {
+      if (fade) {
+        layer.children.forEach((x) => this._fade(x, 150));
+      } else {
+        layer.removeAllChildren();
+      }
+    }
     this._reset();
   }
   emplace(args) {
@@ -274,15 +278,12 @@ class Handwriting {
   }
   fade() {
     const stroke = this._layers[Layer.STROKE];
-    const child = stroke.children[stroke.children.length - 1];
-    this._animate(child, {alpha: 0}, 150,
-                  () => child.parent.removeChild(child));
+    this._fade(stroke.children[stroke.children.length - 1], 150);
   }
   flash(path) {
     const child = pathToShape(path, this._size, kHintColor);
     this._layers[Layer.HINT].addChild(child);
-    this._animate(child, {alpha: 0}, 750,
-                  () => child.parent.removeChild(child));
+    this._fade(child, 750);
   }
   glow(result) {
     this._emplacements.forEach((args) => this._emplace(args));
@@ -301,7 +302,7 @@ class Handwriting {
     }
     const layer = this._layers[Layer.HIGHLIGHT];
     for (let child of layer.children) {
-      this._animate(child, {alpha: 0}, 150, () => layer.removeChild(child));
+      this._fade(child, 150);
     }
     if (path) {
       const child = pathToShape(path, this._size, kHintColor);
@@ -347,8 +348,7 @@ class Handwriting {
     child.cache(0, 0, this._size, this._size);
     this._layers[Layer.WARNING].removeAllChildren();
     this._layers[Layer.WARNING].addChild(child);
-    this._animate(child, {alpha: 0}, 1500,
-                  () => child.parent && child.parent.removeChild(child));
+    this._fade(child, 1500);
   }
   _animate(shape, target, duration, callback) {
     this._running_animations += 1;
@@ -405,13 +405,16 @@ class Handwriting {
     handler();
     this._reset();
   }
+  _fade(child, delay) {
+    this._animate(child, {alpha: 0}, delay,
+                  () => child.parent && child.parent.removeChild(child));
+  }
   _fadeWatermark() {
     const children = this._layers[Layer.WATERMARK].children;
     if (children.length === 0) return;
     const child = children.pop();
     this._layers[Layer.FADE].addChild(child);
-    this._animate(child, {alpha: 0}, 1500,
-                  () => child.parent && child.parent.removeChild(child));
+    this._fade(child, 1500);
   }
   _pushPoint(point) {
     if (point[0] != null && point[1] != null) {

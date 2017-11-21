@@ -339,6 +339,15 @@ Template.teach.events({
     Router.go('/');
     event.stopPropagation();
   },
+  'click a.control.redo': (event) => {
+    if (!item.card || item.card.deck === 'errors') return;
+    const penalties = item.tasks.map((x) => x.penalties);
+    updateItem(item.card, {characters: item.tasks.map((x) => x.data)});
+    item.tasks.forEach((x, i) => x.penalties = penalties[i]);
+    handwriting.clear(/*fade=*/true);
+    helpers.set('grading', false);
+    element.find('#grading').remove();
+  },
   'click a.control.show': () => {
     if (item.tasks.length === 1) {
       maybeShowAnswerForTask(item.tasks[0]);
