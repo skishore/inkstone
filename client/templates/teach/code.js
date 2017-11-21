@@ -23,6 +23,7 @@ import {readItem} from '/client/assets';
 import {Handwriting} from '/client/handwriting';
 import {Settings} from '/client/model/settings';
 import {Timing} from '/client/model/timing';
+import {Vocabulary} from '/client/model/vocabulary';
 import {Popup} from '/client/templates/popup/code';
 import {Matcher} from '/lib/matcher/matcher';
 
@@ -254,6 +255,23 @@ const updateItem = (card, data) => {
 
 // Meteor template and event bindings follow.
 
+const maybeBlacklistWord = (word) => {
+  const callback = () => {
+    if (Vocabulary.updateBlacklist(word, /*blacklisted=*/true)) {
+      transition();
+      handwriting.clear();
+    }
+    Popup.hide(50);
+  }
+  const buttons = [
+    {callback: callback, label: 'Yes'},
+    {class: 'bold', label: 'No'},
+  ];
+  const text = `Are you sure you want to blacklist this word? ` +
+               'You can remove words from the blacklist on the Lists page.';
+  Popup.show({title: `Confirm Blacklist`, text: text, buttons: buttons});
+}
+
 const maybeShowAnswerForTask = (task) => {
   task = item.tasks[task.index];
   if (!(task.missing.length > 0 && task.penalties < kMaxPenalties)) {
@@ -304,6 +322,10 @@ Template.teach.events({
     } else {
       console.error('Unable to apply option:', this);
     }
+  },
+  'click a.control.blacklist': (event) => {
+    if (!item.card || item.card.deck === 'errors') return;
+    maybeBlacklistWord(item.card.data.word);
   },
   'click a.control.home': (event) => {
     // NOTE: We have to go forward here instead of going back because the
