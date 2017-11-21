@@ -28,7 +28,8 @@
 //  - failed: true if this item should be shown again in the failures deck
 //
 // In addition, vocabulary has a 'blacklist' key whos value is a list of
-// blacklisted words. These words will never be part of the active set.
+// blacklist items. Each blacklist item has the keys 'word', 'pinyin', and
+// 'definition'. Blacklisted words will never be part of the active set.
 //
 // The "updateItem" model method takes a "result" argument which should be a
 // value in the set {0, 1, 2, 3}, with higher numbers indicating that the
@@ -51,7 +52,7 @@ const onload = (value) => {
   cache.blacklist = {};
   cache.chunks = [];
   cache.index = {};
-  (value.blacklist || []).forEach((x) => cache.blacklist[x] = true);
+  (value.blacklist || []).forEach((x) => cache.blacklist[x.word] = x);
   _.range(kNumChunks).forEach((i) => {
     cache.chunks.push(value[i] || []);
     cache.chunks[i].forEach((entry) => {
@@ -149,6 +150,9 @@ class Vocabulary {
     cache.chunks = updated.chunks;
     dirty();
   }
+  static getBlacklistedWords() {
+    return vocabulary.get('blacklist');
+  }
   static getExtraItems(last) {
     return new Cursor((entry) => {
       return entry[kIndices.attempts] === 0 || entry[kIndices.next] < last;
@@ -170,18 +174,19 @@ class Vocabulary {
   static getNewItems() {
     return new Cursor((entry) => entry[kIndices.attempts] === 0);
   }
-  static updateBlacklist(word, blacklisted) {
-    if (!!blacklisted === !!cache.blacklist[word]) return false;
+  static updateBlacklist(item, blacklisted) {
+    const word = item.word;
+    if (!!blacklisted === !!cache.blacklist[word]) return;
     if (blacklisted) {
-      cache.blacklist[word] = true;
+      cache.blacklist[word] = item;
       cache.active = cache.active.filter((x) => x[kIndices.word] !== word);
     } else {
       delete cache.blacklist[word];
       const entry = cache.index[word];
       if (entry && is_active(entry)) cache.active.push(entry);
     }
-    vocabulary.set('blacklist', Object.keys(cache.blacklist));
-    return true;
+    const value = Object.keys(cache.blacklist).map((x) => cache.blacklist[x]);
+    vocabulary.set('blacklist', value);
   }
   static updateItem(item, result, ts) {
     const entry = cache.index[item.word];

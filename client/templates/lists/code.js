@@ -95,6 +95,9 @@ const toListTemplate = (lists) => {
 // Meteor template and event bindings follow.
 
 Template.lists.events({
+  'click .item-button.blacklist': () => {
+    Router.go('manage_blacklist');
+  },
   'click .item-button.delete': () => {
     Router.go('delete_lists');
   },

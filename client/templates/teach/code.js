@@ -213,6 +213,7 @@ const onItemData = (data) => {
   helpers.set('deck', card.deck);
   helpers.set('definition', data.definition);
   helpers.set('pinyin', data.pinyin);
+  helpers.set('word', data.word);
   updateItem(card, data);
 }
 
@@ -257,11 +258,16 @@ const updateItem = (card, data) => {
 
 const maybeBlacklistWord = (word) => {
   const callback = () => {
-    if (Vocabulary.updateBlacklist(word, /*blacklisted=*/true)) {
-      transition();
-      handwriting.clear();
-    }
     Popup.hide(50);
+    const item = {
+      definition: helpers.get('definition'),
+      pinyin: helpers.get('pinyin'),
+      word: helpers.get('word'),
+    };
+    if (!item.word || item.word !== word) return;
+    Vocabulary.updateBlacklist(item, /*blacklisted=*/true);
+    transition();
+    handwriting.clear();
   }
   const buttons = [
     {callback: callback, label: 'Yes'},

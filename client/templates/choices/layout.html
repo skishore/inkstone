@@ -94,3 +94,44 @@
     <div class="option format">See the list data format</div>
   </div>
 </template>
+
+<template name="manage_blacklist">
+  {{#ionic}}
+    {{#contentFor "headerButtonLeft"}}
+      {{> ionNavBackButton text="Done"}}
+    {{/contentFor}}
+    {{#contentFor "headerTitle"}}
+      <h1 class="title">Manage Blacklist</h1>
+    {{/contentFor}}
+    {{#ionList}}
+      <div class="block group list-management-options">
+        {{#ionItem class="item-divider"}}
+          Options
+        {{/ionItem}}
+        {{#if blacklist.length}}
+          {{#ionItem class="all"}}
+            Clear blacklist
+          {{/ionItem}}
+        {{else}}
+          {{#ionItem class="back"}}
+            No blacklisted words. Tap to go back.
+          {{/ionItem}}
+        {{/if}}
+      </div>
+      {{#if blacklist.length}}
+        <div class="block group">
+          {{#ionItem class="item-divider"}}
+            Blacklisted Words
+          {{/ionItem}}
+          {{#each item in blacklist}}
+            {{#ionItem class="list-management-option"}}
+              <div data-word={{item.word}}>
+                {{item.word}} ({{item.pinyin}}) - {{item.definition}}
+              </div>
+            {{/ionItem}}
+          {{/each}}
+        </div>
+      {{/if}}
+    {{/ionList}}
+  {{/ionic}}
+</template>

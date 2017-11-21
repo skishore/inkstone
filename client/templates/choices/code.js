@@ -259,7 +259,8 @@ const submitLocalList = () => {
 
 // Meteor template and event bindings follow.
 
-['delete_lists', 'import_lists'].map((x) => Router.route(x, {template: x}));
+['delete_lists', 'import_lists', 'manage_blacklist'].map(
+    (x) => Router.route(x, {template: x}));
 
 Meteor.startup(() => fetchGitHubLists().then((x) => github_lists.set(x)));
 
@@ -313,5 +314,51 @@ Template.imports.events({
       template: 'import_saved_list',
       title: 'Import a saved list',
     });
+  },
+});
+
+// Logic for handling blacklist management.
+
+const maybeAddAllBlacklistedWords = () => {
+  const callback = () => {
+    Vocabulary.getBlacklistedWords().forEach(
+        (x) => Vocabulary.updateBlacklist(x, /*blacklisted=*/false));
+    Popup.hide(50);
+  }
+  const buttons = [
+    {callback: callback, label: 'Yes'},
+    {class: 'bold', label: 'No'},
+  ];
+  const text = `Add all blacklisted words below back into the deck?`;
+  Popup.show({title: 'Clear Blacklist', text: text, buttons: buttons});
+}
+
+const maybeAddBlacklistedWord = (word) => {
+  const callback = () => {
+    Vocabulary.updateBlacklist({word: word}, /*blacklisted=*/false);
+    Popup.hide(50);
+  }
+  const buttons = [
+    {callback: callback, label: 'Yes'},
+    {class: 'bold', label: 'No'},
+  ];
+  const text = `Add ${word} back into the deck?`;
+  Popup.show({title: 'Remove from Blacklist', text: text, buttons: buttons});
+}
+
+Template.manage_blacklist.helpers({
+  blacklist: () => Vocabulary.getBlacklistedWords(),
+});
+
+Template.manage_blacklist.events({
+  'click .list-management-option': (event) => {
+    const word = $(event.currentTarget).children().attr('data-word');
+    maybeAddBlacklistedWord(word);
+  },
+  'click .list-management-options .all': () => {
+    maybeAddAllBlacklistedWords();
+  },
+  'click .list-management-options .back': () => {
+    history.back();
   },
 });
