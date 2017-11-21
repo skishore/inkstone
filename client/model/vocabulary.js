@@ -27,6 +27,9 @@
 //  - successes: number of times the user has gotten the word right
 //  - failed: true if this item should be shown again in the failures deck
 //
+// In addition, vocabulary has a 'blacklist' key whos value is a list of
+// blacklisted words. These words will never be part of the active set.
+//
 // The "updateItem" model method takes a "result" argument which should be a
 // value in the set {0, 1, 2, 3}, with higher numbers indicating that the
 // user made more errors.
@@ -39,20 +42,26 @@ const kColumns = 'word last next lists attempts successes failed'.split(' ');
 const kIndices = {};
 kColumns.forEach((x, i) => kIndices[x] = i);
 
+const is_active = (entry) =>
+    entry[kIndices.lists].length > 0 &&
+    !cache.blacklist[entry[kIndices.word]];
+
 const onload = (value) => {
   cache.active = [];
+  cache.blacklist = {};
   cache.chunks = [];
   cache.index = {};
+  (value.blacklist || []).forEach((x) => cache.blacklist[x] = true);
   _.range(kNumChunks).forEach((i) => {
     cache.chunks.push(value[i] || []);
     cache.chunks[i].forEach((entry) => {
       cache.index[entry[kIndices.word]] = entry;
-      if (entry[kIndices.lists].length > 0) cache.active.push(entry);
+      if (is_active(entry)) cache.active.push(entry);
     });
   });
 }
 
-const cache  = {active: [], chunks: [], index: {}};
+const cache  = {active: [], blacklist: {}, chunks: [], index: {}};
 const vocabulary = new PersistentDict('vocabulary', onload);
 
 const chunk = (word) => cache.chunks[Math.abs(word.hash()) % kNumChunks];
@@ -114,7 +123,7 @@ class Vocabulary {
     const lists = entry[kIndices.lists];
     if (lists.indexOf(list) < 0) {
       lists.push(list);
-      if (lists.length === 1) cache.active.push(entry);
+      if (lists.length === 1 && is_active(entry)) cache.active.push(entry);
     }
     dirty(word);
   }
@@ -131,7 +140,7 @@ class Vocabulary {
       if (lists.length + entry[kIndices.attempts] > 0) {
         entry[kIndices.lists] = lists;
         updated.chunks[i].push(entry);
-        if (lists.length > 0) updated.active.push(entry);
+        if (is_active(entry)) updated.active.push(entry);
       } else {
         delete cache.index[entry[kIndices.word]];
       }
@@ -160,6 +169,19 @@ class Vocabulary {
   }
   static getNewItems() {
     return new Cursor((entry) => entry[kIndices.attempts] === 0);
+  }
+  static updateBlacklist(word, blacklisted) {
+    if (!!blacklisted === !!cache.blacklist[word]) return false;
+    if (blacklisted) {
+      cache.blacklist[word] = true;
+      cache.active = cache.active.filter((x) => x[kIndices.word] !== word);
+    } else {
+      delete cache.blacklist[word];
+      const entry = cache.index[word];
+      if (entry && is_active(entry)) cache.active.push(entry);
+    }
+    vocabulary.set('blacklist', Object.keys(cache.blacklist));
+    return true;
   }
   static updateItem(item, result, ts) {
     const entry = cache.index[item.word];
