@@ -120,19 +120,6 @@
             }
           }
         }
-
-        > .report-issue {
-          animation: fadeIn 0.1s;
-          color: #aaa;
-          font-size: 2 * $font-size;
-          padding: 4% 0;
-          position: absolute;
-          right: 0;
-          top: 0;
-          width: 16%;
-          -webkit-text-stroke-color: #222;
-          -webkit-text-stroke-width: $font-size / 18;
-        }
       }
     }
   }

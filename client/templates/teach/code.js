@@ -24,7 +24,6 @@ import {Handwriting} from '/client/handwriting';
 import {Settings} from '/client/model/settings';
 import {Timing} from '/client/model/timing';
 import {Popup} from '/client/templates/popup/code';
-import {ReportIssue} from '/client/templates/report-issue/code';
 import {Matcher} from '/lib/matcher/matcher';
 
 let element = null;
@@ -114,9 +113,7 @@ const onRegrade = (result) => {
   handwriting.glow(task.result);
   handwriting._stage.update();
   helpers.set('grading', false);
-  helpers.set('report-issue', false);
   element.find('#grading').remove();
-  element.find('.icon.report-issue').remove();
   maybeAdvance();
 }
 
@@ -137,7 +134,6 @@ const onRequestRegrade = (stroke) => {
   task.result = null;
   handwriting.glow(task.result);
   helpers.set('grading', true);
-  helpers.set('report-issue', !Meteor.isCordova);
   return true;
 }
 
@@ -308,11 +304,6 @@ Template.teach.events({
     } else {
       console.error('Unable to apply option:', this);
     }
-  },
-  'click .flashcard > .report-issue': (event) => {
-    const task = item.tasks[item.index];
-    if (!task || task.missing.length > 0 || task.result !== null) return;
-    ReportIssue.show(task.data, task.recording);
   },
   'click a.control.left': (event) => {
     // NOTE: We have to go forward here instead of going back because the
