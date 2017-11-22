@@ -26,7 +26,7 @@
       <h1 class="title">Settings</h1>
     {{/contentFor}}
     {{#ionList}}
-      <div class="block">
+      <div class="block settings-backups">
         {{#ionItem class="item-divider"}}
           Backups
         {{/ionItem}}
@@ -34,7 +34,7 @@
           Backup to a file
         {{/ionItem}}
       </div>
-      <div class="block">
+      <div class="block settings-graphics">
         {{#ionItem class="item-divider"}}
           Graphics
         {{/ionItem}}
@@ -43,7 +43,7 @@
         {{> ionToggle variable="settings.paper_filter" label="Paper Filter"}}
         {{> ionToggle variable="settings.show_regrading_icon" label="Regrading Icon"}}
       </div>
-      <div class="block">
+      <div class="block settings-scheduling">
         {{#ionItem class="item-divider"}}
           Scheduling
         {{/ionItem}}
@@ -54,7 +54,7 @@
         {{> ionToggle variable="settings.revisit_failures"
                       label="Revisit Failures"}}
       </div>
-      <div class="block">
+      <div class="block settings-writing">
         {{#ionItem class="item-divider"}}
           Writing
         {{/ionItem}}

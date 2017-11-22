@@ -112,7 +112,7 @@ const kDemos = {
     highlight('.lists', 'You can import and delete custom ' +
                         'lists on the "Lists" page.'),
     waitOnUrl('lists'),
-    highlight('.block .item.customization-option.import',
+    highlight('.block .item.import',
               'Tap here to import custom word lists.'),
     () => $('.popup').length > 0,
     sleep(300),
@@ -124,7 +124,7 @@ const kDemos = {
               'information about the list data format.'),
     waitOnTap(),
     () => Popup.hide() || true,
-    highlight('.block .item.customization-option.delete',
+    highlight('.block .item.delete',
               'You can delete custom lists. Doing so will not ' +
               'delete your progress on words from those lists.'),
     waitOnTap(),
@@ -159,9 +159,9 @@ const kDemos = {
                             'Try writing it now - remember that stroke ' +
                             'order matters!'),
     waitOnEvent('makemeahanzi-character-complete'),
-    highlight('.flashcard', 'Inkstone automatically grades your writing. ' +
-                            'Swipe up to change your grade, ' +
-                            'or tap to move on.'),
+    highlight('.flashcard', 'Inkstone automatically grades your work. ' +
+                            'Swipe up or tap the flag to grade yourself. ' +
+                            'Tap the character to move on.'),
     waitOnEvent('makemeahanzi-next-character'),
     highlight('.flashcard', 'Now, write the second character of Zhōngwén. ' +
                             'Tap for a hint. Double-tap for the answer.'),
@@ -180,11 +180,16 @@ const kDemos = {
                                    'for the day, you have the option to ' +
                                    'add extra cards.'),
     waitOnTap(),
-    highlight('.control.right', 'While studying, use the "learn" button to ' +
-                                'find out more about characters in the ' +
-                                'current word.'),
+    highlight('.control.redo', 'You can rewrite a word by tapping the ' +
+                               '"clear canvas" button.'),
     waitOnTap(),
-    highlight('.control.left', "When you're done, use the " +
+    highlight('.control.blacklist', "If you don't want to see a particular " +
+                                    'flashcard, you can blacklist it.'),
+    waitOnTap(),
+    highlight('.control.show', 'Use the "learn" button to find out more ' +
+                               'about characters in the current word.'),
+    waitOnTap(),
+    highlight('.control.home', "When you're done, use the " +
                                '"home" button to return to the main menu.'),
     waitOnTap(),
   ],
@@ -198,7 +203,8 @@ const kDemos = {
                            'go to the "Settings" page.'),
     waitOnUrl('settings'),
     () => {
-      $('.ionic-body .content').scrollTop(window.innerHeight);
+      const offset = $('.settings-writing').offset();
+      $('.ionic-body .content').scrollTop(offset.top - window.innerWidth / 4);
       return true;
     },
     highlight('.item:contains("Snap Strokes")',
@@ -257,6 +263,11 @@ const kDemos = {
     highlight('.settings', 'Now, go to the "Settings" page to ' +
                            'change scheduling settings.'),
     waitOnUrl('settings'),
+    () => {
+      const offset = $('.settings-scheduling').offset();
+      $('.ionic-body .content').scrollTop(offset.top - window.innerWidth / 4);
+      return true;
+    },
     highlight('.item:contains("New Cards Per Day")',
               'The first setting places a limit on the number ' +
               'of new cards added per day. Try setting it to 10.'),
