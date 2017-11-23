@@ -6,6 +6,9 @@ The app version that you're on is displayed on the main page below the
 "Inkstone" title. If you don't see it there, you're at version 0.0.4
 or earlier.
 
+- Version 0.1.3 adds "clear canvas" and "blacklist word" options at the top of
+  the writing page. It also makes the UI for changing the grade for a word
+  more obvious, and improves handwriting recognition for the component "成".
 - Version 0.1.2 adds "Backup" and "Restore" options on the settings page.
   This feature can be also used to migrate data from one device to another.
   Imported lists are included in the backup.
@@ -54,8 +57,8 @@ for this program, to the extent permitted by applicable law**. See that
 file for full details. With those caveats stated, the pre-built
 binaries are here:
 
-- [Inkstone v. 0.1.2 for Android armv7](https://www.dropbox.com/s/sdobc0hvnidbjna/inkstone-armv7.apk?dl=1)
-- [Inkstone v. 0.1.2 for Android x86](https://www.dropbox.com/s/hfo7rdp0pjghtnw/inkstone-x86.apk?dl=1)
+- [Inkstone v. 0.1.3 for Android armv7](https://www.dropbox.com/s/sdobc0hvnidbjna/inkstone-armv7.apk?dl=1)
+- [Inkstone v. 0.1.3 for Android x86](https://www.dropbox.com/s/hfo7rdp0pjghtnw/inkstone-x86.apk?dl=1)
 
 Most Android phones use armv7. Trying to install the APK for the wrong
 architecture will just result in an error message, so if you're not sure
