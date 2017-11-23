@@ -5,3 +5,4 @@
 .backup
 .electrify
 .sass-cache
+node_modules
