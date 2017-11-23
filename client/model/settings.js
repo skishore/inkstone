@@ -31,6 +31,7 @@ const defaults = {
   paper_filter: true,
   reveal_order: true,
   revisit_failures: true,
+  show_regrading_icon: true,
   snap_strokes: true,
 };
 

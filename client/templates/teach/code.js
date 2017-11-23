@@ -57,6 +57,7 @@ const maybeAdvance = () => {
   }
   item.index += 1;
 
+  helpers.set('complete', false);
   $(window).trigger('makemeahanzi-next-character');
   if (item.index < item.tasks.length) {
     handwriting.moveToCorner();
@@ -181,6 +182,7 @@ const onStroke = (stroke) => {
   // drew a stroke out of order, penalize them and give them a hint.
   const index = _.min(result.indices);
   if (task.missing.length === 0) {
+    helpers.set('complete', true);
     $(window).trigger('makemeahanzi-character-complete');
     task.result = getResult(task.penalties);
     handwriting.glow(task.result);
@@ -355,6 +357,10 @@ Template.teach.events({
       Popup.show({title: 'Character Details', template: 'answer_selection'});
     }
   },
+  'click .icon.regrade': () => {
+    onRequestRegrade([[0, 1], [0, 0]]);
+    handwriting._stage.update();
+  },
 });
 
 Template.teach.helpers({
@@ -362,6 +368,9 @@ Template.teach.helpers({
   margin: () => {
     const width = Settings.get('canvas_width');
     return Math.max(Math.min(Math.floor((100 - width) / 2), 50), 0);
+  },
+  show_regrading_icon: () => {
+    return Settings.get('show_regrading_icon') && helpers.get('complete');
   },
 });
 

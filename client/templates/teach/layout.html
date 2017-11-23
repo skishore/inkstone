@@ -43,6 +43,10 @@
           </div>
           {{#if get 'grading'}}
             {{> grading}}
+          {{else}}
+            {{#if show_regrading_icon}}
+              <div class="icon regrade"><i class="ion-ios-flag"></i></div>
+            {{/if}}
           {{/if}}
         </div>
       </div>

@@ -128,6 +128,15 @@
             }
           }
         }
+
+        > .icon {
+          bottom: 0;
+          color: $base-color;
+          font-size: 3 * $font-size;
+          padding: 3% 0;
+          position: absolute;
+          width: 25%;
+        }
       }
     }
   }
