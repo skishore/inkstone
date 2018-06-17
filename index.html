@@ -13,6 +13,7 @@
 
     <script src="apps/js/jquery-slim.min.js"></script>
     <script src="apps/js/bootstrap.min.js"></script>
+    <script src="apps/js/polyfill.min.js"></script>
     <script src="apps/js/babel.js"></script>
 
     <title>Inkstone Chinese</title>
@@ -29,10 +30,10 @@
       <div id="header">
         <div class="header-text col-md-6">
           <div class="vertical-align">
-            <h1>Learn Chinese one stroke at a time.</h1>
-            <p class="mobile">Practice writing Chinese using our slick interface. Instant feedback, daily learning goals, custom wordlists, and more.</p>
+            <h1>Learn Chinese one stroke at a time</h1>
+            <p class="mobile">Practice writing Chinese using our clean interface. Instant feedback, daily learning goals, custom wordlists, and more.</p>
             <p class="desktop">
-              Practice writing Chinese using our slick interface.
+              Practice writing Chinese using our clean interface.
               Get instant feedback, set daily learning goals, upload custom wordlists, and more.
               There's no Internet connection required, so you can learn anywhere, anytime!
             </p>
@@ -64,11 +65,6 @@
       <div class="container marketing">
         <div class="row">
           <div class="col-lg-4">
-            <h2 class="chinese-header">低价</h2>
-            <h2>Best-in-Class Pricing</h2>
-            <p>Other apps charge hefty monthly subscription fees and require an Internet connection. Inkstone is a one-time purchase and fully supports offline use.
-          </div>
-          <div class="col-lg-4">
             <h2 class="chinese-header">定制</h2>
             <h2>Customization</h2>
             <p>Take control of your lesson plan by mixing and matching our curated wordlists with your own. Set daily targets and learn at your own pace.</p>
@@ -78,6 +74,11 @@
             <h2>Guided Practice</h2>
             <p>Our app guides you through the fundamentals of Chinese handwriting, including correct stroke order, and it reschedules words based on your mastery of them.</p>
           </div>
+          <div class="col-lg-4">
+            <h2 class="chinese-header">低价</h2>
+            <h2>Low, Clear Pricing</h2>
+            <p>Other apps charge hefty monthly subscription fees and require an Internet connection. Inkstone is a one-time purchase and fully supports offline use.
+          </div>
         </div>
       </div>
 
@@ -85,15 +86,17 @@
 
       <div class="demo-section">
         <div class="text col-md-4">
-          <h1>Demo: Radicals</h1>
-          <p>
-            Try out our handwriting recognition and automatic grading algorithm right here!
-            Write the prompted word on the canvas to the right.
-            Tap for a hint, and double tap for the answer.
-            When you're done with a character, tap to continue.
-          </p>
-          <h2 id="demo-prompt-1">Loading...</h2>
-          <h3 id="demo-prompt-2">The prompt will appear here.</h3>
+          <div class="vertical-align">
+            <h1>Demo: HSK 1</h1>
+            <p>
+              Try out our handwriting recognition and automatic grading algorithm right here!
+              Write the prompted word on the canvas to the right.
+              Tap for a hint, and double tap for the answer.
+              When you're done with a character, tap to continue.
+            </p>
+            <h2 id="demo-prompt-1">Loading...</h2>
+            <h3 id="demo-prompt-2">The prompt will appear here.</h3>
+          </div>
         </div>
         <div id="demo-container"></div>
       </div>
@@ -102,9 +105,13 @@
 
       <footer class="container">
         <p class="float-left" >
-          &copy; 2018 Inkstone Chinese &middot;
-          <a href="docs/credits.html">Credits</a> &middot;
-          <a href="details.html">Details</a>
+          &copy; 2018 Shaunak Kishore
+          &middot;
+          <a class="desktop" href="docs/credits.html">Open-Source Credits</a>
+          <a class="mobile" href="docs/credits.html">Credits</a>
+          &middot;
+          <a class="desktop" href="details.html">Project Details</a>
+          <a class="mobile" href="details.html">Details</a>
         </p>
         <p class="float-right"><a href="#">Back to top</a></p>
       </footer>

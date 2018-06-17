@@ -11,6 +11,7 @@ nav.navbar {
 #header {
   background-color: #777;
   color: white;
+  overflow: hidden;
   padding: 3rem 1rem;
   position: relative;
 }
@@ -20,12 +21,9 @@ nav.navbar {
   vertical-align: top;
 }
 
-#header > .header-text > .vertical-align > p {
-  margin: 1rem 0;
-}
-
+#header > .header-text > .vertical-align > p,
 #header > .header-text > .vertical-align > .call-to-action {
-  margin-bottom: 1rem;
+  margin: 1rem 0;
 }
 
 #header > .header-text > .vertical-align > .call-to-action > a > img {
@@ -76,6 +74,9 @@ nav.navbar {
   border: 1px solid #222;
 }
 
+.demo-section {
+  overflow: hidden;
+}
 
 .demo-section > div {
   display: inline-block;
@@ -118,7 +119,8 @@ nav.navbar {
   }
 
   #header > .header-text {
-    transform: translateY(226px);
+    min-height: 452px;
+    transform: translateY(50%);
   }
 
   #header > .header-text > .vertical-align {
@@ -126,19 +128,23 @@ nav.navbar {
   }
 
   .demo-section > .text {
-    margin-top: 15vw;
+    min-height: 512px;
+    transform: translateY(50%);
+  }
+
+  .demo-section > .text > .vertical-align {
     transform: translateY(-50%);
   }
 
   #demo-container {
-    height: 30vw;
-    width: 30vw;
+    height: 512px;
+    width: 512px;
   }
 }
 
 @font-face {
   font-family: UKaiCN;
-  src: url(/apps/media/arphic-gukai.ttf);
+  src: url(/inkstone/apps/media/arphic-gukai.ttf);
 }
 
 .chinese-header {

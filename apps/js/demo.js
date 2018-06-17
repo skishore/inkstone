@@ -78,13 +78,14 @@ const runWord = (elements, entry, listener) =>
   Promise.all(Array.from(entry.word).map(getCharacterData))
          .then(data => {
             $(elements[0]).children().remove();
-            $(elements[1]).text(`${entry.pinyin}`);
-            $(elements[2]).text(`${entry.definition}; radical ${entry.index}`);
+            $(elements[1]).text(entry.pinyin);
+            const suffix = entry.index ? `; radical ${entry.index}` : '';
+            $(elements[2]).text(`${entry.definition}${suffix}`);
             new inkstone.Teach(data, elements[0], {...kOptions, listener});
          }).catch((x) => console.error(x));
 
 const kList = Promise.all([
-  getUrl('apps/media/100cr.list'),
+  getUrl('apps/media/nhsk1.list'),
   getUrl('apps/media/radicals.json'),
 ]).then(x => {
   const lines = x[0].trim().split('\n');
@@ -92,7 +93,6 @@ const kList = Promise.all([
   return lines.map(y => {
     const data = y.split('\t');
     const index = table[data[0]];
-    if (!index) throw new Error(`Unknown radical: ${data[0]}`);
     return {definition: data[4], index, pinyin: data[3], word: data[0]};
   });
 });
