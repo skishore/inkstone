@@ -1,0 +1,147 @@
+body {
+  color: #333;
+  padding: 3rem 0;
+  text-align: center;
+}
+
+nav.navbar {
+  background-color: #333 !important;
+}
+
+#header {
+  background-color: #777;
+  color: white;
+  padding: 3rem 1rem;
+  position: relative;
+}
+
+#header > .header-text, #header > .header-image {
+  display: inline-block;
+  vertical-align: top;
+}
+
+#header > .header-text > .vertical-align > p {
+  margin: 1rem 0;
+}
+
+#header > .header-text > .vertical-align > .call-to-action {
+  margin-bottom: 1rem;
+}
+
+#header > .header-text > .vertical-align > .call-to-action > a > img {
+  height: 6rem;
+}
+
+#header > .header-text > .vertical-align > .call-to-action > a > img.ios {
+  padding: 1rem;
+}
+
+#header > .header-text > .vertical-align > .call-to-action > a.link {
+  height: 6rem;
+  margin: 1rem;
+  position: relative;
+}
+
+#header > .header-text > .vertical-align > .call-to-action > a.link > img {
+  background-color: black;
+  border-radius: 0.6rem;
+  border: 0.03rem solid white;
+  color: white;
+  height: 4rem;
+  display: inline-block;
+  margin: 1rem 0;
+  width: 13.5rem;
+}
+
+#header > .header-text > .vertical-align > .call-to-action > a.link > div {
+  position: absolute;
+  bottom: 0;
+  top: 0;
+}
+
+#header > .header-text > .vertical-align > .call-to-action > a.link > div.icon {
+  font-size: 2.6rem;
+  left: 1rem;
+  line-height: 24px;
+}
+
+#header > .header-text > .vertical-align > .call-to-action > a.link > div.text {
+  color: white;
+  font-size: 1.3rem;
+  left: 4.6rem;
+  line-height: 20px;
+}
+
+#header > .header-image > img {
+  border: 1px solid #222;
+}
+
+
+.demo-section > div {
+  display: inline-block;
+  margin-bottom: 1rem;
+  vertical-align: top;
+  width: 100%;
+}
+
+#demo-container {
+  border: 1px solid #222;
+  height: 80vw;
+  width: 80vw;
+}
+
+.container.marketing > .row > .col-lg-4 {
+  margin-top: 2rem;
+}
+
+.separator {
+  border-top: 1px solid #ccc;
+  margin: 2rem auto;
+  width: 80%;
+}
+
+.mobile {
+  display: initial;
+}
+
+.desktop {
+  display: none;
+}
+
+@media (min-width: 768px) {
+  .mobile {
+    display: none;
+  }
+
+  .desktop {
+    display: initial;
+  }
+
+  #header > .header-text {
+    transform: translateY(226px);
+  }
+
+  #header > .header-text > .vertical-align {
+    transform: translateY(-50%);
+  }
+
+  .demo-section > .text {
+    margin-top: 15vw;
+    transform: translateY(-50%);
+  }
+
+  #demo-container {
+    height: 30vw;
+    width: 30vw;
+  }
+}
+
+@font-face {
+  font-family: UKaiCN;
+  src: url(/apps/media/arphic-gukai.ttf);
+}
+
+.chinese-header {
+  font-family: UKaiCN;
+  font-size: 100px;
+}

@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html>
+
+  <head>
+    <meta charset='utf-8'>
+    <meta http-equiv="X-UA-Compatible" content="chrome=1">
+    <meta name="description" content="Inkstone : Learn Chinese on the go - no Internet connection required!">
+
+    <link rel="stylesheet" type="text/css" media="screen" href="stylesheets/stylesheet.css">
+
+    <title>Inkstone</title>
+  </head>
+
+  <body>
+
+    <!-- HEADER -->
+    <div id="header_wrap" class="outer">
+        <header class="inner">
+          <a id="forkme_banner" href="https://github.com/skishore/inkstone">View on GitHub</a>
+
+          <h1 id="project_title">Inkstone</h1>
+          <h2 id="project_tagline">Learn Chinese on the go - no Internet connection required!</h2>
+
+            <section id="downloads">
+              <a class="zip_download_link" href="https://github.com/skishore/inkstone/zipball/master">Download this project as a .zip file</a>
+              <a class="tar_download_link" href="https://github.com/skishore/inkstone/tarball/master">Download this project as a tar.gz file</a>
+            </section>
+        </header>
+    </div>
+
+    <!-- MAIN CONTENT -->
+    <div id="main_content_wrap" class="outer">
+      <section id="main_content" class="inner">
+        <p><img src="images/demo.gif" alt="Inkstone in action"></p>
+
+<h3>
+<a id="whats-new" class="anchor" href="#whats-new" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>What's new</h3>
+
+<p>The app version that you're on is displayed on the main page below the
+"Inkstone" title. If you don't see it there, you're at version 0.0.4
+or earlier.</p>
+
+<ul>
+<li>Version 0.1.3 adds "clear canvas" and "blacklist word" options at the top of the writing page. It also makes the UI for changing the grade for a word more obvious, and improves handwriting recognition for the component "成".</li>
+<li>Version 0.1.2 adds "Backup" and "Restore" options on the settings page. This feature can also be used to migrate data from one device to another. Imported lists are included in the backup.</li>
+<li>Version 0.1.1 adds a "clear all data" button and the option to rerun a stroke order animation by clicking on it.</li>
+<li>Version 0.1.0 adds an asset download pane and a canvas width setting.</li>
+<li>Version 0.0.8 adds support for
+<a href="images/shortcuts.gif">handwriting shortcuts</a>.</li>
+<li>Version 0.0.7 makes it
+<a href="https://www.skishore.me/inkstone/docs/format.html">easier to import word lists</a>.</li>
+<li>Version 0.0.6 makes it possible to adjust scheduling settings freely.</li>
+<li>Version 0.0.5 includes the option to <strong>study traditional characters</strong>.</li>
+</ul>
+
+<p>In addition to the features mentioned above, most versions include some
+fixes and additions to the character data.
+See the <a href="#installing-from-binary">Installing from binary</a>
+section for updated APKs, or
+<a href="https://play.google.com/store/apps/details?id=com.id126c0rsxlvjwv18cf44u">download the app from the Google Play Store</a>.</p>
+
+<h3>
+<a id="introduction" class="anchor" href="#introduction" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Introduction</h3>
+
+<p>Inkstone is a mobile app for people who want to learn to read and
+write Mandarin. It's <strong>totally free</strong>, <strong>open-source</strong>, and can be used
+<strong>without an Internet connection</strong>! Inkstone is licensed under the
+<a href="https://www.gnu.org/licenses/gpl-3.0.en.html">GNU General Public License v3.0</a>.
+Although the app is still being developed, it has quite a few features:</p>
+
+<ul>
+<li>Tap for a hint, double-tap for a walkthrough</li>
+<li>Stroke recognition and automatic grading</li>
+<li>Spaced-repetition-based scheduling</li>
+<li>Help pages and stroke-order animations for every character</li>
+<li>Bundled word lists: radicals and all HSK levels</li>
+<li>Settings that give you control over scheduling</li>
+<li>Support for custom word lists</li>
+</ul>
+
+<p>Inkstone should run on both Android and iOS, but I don't have an iPhone
+on which to test the iOS version. See the <code>Supported platforms</code> section
+for details.</p>
+
+<h3>
+<a id="installing-from-binary" class="anchor" href="#installing-from-binary" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Installing from binary</h3>
+
+<p>I've uploaded compiled Android APKs to Dropbox. Only use these
+binaries if you trust me and Dropbox! The legal disclaimers in the
+<code>LICENSE</code> file apply to these binaries as well: <strong>there is no warranty
+for this program, to the extent permitted by applicable law</strong>. See that
+file for full details. With those caveats stated, the pre-built
+binaries are here:</p>
+
+<ul>
+<li><a href="https://www.dropbox.com/s/sdobc0hvnidbjna/inkstone-armv7.apk?dl=1">Inkstone v. 0.1.3 for Android armv7</a></li>
+<li><a href="https://www.dropbox.com/s/hfo7rdp0pjghtnw/inkstone-x86.apk?dl=1">Inkstone v. 0.1.3 for Android x86</a></li>
+</ul>
+
+<p>Most Android phones use armv7. Trying to install the APK for the wrong
+architecture will just result in an error message, so if you're not sure
+which one your phone is, try both.</p>
+
+<h3>
+<a id="building-from-source" class="anchor" href="#building-from-source" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Building from source</h3>
+
+<p>To build Inkstone,
+<a href="https://www.meteor.com/install">install the latest version of Meteor.js</a>,
+then check out this repository and run:</p>
+
+<pre><code>$ meteor build .build --server localhost:3785
+$ cp -R cordova-build-override/* .build/android/project/assets/.
+$ pushd .build/android/project/cordova
+$ ./build --release
+$ popd
+</code></pre>
+
+<p>If the build goes successfully, you'll end up with APKs in:</p>
+
+<pre><code>./build/android/project/build/outputs/apk/
+</code></pre>
+
+<p>You'll have to sign these APKs before they can be installed on a device.
+See <code>scripts/build</code> for an example that also signs the APKs.
+Note that the <code>--server</code> parameter in the <code>meteor build</code> command is a dummy.
+Other than custom-lists downloads, the app is an entirely-client-side app.</p>
+
+<h3>
+<a id="supported-platforms" class="anchor" href="#supported-platforms" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Supported platforms</h3>
+
+<p>This app has only been tested on Android. In theory, this code could
+be used to build an iOS app, too, as follows:</p>
+
+<pre><code>$ meteor add-platform ios
+$ meteor build .build --server localhost:3785
+</code></pre>
+
+<p>However, I can't test or debug the iOS build because I don't have an
+iPhone. If people are interested, I'd love to buy one and try it out!
+Apple devices are expensive, though, as are Apple developer licenses...</p>
+
+<h3>
+<a id="open-source-credits" class="anchor" href="#open-source-credits" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Open source credits</h3>
+
+<p><a href="https://www.skishore.me/inkstone/docs/credits.html">Inkstone was made possible by a number of other open-source projects,
+a full listing of which can be found here.</a></p>
+
+<h3>
+<a id="upcoming-features" class="anchor" href="#upcoming-features" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Upcoming features</h3>
+
+<p>See <code>todo.txt</code> for a list of planned features. If there's something you'd
+like to see added that's not in that file, open an issue or drop me an email
+at <code>kshaunak "at" gmail.com</code>.</p>
+      </section>
+    </div>
+
+    <!-- FOOTER  -->
+    <div id="footer_wrap" class="outer">
+      <footer class="inner">
+        <p class="copyright">Inkstone maintained by <a href="https://github.com/skishore">skishore</a></p>
+        <p>Published with <a href="https://pages.github.com">GitHub Pages</a></p>
+      </footer>
+    </div>
+
+
+
+  </body>
+</html>
