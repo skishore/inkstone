@@ -49,6 +49,12 @@ if (Meteor.isCordova) {
 Platform.isAndroid = () => false;
 Platform.isIOS = () => true;
 
+Template.index.rendered = () => HTTP.get('graphics/swash.svg', (_, result) => {
+  const b64 = btoa(result.content || result.data);
+  const url = `url("data:image/svg+xml;base64,${b64}")`;
+  $('.teach').css({'-webkit-mask-image': url});
+});
+
 Template.layout.helpers({
   remainder: () => {
     const x = Timing.getRemainder();
