@@ -127,7 +127,7 @@ const rebuildCharacterData = () => {
     all.map((character) => check(rows[character], CharacterData));
     console.log('Dumping...');
     child_process.execSync('mkdir -p .assets', {cwd: kBase});
-    child_process.execSync('mkdir -p .assets/characters', {cwd: kBase});
+    child_process.execSync('mkdir -p .assets/characters_v2', {cwd: kBase});
     dumpCharacters(all, rows);
     console.log('Cleaning up...');
     child_process.execSync('rm makemeahanzi.txt', {cwd: kBase});
