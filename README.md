@@ -6,6 +6,11 @@ The app version that you're on is displayed on the main page below the
 "Inkstone" title. If you don't see it there, you're at version 0.0.4
 or earlier.
 
+- Version 0.1.4 introduces "stroke-capped" character data, which is visually
+  appealing and better for learning.
+  [See here for more details about this change.](https://github.com/skishore/makemeahanzi/pull/32)
+  It also includes many character and word list fixes, and it patches a
+  critical bug on iOS 11.4 which caused the "Write" button to be invisible.
 - Version 0.1.3 adds "clear canvas" and "blacklist word" options at the top of
   the writing page. It also makes the UI for changing the grade for a word
   more obvious, and improves handwriting recognition for the component "成".
@@ -44,10 +49,6 @@ Although the app is still being developed, it has quite a few features:
 - Settings that give you control over scheduling
 - Support for custom word lists
 
-Inkstone should run on both Android and iOS, but I don't have an iPhone
-on which to test the iOS version. See the `Supported platforms` section
-for details.
-
 ### Installing from binary
 
 I've uploaded compiled Android APKs to Dropbox. Only use these
@@ -57,8 +58,8 @@ for this program, to the extent permitted by applicable law**. See that
 file for full details. With those caveats stated, the pre-built
 binaries are here:
 
-- [Inkstone v. 0.1.3 for Android armv7](https://www.dropbox.com/s/sdobc0hvnidbjna/inkstone-armv7.apk?dl=1)
-- [Inkstone v. 0.1.3 for Android x86](https://www.dropbox.com/s/hfo7rdp0pjghtnw/inkstone-x86.apk?dl=1)
+- [Inkstone v. 0.1.4 for Android armv7](https://www.dropbox.com/s/sdobc0hvnidbjna/inkstone-armv7.apk?dl=1)
+- [Inkstone v. 0.1.4 for Android x86](https://www.dropbox.com/s/hfo7rdp0pjghtnw/inkstone-x86.apk?dl=1)
 
 Most Android phones use armv7. Trying to install the APK for the wrong
 architecture will just result in an error message, so if you're not sure
@@ -87,15 +88,10 @@ Other than custom-lists downloads, the app is an entirely-client-side app.
 
 ### Supported platforms
 
-This app has only been tested on Android. In theory, this code could
-be used to build an iOS app, too, as follows:
-
-    $ meteor add-platform ios
-    $ meteor build .build --server localhost:3785
-
-However, I can't test or debug the iOS build because I don't have an
-iPhone. If people are interested, I'd love to buy one and try it out!
-Apple devices are expensive, though, as are Apple developer licenses...
+Inkstone is available for both Android and iOS.
+Since sideloading apps on iOS requires jailbreaking or recompiling,
+I have only provided pre-built Android binaries.
+[I have also made the app available on both the App Store and on Google Play.](https://www.skishore.me/inkstone/)
 
 ### Open source credits
 
