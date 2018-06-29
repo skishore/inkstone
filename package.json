@@ -1,6 +1,6 @@
 {
   "name": "inkstone",
-  "version": "0.1.2",
+  "version": "0.1.4",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/skishore/inkstone.git"
@@ -8,5 +8,8 @@
   "license": "MIT",
   "dependencies": {
     "babel-runtime": "^6.23.0"
+  },
+  "devDependencies": {
+    "babel-polyfill": "^6.26.0"
   }
 }
