@@ -20,9 +20,10 @@ pushd .build/android/project/cordova
 ./build --release
 cd ../build/outputs/apk
 
-# Sign the output. Will prompt for passwords.
-jarsigner -verbose -sigalg SHA1withRSA -digestalg SHA1 -keystore ~/.keystore project-armv7-release-unsigned.apk inkstone
-jarsigner -verbose -sigalg SHA1withRSA -digestalg SHA1 -keystore ~/.keystore project-x86-release-unsigned.apk inkstone
+# Sign the output, using our private ~/.keystore and ~/.keystore_password.
+PASSWORD=`cat ~/.keystore_password`
+jarsigner -verbose -sigalg SHA1withRSA -digestalg SHA1 -keystore ~/.keystore -storepass "$PASSWORD" project-armv7-release-unsigned.apk inkstone
+jarsigner -verbose -sigalg SHA1withRSA -digestalg SHA1 -keystore ~/.keystore -storepass "$PASSWORD" project-x86-release-unsigned.apk inkstone
 $ZIPALIGN -f 4 project-armv7-release-unsigned.apk project-armv7-release.apk
 $ZIPALIGN -f 4 project-x86-release-unsigned.apk project-x86-release.apk
 
