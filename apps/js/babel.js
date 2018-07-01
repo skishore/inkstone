@@ -1,36 +1,952 @@
-const kIdPrefix = "inkstone-stroke-order-animation";const kWidth = 128;const addGlobalStyleForAnimations = (animations, options) => {
-  const rules = [];for (const animation of animations) {
-    rules.push(`\n      @keyframes ${animation.keyframes} {\n        from {\n          stroke: ${options.animation_color};\n          stroke-dashoffset: ${animation.offset};\n          stroke-width: ${animation.width};\n        }\n        ${animation.fraction} {\n          animation-timing-function: step-end;\n          stroke: ${options.animation_color};\n          stroke-dashoffset: 0;\n          stroke-width: ${animation.width};\n        }\n        to {\n          stroke: ${options.stroke_color};\n          stroke-width: 1024;\n        }\n      }\n      #${animation.animation_id} {\n        animation: ${animation.keyframes} ${animation.duration} both;\n        animation-delay: ${animation.delay};\n        animation-timing-function: linear;\n      }\n    `);
-  }const head = document.getElementsByTagName("head")[0];if (!head) throw new Error("Unable to locate <head> element!");const global_style_id = `${kIdPrefix}-global-style`;const previous = document.getElementById(global_style_id);if (previous) head.removeChild(previous);const style = document.createElement("style");style.id = global_style_id;style.innerHTML = rules.join("");style.type = "text/css";head.appendChild(style);
-};const counter = (() => {
-  let x = 0;return () => x++;
-})();const createSVGNode = (type, attributes) => {
-  const node = document.createElementNS("http://www.w3.org/2000/svg", type);for (const attribute in attributes) {
-    if (!attributes.hasOwnProperty(attribute)) continue;node.setAttribute(attribute, attributes[attribute]);
-  }return node;
-};const distance2 = (point1, point2) => {
-  const diff = [point1[0] - point2[0], point1[1] - point2[1]];return diff[0] * diff[0] + diff[1] * diff[1];
-};const getMedianLength = median => {
-  let result = 0;for (let i = 0; i < median.length - 1; i++) {
-    result += Math.sqrt(distance2(median[i], median[i + 1]));
-  }return result;
-};const getMedianPath = median => {
-  const result = [];for (let point of median) {
-    result.push(result.length === 0 ? "M" : "L");result.push("" + point[0]);result.push("" + point[1]);
-  }return result.join(" ");
-};const getAnimationData = (strokes, medians, options) => {
-  options = options || {};const initial_delay = 1024 * (options.initial_delay || .9);const per_stroke_delay = 1024 * (options.per_stroke_delay || .3);const prefix = options.prefix || kIdPrefix;const speed = 1024 * (options.speed || .03);const lengths = medians.map(x => getMedianLength(x) + kWidth).map(Math.round);const paths = medians.map(getMedianPath);const animations = [];let total_duration = initial_delay / speed / 60;for (let i = 0; i < strokes.length; i++) {
-    const offset = lengths[i] + kWidth;const duration = (per_stroke_delay + offset) / speed / 60;const fraction = Math.round(100 * offset / (per_stroke_delay + offset));animations.push({ animation_id: `${prefix}-animation-${i}`, clip_id: `${prefix}-clip-${i}`, d: paths[i], delay: `${total_duration}s`, duration: `${duration}s`, fraction: `${fraction}%`, keyframes: `keyframes${i}`, length: lengths[i], offset: offset, spacing: 2 * lengths[i], stroke: strokes[i], width: kWidth });total_duration += duration;
-  }return { animations: animations, strokes: strokes };
-};const animate = (character, element, options) => {
-  const prefix = `${kIdPrefix}-${counter()}`;const data = getAnimationData(character.strokes, character.medians, { initial_delay: .9 / options.animation_speed, per_stroke_delay: .3 / options.animation_speed, prefix: prefix, speed: options.animation_speed * .03 });addGlobalStyleForAnimations(data.animations, options);const svg = createSVGNode("svg", { height: element.clientWidth, version: "1.1", viewBox: "0 0 1024 1024", width: element.clientWidth });svg.style.position = "absolute";svg.style.left = svg.style.top = 0;const g = createSVGNode("g", { transform: "scale(1, -1) translate(0, -900)" });for (const stroke of data.strokes) {
-    g.appendChild(createSVGNode("path", { d: stroke, fill: options.watermark_color }));
-  }let last_animation = null;for (const animation of data.animations) {
-    const clipPath = createSVGNode("clipPath", { id: animation.clip_id });clipPath.appendChild(createSVGNode("path", { d: animation.stroke }));g.appendChild(clipPath);const path = createSVGNode("path", { "clip-path": `url(#${animation.clip_id})`, d: animation.d, fill: "none", id: animation.animation_id, "stroke-dasharray": `${animation.length} ${animation.spacing}`, "stroke-linecap": "round" });last_animation = path;g.appendChild(path);
-  }svg.appendChild(g);element.appendChild(svg);if (!last_animation) return new Promise.resolve();return new Promise((resolve, reject) => {
-    last_animation.addEventListener("animationend", resolve);
-  });
-};this.inkstone = this.inkstone || {};this.inkstone.animate = animate;this.createjs = this.createjs || {};createjs.extend = function (subclass, superclass) {
+(function () {
+  const kMaxAttempts = 3;const kMaxMistakes = 4;const delay = duration => new Promise((resolve, reject) => {
+    setTimeout(resolve, duration);
+  });const getResult = x => Math.min(Math.floor(2 * x / kMaxMistakes), 2);class Character {
+    constructor(data, handwriting, ondone, options) {
+      this.attempts = 0;this.data = data;this.handwriting = handwriting;this.matcher = new inkstone.Matcher(data);this.missing = _.range(data.strokes.length);this.mistakes = 0;this.ondone = ondone;this.options = options;
+    }onClick() {
+      this.mistakes += 2;this.handwriting.flash(this.data.strokes[this.missing[0]]);
+    }onDouble() {
+      if (this.mistakes === 0) return;this.handwriting.reveal(this.data.strokes);
+    }onStroke(stroke) {
+      const result = this.matcher.match(stroke, this.missing);if (result.indices.length === 0) {
+        this.attempts += 1;this.handwriting.fadeStroke();if (this.attempts >= kMaxAttempts) {
+          this.mistakes += 1;this.handwriting.flash(this.data.strokes[this.missing[0]]);
+        }return;
+      }const path = result.indices.map(x => this.data.strokes[x]).join(" ");const missing = this.missing.filter(x => result.indices.indexOf(x) < 0);if (missing.length === this.missing.length) {
+        this.mistakes += 1;this.handwriting.undo();this.handwriting.flash(path);return;
+      }this.missing = missing;const rotate = result.simplified_median.length === 2;this.handwriting.emplace(path, rotate, result.source_segment, result.target_segment);if (result.warning) {
+        this.mistakes += 1;this.handwriting.warn(this.options.messages[result.warning]);
+      }const index = _.min(result.indices);if (this.missing.length === 0) {
+        this.handwriting.glow(getResult(this.mistakes));this.ondone(this.mistakes);
+      } else if (this.missing[0] < index) {
+        this.mistakes += 2 * (index - this.missing[0]);this.handwriting.flash(this.data.strokes[this.missing[0]]);
+      } else {
+        this.attempts = 0;
+      }
+    }
+  }class Cursor {
+    constructor() {
+      this.reset();
+    }nextCharacter() {
+      this.reset({ character: this.character + 1 });
+    }nextMode() {
+      this.reset({ character: this.character, mode: this.mode + 1 });
+    }nextRepetition() {
+      this.repetition += 1;
+    }reset(values) {
+      this.character = 0;this.mode = 0;this.repetition = 0;this.num_single_taps = 0;this.num_double_taps = 0;this.num_mistakes = 0;if (values) {
+        for (const key in values) {
+          this[key] = values[key];
+        }
+      }
+    }
+  }class Teach {
+    constructor(data, element, options) {
+      const handlers = { onclick: this.onClick.bind(this), ondouble: this.onDouble.bind(this), onstroke: this.onStroke.bind(this) };const inner = document.createElement("div");inner.style.position = "relative";inner.style.width = inner.style.height = "100%";element.appendChild(inner);this.animating = false;this.character = null;this.cursor = new Cursor();this.data = data;this.done = false;this.element = inner;this.handwriting = new inkstone.Handwriting(inner, handlers, options.display);this.options = options;this.nextCharacter();
+    }maybeAdvance() {
+      if (this.animating || this.character) return;const mode = this.options.modes[this.cursor.mode];if (this.cursor.mode + 1 < this.options.modes.length && this.cursor.num_mistakes >= mode.max_mistakes) {
+        this.recordStep();this.cursor.nextMode();this.nextMode();
+      } else if (this.cursor.repetition + 1 < mode.repeat) {
+        this.handwriting.warn(this.options.messages.again);this.cursor.nextRepetition();this.nextRepetition();
+      } else if (this.cursor.character + 1 < this.data.length) {
+        this.recordStep();this.cursor.nextCharacter();this.nextCharacter();
+      } else if (!this.done) {
+        this.recordStep();this.options.listener({ type: "done" });this.done = true;
+      }
+    }nextCharacter() {
+      this.animating = true;const animation = this.cursor.character > 0 ? this.handwriting.moveToCorner().then(() => delay(150)) : Promise.resolve();animation.then(() => {
+        this.animating = false;this.nextRepetition();
+      });
+    }nextMode() {
+      this.nextRepetition();
+    }nextRepetition() {
+      const data = this.data[this.cursor.character];const mode = this.options.modes[this.cursor.mode];this.animating = true;this.handwriting.fadeCharacter();const animation = this.cursor.repetition < mode.demo ? inkstone.animate(data, this.element, this.options.display) : Promise.resolve();animation.then(() => {
+        this.animating = false;Array.from(this.element.getElementsByTagName("svg")).map(x => this.element.removeChild(x));const ondone = this.onCharacterDone.bind(this);this.character = new Character(data, this.handwriting, ondone, this.options);if (this.cursor.repetition < mode.watermark) {
+          this.handwriting.reveal(data.strokes);this.handwriting._stage.update();
+        }
+      });
+    }onCharacterDone(mistakes) {
+      this.character = null;this.cursor.num_mistakes += mistakes;
+    }onClick() {
+      if (!this.character) return this.maybeAdvance();const mode = this.options.modes[this.cursor.mode];if (this.cursor.num_single_taps < mode.single_tap) {
+        this.cursor.num_single_taps += 1;this.character.onClick();
+      }
+    }onDouble() {
+      if (!this.character) return this.maybeAdvance();const mode = this.options.modes[this.cursor.mode];if (this.cursor.num_double_taps < mode.double_tap) {
+        this.cursor.num_double_taps += 1;this.character.onDouble();
+      }
+    }onStroke(stroke) {
+      if (!this.character) return this.maybeAdvance();this.character.onStroke(stroke);
+    }recordStep() {
+      this.options.listener && this.options.listener({ type: "step", character: this.data[this.cursor.character].character, mistakes: this.cursor.num_mistakes, mode: this.cursor.mode });
+    }
+  }this.inkstone = this.inkstone || {};this.inkstone.Teach = Teach;
+})();(function () {
+  const kCanvasSize = 512;const kCornerSize = 1 / 8;const kCrossWidth = 1 / 256;const kMinDistance = 1 / 32;const kStrokeWidth = 1 / 32;const kDoubleTapSpeed = 500;let ticker = null;const angle = xs => Math.atan2(xs[1][1] - xs[0][1], xs[1][0] - xs[0][0]);const animate = (shape, size, rotate, source, target) => {
+    shape.regX = size * (target[0][0] + target[1][0]) / 2;shape.regY = size * (target[0][1] + target[1][1]) / 2;shape.x = size * (source[0][0] + source[1][0]) / 2;shape.y = size * (source[0][1] + source[1][1]) / 2;const scale = distance(source) / (distance(target) + kMinDistance);shape.scaleX = scale;shape.scaleY = scale;if (rotate) {
+      const rotation = 180 / Math.PI * (angle(source) - angle(target));shape.rotation = (Math.round(rotation) + 540) % 360 - 180;
+    }return { rotation: 0, scaleX: 1, scaleY: 1, x: shape.regX, y: shape.regY };
+  };const convertShapeStyles = (shape, end) => {
+    if (!shape.graphics || !shape.graphics.instructions) {
+      return;
+    }let updated = false;for (let instruction of shape.graphics.instructions) {
+      if (instruction.style) {
+        instruction.style = end;updated = true;
+      }
+    }if (updated) shape.updateCache();
+  };const createCanvas = (element, handwriting) => {
+    const canvas = document.createElement("canvas");canvas.width = canvas.height = kCanvasSize;canvas.style.width = canvas.style.height = `${element.clientWidth}px`;element.appendChild(canvas);const touch_supported = "ontouchstart" in window;const zoom = kCanvasSize / element.clientWidth;const getPosition = event => {
+      if (touch_supported) event = event.touches[0];if (!event) return;const bound = canvas.getBoundingClientRect();const point = [event.clientX - bound.left, event.clientY - bound.top];return point.map(x => Math.round(zoom * x));
+    };let mousedown = false;const start_event = touch_supported ? "touchstart" : "mousedown";canvas.addEventListener(start_event, event => {
+      mousedown = true;if (event.cancelable) event.preventDefault();handwriting._pushPoint(getPosition(event));
+    });const move_event = touch_supported ? "touchmove" : "mousemove";canvas.addEventListener(move_event, event => {
+      if (!mousedown) return;handwriting._pushPoint(getPosition(event));
+    }, { passive: true });const end_event = touch_supported ? "touchend" : "mouseup";canvas.addEventListener(end_event, event => {
+      mousedown = false;handwriting._endStroke();
+    });return canvas;
+  };const distance = xs => {
+    const diff = [xs[1][0] - xs[0][0], xs[1][1] - xs[0][1]];return Math.sqrt(diff[0] * diff[0] + diff[1] * diff[1]);
+  };const dottedLine = (width, x1, y1, x2, y2) => {
+    const result = new createjs.Shape();result.graphics.setStrokeDash([width, width], 0);result.graphics.setStrokeStyle(width);result.graphics.beginStroke("#ccc");result.graphics.moveTo(x1, y1);result.graphics.lineTo(x2, y2);return result;
+  };const midpoint = (point1, point2) => {
+    return [(point1[0] + point2[0]) / 2, (point1[1] + point2[1]) / 2];
+  };const pathToShape = (path, size, color, uncached) => {
+    const scale = 1024 / size;const result = new createjs.Shape();const tokens = path.split(" ");let index = 0;const next = () => {
+      index += 2;let result = [tokens[index - 2], tokens[index - 1]];result = result.map(x => parseInt(x, 10));result[1] = 900 - result[1];return result.map(x => Math.round(x / scale));
+    };const arity = { C: 3, L: 1, M: 1, Q: 2, Z: 0 };while (index < tokens.length) {
+      index += 1;const command = tokens[index - 1];const args = _.range(arity[command] || 0).map(next);if (command === "Z") {
+        result.graphics.closePath();
+      } else if (command === "M") {
+        result.graphics.beginFill(color);result.graphics.beginStroke(color);result.graphics.moveTo(args[0][0], args[0][1]);
+      } else if (command === "L") {
+        result.graphics.lineTo(args[0][0], args[0][1]);
+      } else if (command === "Q") {
+        result.graphics.curveTo(args[0][0], args[0][1], args[1][0], args[1][1]);
+      } else if (command === "C") {
+        result.graphics.bezierCurveTo(args[0][0], args[0][1], args[1][0], args[1][1], args[2][0], args[2][1]);
+      } else {
+        console.error(`Invalid command: ${command}`);
+      }
+    }if (!uncached) result.cache(0, 0, size, size);return result;
+  };const renderCross = (size, container) => {
+    const stroke = size * kCrossWidth;container.addChild(dottedLine(stroke, 0, 0, size, size));container.addChild(dottedLine(stroke, size, 0, 0, size));container.addChild(dottedLine(stroke, size / 2, 0, size / 2, size));container.addChild(dottedLine(stroke, 0, size / 2, size, size / 2));container.cache(0, 0, size, size);
+  };class BasicBrush {
+    constructor(container, point, options) {
+      options = options || {};this._color = options.color || "black";this._width = options.width || 1;this._shape = new createjs.Shape();this._endpoint = point;this._midpoint = null;container.addChild(this._shape);
+    }advance(point) {
+      const last_endpoint = this._endpoint;const last_midpoint = this._midpoint;this._endpoint = point;this._midpoint = midpoint(last_endpoint, this._endpoint);if (last_midpoint) {
+        this._draw(last_midpoint, this._midpoint, last_endpoint);
+      } else {
+        this._draw(last_endpoint, this._midpoint);
+      }
+    }_draw(point1, point2, control) {
+      const graphics = this._shape.graphics;graphics.setStrokeStyle(this._width, "round");graphics.beginStroke(this._color);graphics.moveTo(point1[0], point1[1]);if (control) {
+        graphics.curveTo(control[0], control[1], point2[0], point2[1]);
+      } else {
+        graphics.lineTo(point2[0], point2[1]);
+      }
+    }
+  }const Layer = { CROSS: 0, CORNER: 1, FADE: 2, WATERMARK: 3, HIGHLIGHT: 4, COMPLETE: 5, HINT: 6, STROKE: 7, WARNING: 8, ALL: 9 };class Handwriting {
+    constructor(element, handlers, options) {
+      this._onclick = handlers.onclick;this._ondouble = handlers.ondouble;this._onstroke = handlers.onstroke;this.options = options;const canvas = createCanvas(element, this);this._stage = new createjs.Stage(canvas);this._size = this._stage.canvas.width;this._layers = [];for (let i = 0; i < Layer.ALL; i++) {
+        const layer = new createjs.Container();this._layers.push(layer);this._stage.addChild(layer);
+      }renderCross(this._size, this._layers[Layer.CROSS]);createjs.Ticker.timingMode = createjs.Ticker.RAF;createjs.Ticker.removeEventListener("tick", ticker);ticker = createjs.Ticker.addEventListener("tick", this._tick.bind(this));this.clear();
+    }clear() {
+      createjs.Tween.removeAllTweens();for (let layer of this._layers) {
+        layer.removeAllChildren();
+      }this._corner_characters = 0;this._drawable = true;this._pending_animations = 0;this._running_animations = 0;this._reset();
+    }emplace(path, rotate, source, target) {
+      const child = pathToShape(path, this._size, this.options.stroke_color);const endpoint = animate(child, this._size, rotate, source, target);this._layers[Layer.STROKE].children.pop();this._layers[Layer.COMPLETE].addChild(child);this._animate(child, endpoint, 150);
+    }fadeCharacter() {
+      const children = this._layers[Layer.COMPLETE].children;while (children.length > 0) {
+        this._layers[Layer.WATERMARK].addChild(children.shift());
+      }this._fadeWatermark(150);this._drawable = true;
+    }fadeStroke() {
+      const stroke = this._layers[Layer.STROKE];const child = stroke.children[stroke.children.length - 1];this._animate(child, { alpha: 0 }, 150, () => child.parent.removeChild(child));
+    }flash(path) {
+      const child = pathToShape(path, this._size, this.options.hint_color);this._layers[Layer.HINT].addChild(child);this._animate(child, { alpha: 0 }, 750, () => child.parent.removeChild(child));
+    }glow(result) {
+      const color = this.options.result_colors[result];for (let child of this._layers[Layer.COMPLETE].children) {
+        convertShapeStyles(child, color);
+      }this._drawable = false;
+    }moveToCorner() {
+      const children = this._layers[Layer.COMPLETE].children.slice();const container = new createjs.Container();children.forEach(child => container.addChild(child));[Layer.WATERMARK, Layer.COMPLETE].forEach(layer => this._layers[layer].removeAllChildren());const endpoint = { scaleX: kCornerSize, scaleY: kCornerSize };endpoint.x = kCornerSize * this._size * this._corner_characters;this._layers[Layer.CORNER].addChild(container);this._corner_characters += 1;this._drawable = true;return new Promise((resolve, reject) => {
+        this._animate(container, endpoint, 150, resolve);
+      });
+    }reveal(paths) {
+      const layer = this._layers[Layer.WATERMARK];if (layer.children.length > 0) return;const container = new createjs.Container();for (let path of paths) {
+        const child = pathToShape(path, this._size, this.options.watermark_color, true);container.addChild(child);
+      }container.cache(0, 0, this._size, this._size);layer.addChild(container);
+    }undo() {
+      this._layers[Layer.STROKE].children.pop();this._reset();
+    }warn(warning) {
+      if (!warning) return;const font = `${this.options.font_size} Georgia`;const child = new createjs.Text(warning, font, this.options.font_color);const bounds = child.getBounds();child.x = (kCanvasSize - bounds.width) / 2;child.y = kCanvasSize - 2 * bounds.height;child.cache(0, 0, this._size, this._size);this._layers[Layer.WARNING].removeAllChildren();this._layers[Layer.WARNING].addChild(child);this._animate(child, { alpha: 0 }, 1500, () => child.parent && child.parent.removeChild(child));
+    }_animate(shape, target, duration, callback) {
+      this._running_animations += 1;createjs.Tween.get(shape).to(target, duration).call(() => {
+        this._pending_animations += 1;callback && callback();
+      });
+    }_click() {
+      const timestamp = new Date().getTime();const cutoff = (this._last_click_timestamp || 0) + kDoubleTapSpeed;const handler = timestamp < cutoff ? this._ondouble : this._onclick;this._last_click_timestamp = timestamp;handler && handler();
+    }_drawStroke() {
+      if (this._stroke.length < 2) {
+        return;
+      }this._fadeWatermark(1500);const n = this._stroke.length;if (!this._brush) {
+        const layer = this._layers[Layer.STROKE];const options = { color: this.options.drawing_color, width: this._size * kStrokeWidth };this._brush = new BasicBrush(layer, this._stroke[n - 2], options);
+      }this._brush.advance(this._stroke[n - 1]);this._stage.update();
+    }_endStroke() {
+      let handler = () => this._click();if (this._stroke.length >= 2) {
+        const layer = this._layers[Layer.STROKE];const stroke = this._stroke.map(x => x.map(y => y / this._size));const n = stroke.length;if (_.any(stroke, x => distance([stroke[n - 1], x]) > kMinDistance)) {
+          layer.children.forEach(x => x.cache(0, 0, this._size, this._size));handler = () => this._onstroke && this._onstroke(stroke);
+        } else {
+          layer.removeAllChildren();
+        }
+      }handler();this._reset();
+    }_fadeWatermark(delay) {
+      const children = this._layers[Layer.WATERMARK].children;while (children.length > 0) {
+        const child = children.pop();this._layers[Layer.FADE].addChild(child);this._animate(child, { alpha: 0 }, delay, () => child.parent && child.parent.removeChild(child));
+      }
+    }_pushPoint(point) {
+      if (point[0] != null && point[1] != null) {
+        this._stroke.push(point);if (this._drawable) this._drawStroke();
+      }
+    }_reset() {
+      this._brush = null;this._stroke = [];this._stage.update();
+    }_tick(event) {
+      if (this._running_animations) {
+        this._stage.update(event);this._running_animations -= this._pending_animations;this._pending_animations = 0;
+      }
+    }
+  }this.inkstone = this.inkstone || {};this.inkstone.Handwriting = Handwriting;
+})();(function () {
+  const kAngleThreshold = Math.PI / 5;const kDistanceThreshold = .3;const kLengthThreshold = 1.5;const kMaxMissedSegments = 1;const kMaxOutOfOrder = 2;const kMinDistance = 1 / 16;const kMissedSegmentPenalty = 1;const kOutOfOrderPenalty = 2;const kReversePenalty = 2;const kHookShapes = [[[1, 3], [-3, -1]], [[3, 3], [0, -1]]];const util = { distance2: (point1, point2) => util.norm2(util.subtract(point1, point2)), clone: point => [point[0], point[1]], norm2: point => point[0] * point[0] + point[1] * point[1], round: point => point.map(Math.round), subtract: (point1, point2) => [point1[0] - point2[0], point1[1] - point2[1]] };const angleDiff = (angle1, angle2) => {
+    const diff = Math.abs(angle1 - angle2);return Math.min(diff, 2 * Math.PI - diff);
+  };const getAngle = median => {
+    const diff = util.subtract(median[median.length - 1], median[0]);return Math.atan2(diff[1], diff[0]);
+  };const getBounds = median => {
+    const min = [Infinity, Infinity];const max = [-Infinity, -Infinity];median.map(point => {
+      min[0] = Math.min(min[0], point[0]);min[1] = Math.min(min[1], point[1]);max[0] = Math.max(max[0], point[0]);max[1] = Math.max(max[1], point[1]);
+    });return [min, max];
+  };const getMidpoint = median => {
+    const bounds = getBounds(median);return [(bounds[0][0] + bounds[1][0]) / 2, (bounds[0][1] + bounds[1][1]) / 2];
+  };const getMinimumLength = pair => Math.sqrt(util.distance2(pair[0], pair[1])) + kMinDistance;const hasHook = median => {
+    if (median.length < 3) return false;if (median.length > 3) return true;for (let shape of kHookShapes) {
+      if (match(median, shape)) return true;
+    }return false;
+  };const match = (median, shape) => {
+    if (median.length !== shape.length + 1) return false;for (let i = 0; i < shape.length; i++) {
+      const angle = angleDiff(getAngle(median.slice(i, i + 2)), getAngle([[0, 0], shape[i]]));if (angle >= kAngleThreshold) return false;
+    }return true;
+  };const performAlignment = (source, target) => {
+    source = source.map(util.clone);target = target.map(util.clone);const memo = [_.range(source.length).map(j => j > 0 ? -Infinity : 0)];for (let i = 1; i < target.length; i++) {
+      const row = [-Infinity];for (let j = 1; j < source.length; j++) {
+        let best_value = -Infinity;const start = Math.max(j - kMaxMissedSegments - 1, 0);for (let k = start; k < j; k++) {
+          if (memo[i - 1][k] === -Infinity) continue;const score = scorePairing([source[k], source[j]], [target[i - 1], target[i]], i === 1);const penalty = (j - k - 1) * kMissedSegmentPenalty;best_value = Math.max(best_value, score + memo[i - 1][k] - penalty);
+        }row.push(best_value);
+      }memo.push(row);
+    }const result = { score: -Infinity, source: null, target: null, warning: null };const min_matched = target.length - (hasHook(target) ? 1 : 0);for (let i = min_matched - 1; i < target.length; i++) {
+      const penalty = (target.length - i - 1) * kMissedSegmentPenalty;const score = memo[i][source.length - 1] - penalty;if (score > result.score) {
+        result.penalties = 0;result.score = score;result.source = [source[0], source[source.length - 1]];result.target = [target[0], target[i]];result.warning = i < target.length - 1 ? "should_hook" : null;
+      }
+    }return result;
+  };const recognize = (source, target, offset) => {
+    if (offset > kMaxOutOfOrder) return { score: -Infinity };let result = performAlignment(source, target);if (result.score === -Infinity) {
+      let alternative = performAlignment(source.slice().reverse(), target);if (!alternative.warning) {
+        result = alternative;result.penalties += 1;result.score -= kReversePenalty;result.warning = "stroke_backward";
+      }
+    }result.score -= Math.abs(offset) * kOutOfOrderPenalty;return result;
+  };const scorePairing = (source, target, is_initial_segment) => {
+    const angle = angleDiff(getAngle(source), getAngle(target));const distance = Math.sqrt(util.distance2(getMidpoint(source), getMidpoint(target)));const length = Math.abs(Math.log(getMinimumLength(source) / getMinimumLength(target)));if (angle > (is_initial_segment ? 1 : 2) * kAngleThreshold || distance > kDistanceThreshold || length > kLengthThreshold) {
+      return -Infinity;
+    }return -(angle + distance + length);
+  };this.inkstone = this.inkstone || {};this.inkstone.matcher = this.inkstone.matcher || {};this.inkstone.matcher.match = match;this.inkstone.matcher.recognize = recognize;
+})();(function () {
+  const path_radical_callback = rects => {
+    const output = [rects[0].tl, rects[0].tr];output.push([rects[0].l, .5 * rects[0].t + .5 * rects[0].b]);output.push([rects[0].r, .5 * rects[0].t + .5 * rects[0].b]);output.push(rects[0].bl);return [output, output.slice(0, 3).concat(output.slice(4)), output.slice(0, 2).concat(output.slice(4))];
+  };const kShortcuts = [{ targets: [[["女", 1], ["女", 2]]], callback: rects => {
+      if (rects[0].r < rects[1].r) return [];return [[rects[1].bl, [rects[0].r, rects[1].t], rects[0].bl]];
+    } }, { targets: [[["了", 0], ["了", 1]], [["孑", 0], ["孑", 1]]], callback: rects => {
+      const output = [rects[0].tl, rects[0].tr, rects[1].tr, rects[1].br];output.push([rects[1].l, rects[1].b + rects[1].l - rects[1].r]);return [output, output.slice(0, 2).concat(output.slice(3))];
+    } }, { targets: [[["纟", 0], ["纟", 1]], [["幺", 0], ["幺", 1]]], callback: rects => {
+      const output = [rects[0].tr, rects[0].bl, rects[1].tr, rects[1].bl];output.push([rects[1].r, .25 * rects[1].t + .75 * rects[1].b]);return [output];
+    } }, { targets: [[["廴", 0]], [["辶", 1]]], callback: path_radical_callback }, { targets: [[["廴", 0], ["廴", 1]], [["辶", 1], ["辶", 2]]], callback: rects => {
+      const options = path_radical_callback([rects[0]]);return options.map(x => x.concat([rects[1].br]));
+    } }];const componentsMatch = (components, target) => {
+    if (components.length < target.length) return false;for (let i = 0; i < target.length; i++) {
+      if (components[i][target[i][0]] !== target[i][1]) return false;
+    }return true;
+  };const computeBounds = median => {
+    const xs = median.map(point => point[0]);const ys = median.map(point => point[1]);const result = { l: _.min(xs), r: _.max(xs), t: _.min(ys), b: _.max(ys) };result.tl = [result.l, result.t];result.tr = [result.r, result.t];result.bl = [result.l, result.b];result.br = [result.r, result.b];return result;
+  };const getShortcuts = (components, medians) => {
+    if (components.length !== medians.length) {
+      console.error("Components:", components);console.error("Medians:", medians);throw new Error("Mismatched components and medians!");
+    }const result = [];for (let i = 0; i < components.length; i++) {
+      for (let shortcut of kShortcuts) {
+        const remainder = components.slice(i);if (_.any(shortcut.targets, x => componentsMatch(remainder, x))) {
+          const n = shortcut.targets[0].length;const bounds = medians.slice(i, i + n).map(computeBounds);const indices = _.range(i, i + n);for (let median of shortcut.callback(bounds)) {
+            result.push({ indices: indices, median: median });
+          }
+        }
+      }
+    }return result;
+  };this.inkstone = this.inkstone || {};this.inkstone.matcher = this.inkstone.matcher || {};this.inkstone.matcher.getShortcuts = getShortcuts;
+})();(function () {
+  const viable = (indices, missing) => {
+    if (indices.length === 1) return true;const set = {};missing.forEach(x => set[x] = true);const remaining = indices.filter(x => set[x]).length;return remaining === 0 || remaining === indices.length;
+  };class Matcher {
+    constructor(character_data) {
+      this._medians = character_data.medians.map(x => inkstone.matcher.findCorners([x])[0]);this._shortcuts = inkstone.matcher.getShortcuts(character_data.components, this._medians);this._candidates = this._medians.map((x, i) => ({ indices: [i], median: x })).concat(this._shortcuts);
+    }match(stroke, missing) {
+      if (missing.length === 0) {
+        throw new Error("Must have at least one missing stroke!");
+      }stroke = new Shortstraw().run(stroke);let best_result = { indices: [], score: -Infinity };this._candidates.forEach((candidate, i) => {
+        if (!viable(candidate.indices, missing)) return;const first_index = _.min(candidate.indices);const offset = first_index - missing[0];const result = inkstone.matcher.recognize(stroke, candidate.median, offset);if (result.score > best_result.score) {
+          best_result = { indices: candidate.indices, penalties: result.penalties, score: result.score, source_segment: result.source, simplified_median: candidate.median, target_segment: result.target, warning: result.warning };
+        }
+      });return best_result;
+    }
+  }this.inkstone = this.inkstone || {};this.inkstone.Matcher = Matcher;
+})();(function () {
+  const kMinFirstSegmentFraction = .1;const kMinLastSegmentFraction = .05;const kFontSize = 1024;const kTruncation = 16;const kShuWanGouShapes = [[[4, 0], [0, 4], [4, 0], [0, -1]], [[0, 4], [4, 0], [0, -1]]];const fixMedianCoordinates = median => median.map(x => [x[0], 900 - x[1]]);const scale = (median, k) => median.map(point => point.map(x => k * x));const dropDanglingHooks = median => {
+    const n = median.length;if (n < 3) return median;const total = pathLength(median);const indices_to_drop = {};if (distance(median[0], median[1]) < kMinFirstSegmentFraction) {
+      indices_to_drop[1] = true;
+    }if (distance(median[n - 2], median[n - 1]) < kMinLastSegmentFraction) {
+      indices_to_drop[n - 2] = true;
+    }return median.filter((value, i) => !indices_to_drop[i]);
+  };const fixShuWanGou = median => {
+    if (median.length === 2) return median;const indices_to_drop = {};for (let shape of kShuWanGouShapes) {
+      if (inkstone.matcher.match(median, shape)) {
+        indices_to_drop[shape.length - 2] = true;
+      }
+    }return median.filter((value, i) => !indices_to_drop[i]);
+  };const distance = (point1, point2) => {
+    const diff = [point1[0] - point2[0], point1[1] - point2[1]];return Math.sqrt(diff[0] * diff[0] + diff[1] * diff[1]);
+  };const findCorners = medians => {
+    const shortstraw = new Shortstraw();return medians.map(fixMedianCoordinates).map(x => truncate(x, kTruncation)).map(x => scale(x, 1 / kFontSize)).map(shortstraw.run.bind(shortstraw)).map(dropDanglingHooks).map(fixShuWanGou);
+  };const pathLength = median => {
+    let total = 0;_.range(median.length - 1).map(i => total += distance(median[i], median[i + 1]));return total;
+  };const refine = (median, n) => {
+    const total = pathLength(median);const result = [];let index = 0;let position = median[0];let total_so_far = 0;for (let i of _.range(n - 1)) {
+      const target = i * total / (n - 1);while (total_so_far < target) {
+        const step = distance(position, median[index + 1]);if (total_so_far + step < target) {
+          index += 1;position = median[index];total_so_far += step;
+        } else {
+          const t = (target - total_so_far) / step;position = [(1 - t) * position[0] + t * median[index + 1][0], (1 - t) * position[1] + t * median[index + 1][1]];total_so_far = target;
+        }
+      }result.push([position[0], position[1]]);
+    }result.push(median[median.length - 1]);return result;
+  };const truncate = (median, truncation) => {
+    const n = 64;const length = pathLength(median);const index = Math.round(n * Math.min(truncation / length, .25));return refined = refine(median, n).slice(index, n - index);
+  };this.inkstone = this.inkstone || {};this.inkstone.matcher = this.inkstone.matcher || {};this.inkstone.matcher = this.inkstone.matcher || {};this.inkstone.matcher.findCorners = findCorners;
+})();(function () {
+  var root = typeof self == "object" && self.self === self && self || typeof global == "object" && global.global === global && global || this || {};var previousUnderscore = root._;var ArrayProto = Array.prototype,
+      ObjProto = Object.prototype;var SymbolProto = typeof Symbol !== "undefined" ? Symbol.prototype : null;var push = ArrayProto.push,
+      slice = ArrayProto.slice,
+      toString = ObjProto.toString,
+      hasOwnProperty = ObjProto.hasOwnProperty;var nativeIsArray = Array.isArray,
+      nativeKeys = Object.keys,
+      nativeCreate = Object.create;var Ctor = function () {};var _ = function (obj) {
+    if (obj instanceof _) return obj;if (!(this instanceof _)) return new _(obj);this._wrapped = obj;
+  };if (typeof exports != "undefined" && !exports.nodeType) {
+    if (typeof module != "undefined" && !module.nodeType && module.exports) {
+      exports = module.exports = _;
+    }exports._ = _;
+  } else {
+    root._ = _;
+  }_.VERSION = "1.8.3";var optimizeCb = function (func, context, argCount) {
+    if (context === void 0) return func;switch (argCount) {case 1:
+        return function (value) {
+          return func.call(context, value);
+        };case null:case 3:
+        return function (value, index, collection) {
+          return func.call(context, value, index, collection);
+        };case 4:
+        return function (accumulator, value, index, collection) {
+          return func.call(context, accumulator, value, index, collection);
+        };}return function () {
+      return func.apply(context, arguments);
+    };
+  };var builtinIteratee;var cb = function (value, context, argCount) {
+    if (_.iteratee !== builtinIteratee) return _.iteratee(value, context);if (value == null) return _.identity;if (_.isFunction(value)) return optimizeCb(value, context, argCount);if (_.isObject(value) && !_.isArray(value)) return _.matcher(value);return _.property(value);
+  };_.iteratee = builtinIteratee = function (value, context) {
+    return cb(value, context, Infinity);
+  };var restArgs = function (func, startIndex) {
+    startIndex = startIndex == null ? func.length - 1 : +startIndex;return function () {
+      var length = Math.max(arguments.length - startIndex, 0),
+          rest = Array(length),
+          index = 0;for (; index < length; index++) {
+        rest[index] = arguments[index + startIndex];
+      }switch (startIndex) {case 0:
+          return func.call(this, rest);case 1:
+          return func.call(this, arguments[0], rest);case 2:
+          return func.call(this, arguments[0], arguments[1], rest);}var args = Array(startIndex + 1);for (index = 0; index < startIndex; index++) {
+        args[index] = arguments[index];
+      }args[startIndex] = rest;return func.apply(this, args);
+    };
+  };var baseCreate = function (prototype) {
+    if (!_.isObject(prototype)) return {};if (nativeCreate) return nativeCreate(prototype);Ctor.prototype = prototype;var result = new Ctor();Ctor.prototype = null;return result;
+  };var shallowProperty = function (key) {
+    return function (obj) {
+      return obj == null ? void 0 : obj[key];
+    };
+  };var deepGet = function (obj, path) {
+    var length = path.length;for (var i = 0; i < length; i++) {
+      if (obj == null) return void 0;obj = obj[path[i]];
+    }return length ? obj : void 0;
+  };var MAX_ARRAY_INDEX = Math.pow(2, 53) - 1;var getLength = shallowProperty("length");var isArrayLike = function (collection) {
+    var length = getLength(collection);return typeof length == "number" && length >= 0 && length <= MAX_ARRAY_INDEX;
+  };_.each = _.forEach = function (obj, iteratee, context) {
+    iteratee = optimizeCb(iteratee, context);var i, length;if (isArrayLike(obj)) {
+      for (i = 0, length = obj.length; i < length; i++) {
+        iteratee(obj[i], i, obj);
+      }
+    } else {
+      var keys = _.keys(obj);for (i = 0, length = keys.length; i < length; i++) {
+        iteratee(obj[keys[i]], keys[i], obj);
+      }
+    }return obj;
+  };_.map = _.collect = function (obj, iteratee, context) {
+    iteratee = cb(iteratee, context);var keys = !isArrayLike(obj) && _.keys(obj),
+        length = (keys || obj).length,
+        results = Array(length);for (var index = 0; index < length; index++) {
+      var currentKey = keys ? keys[index] : index;results[index] = iteratee(obj[currentKey], currentKey, obj);
+    }return results;
+  };var createReduce = function (dir) {
+    var reducer = function (obj, iteratee, memo, initial) {
+      var keys = !isArrayLike(obj) && _.keys(obj),
+          length = (keys || obj).length,
+          index = dir > 0 ? 0 : length - 1;if (!initial) {
+        memo = obj[keys ? keys[index] : index];index += dir;
+      }for (; index >= 0 && index < length; index += dir) {
+        var currentKey = keys ? keys[index] : index;memo = iteratee(memo, obj[currentKey], currentKey, obj);
+      }return memo;
+    };return function (obj, iteratee, memo, context) {
+      var initial = arguments.length >= 3;return reducer(obj, optimizeCb(iteratee, context, 4), memo, initial);
+    };
+  };_.reduce = _.foldl = _.inject = createReduce(1);_.reduceRight = _.foldr = createReduce(-1);_.find = _.detect = function (obj, predicate, context) {
+    var keyFinder = isArrayLike(obj) ? _.findIndex : _.findKey;var key = keyFinder(obj, predicate, context);if (key !== void 0 && key !== -1) return obj[key];
+  };_.filter = _.select = function (obj, predicate, context) {
+    var results = [];predicate = cb(predicate, context);_.each(obj, function (value, index, list) {
+      if (predicate(value, index, list)) results.push(value);
+    });return results;
+  };_.reject = function (obj, predicate, context) {
+    return _.filter(obj, _.negate(cb(predicate)), context);
+  };_.every = _.all = function (obj, predicate, context) {
+    predicate = cb(predicate, context);var keys = !isArrayLike(obj) && _.keys(obj),
+        length = (keys || obj).length;for (var index = 0; index < length; index++) {
+      var currentKey = keys ? keys[index] : index;if (!predicate(obj[currentKey], currentKey, obj)) return false;
+    }return true;
+  };_.some = _.any = function (obj, predicate, context) {
+    predicate = cb(predicate, context);var keys = !isArrayLike(obj) && _.keys(obj),
+        length = (keys || obj).length;for (var index = 0; index < length; index++) {
+      var currentKey = keys ? keys[index] : index;if (predicate(obj[currentKey], currentKey, obj)) return true;
+    }return false;
+  };_.contains = _.includes = _.include = function (obj, item, fromIndex, guard) {
+    if (!isArrayLike(obj)) obj = _.values(obj);if (typeof fromIndex != "number" || guard) fromIndex = 0;return _.indexOf(obj, item, fromIndex) >= 0;
+  };_.invoke = restArgs(function (obj, path, args) {
+    var contextPath, func;if (_.isFunction(path)) {
+      func = path;
+    } else if (_.isArray(path)) {
+      contextPath = path.slice(0, -1);path = path[path.length - 1];
+    }return _.map(obj, function (context) {
+      var method = func;if (!method) {
+        if (contextPath && contextPath.length) {
+          context = deepGet(context, contextPath);
+        }if (context == null) return void 0;method = context[path];
+      }return method == null ? method : method.apply(context, args);
+    });
+  });_.pluck = function (obj, key) {
+    return _.map(obj, _.property(key));
+  };_.where = function (obj, attrs) {
+    return _.filter(obj, _.matcher(attrs));
+  };_.findWhere = function (obj, attrs) {
+    return _.find(obj, _.matcher(attrs));
+  };_.max = function (obj, iteratee, context) {
+    var result = -Infinity,
+        lastComputed = -Infinity,
+        value,
+        computed;if (iteratee == null || typeof iteratee == "number" && typeof obj[0] != "object" && obj != null) {
+      obj = isArrayLike(obj) ? obj : _.values(obj);for (var i = 0, length = obj.length; i < length; i++) {
+        value = obj[i];if (value != null && value > result) {
+          result = value;
+        }
+      }
+    } else {
+      iteratee = cb(iteratee, context);_.each(obj, function (v, index, list) {
+        computed = iteratee(v, index, list);if (computed > lastComputed || computed === -Infinity && result === -Infinity) {
+          result = v;lastComputed = computed;
+        }
+      });
+    }return result;
+  };_.min = function (obj, iteratee, context) {
+    var result = Infinity,
+        lastComputed = Infinity,
+        value,
+        computed;if (iteratee == null || typeof iteratee == "number" && typeof obj[0] != "object" && obj != null) {
+      obj = isArrayLike(obj) ? obj : _.values(obj);for (var i = 0, length = obj.length; i < length; i++) {
+        value = obj[i];if (value != null && value < result) {
+          result = value;
+        }
+      }
+    } else {
+      iteratee = cb(iteratee, context);_.each(obj, function (v, index, list) {
+        computed = iteratee(v, index, list);if (computed < lastComputed || computed === Infinity && result === Infinity) {
+          result = v;lastComputed = computed;
+        }
+      });
+    }return result;
+  };_.shuffle = function (obj) {
+    return _.sample(obj, Infinity);
+  };_.sample = function (obj, n, guard) {
+    if (n == null || guard) {
+      if (!isArrayLike(obj)) obj = _.values(obj);return obj[_.random(obj.length - 1)];
+    }var sample = isArrayLike(obj) ? _.clone(obj) : _.values(obj);var length = getLength(sample);n = Math.max(Math.min(n, length), 0);var last = length - 1;for (var index = 0; index < n; index++) {
+      var rand = _.random(index, last);var temp = sample[index];sample[index] = sample[rand];sample[rand] = temp;
+    }return sample.slice(0, n);
+  };_.sortBy = function (obj, iteratee, context) {
+    var index = 0;iteratee = cb(iteratee, context);return _.pluck(_.map(obj, function (value, key, list) {
+      return { value: value, index: index++, criteria: iteratee(value, key, list) };
+    }).sort(function (left, right) {
+      var a = left.criteria;var b = right.criteria;if (a !== b) {
+        if (a > b || a === void 0) return 1;if (a < b || b === void 0) return -1;
+      }return left.index - right.index;
+    }), "value");
+  };var group = function (behavior, partition) {
+    return function (obj, iteratee, context) {
+      var result = partition ? [[], []] : {};iteratee = cb(iteratee, context);_.each(obj, function (value, index) {
+        var key = iteratee(value, index, obj);behavior(result, value, key);
+      });return result;
+    };
+  };_.groupBy = group(function (result, value, key) {
+    if (_.has(result, key)) result[key].push(value);else result[key] = [value];
+  });_.indexBy = group(function (result, value, key) {
+    result[key] = value;
+  });_.countBy = group(function (result, value, key) {
+    if (_.has(result, key)) result[key]++;else result[key] = 1;
+  });var reStrSymbol = /[^\ud800-\udfff]|[\ud800-\udbff][\udc00-\udfff]|[\ud800-\udfff]/g;_.toArray = function (obj) {
+    if (!obj) return [];if (_.isArray(obj)) return slice.call(obj);if (_.isString(obj)) {
+      return obj.match(reStrSymbol);
+    }if (isArrayLike(obj)) return _.map(obj, _.identity);return _.values(obj);
+  };_.size = function (obj) {
+    if (obj == null) return 0;return isArrayLike(obj) ? obj.length : _.keys(obj).length;
+  };_.partition = group(function (result, value, pass) {
+    result[pass ? 0 : 1].push(value);
+  }, true);_.first = _.head = _.take = function (array, n, guard) {
+    if (array == null || array.length < 1) return void 0;if (n == null || guard) return array[0];return _.initial(array, array.length - n);
+  };_.initial = function (array, n, guard) {
+    return slice.call(array, 0, Math.max(0, array.length - (n == null || guard ? 1 : n)));
+  };_.last = function (array, n, guard) {
+    if (array == null || array.length < 1) return void 0;if (n == null || guard) return array[array.length - 1];return _.rest(array, Math.max(0, array.length - n));
+  };_.rest = _.tail = _.drop = function (array, n, guard) {
+    return slice.call(array, n == null || guard ? 1 : n);
+  };_.compact = function (array) {
+    return _.filter(array, Boolean);
+  };var flatten = function (input, shallow, strict, output) {
+    output = output || [];var idx = output.length;for (var i = 0, length = getLength(input); i < length; i++) {
+      var value = input[i];if (isArrayLike(value) && (_.isArray(value) || _.isArguments(value))) {
+        if (shallow) {
+          var j = 0,
+              len = value.length;while (j < len) output[idx++] = value[j++];
+        } else {
+          flatten(value, shallow, strict, output);idx = output.length;
+        }
+      } else if (!strict) {
+        output[idx++] = value;
+      }
+    }return output;
+  };_.flatten = function (array, shallow) {
+    return flatten(array, shallow, false);
+  };_.without = restArgs(function (array, otherArrays) {
+    return _.difference(array, otherArrays);
+  });_.uniq = _.unique = function (array, isSorted, iteratee, context) {
+    if (!_.isBoolean(isSorted)) {
+      context = iteratee;iteratee = isSorted;isSorted = false;
+    }if (iteratee != null) iteratee = cb(iteratee, context);var result = [];var seen = [];for (var i = 0, length = getLength(array); i < length; i++) {
+      var value = array[i],
+          computed = iteratee ? iteratee(value, i, array) : value;if (isSorted) {
+        if (!i || seen !== computed) result.push(value);seen = computed;
+      } else if (iteratee) {
+        if (!_.contains(seen, computed)) {
+          seen.push(computed);result.push(value);
+        }
+      } else if (!_.contains(result, value)) {
+        result.push(value);
+      }
+    }return result;
+  };_.union = restArgs(function (arrays) {
+    return _.uniq(flatten(arrays, true, true));
+  });_.intersection = function (array) {
+    var result = [];var argsLength = arguments.length;for (var i = 0, length = getLength(array); i < length; i++) {
+      var item = array[i];if (_.contains(result, item)) continue;var j;for (j = 1; j < argsLength; j++) {
+        if (!_.contains(arguments[j], item)) break;
+      }if (j === argsLength) result.push(item);
+    }return result;
+  };_.difference = restArgs(function (array, rest) {
+    rest = flatten(rest, true, true);return _.filter(array, function (value) {
+      return !_.contains(rest, value);
+    });
+  });_.unzip = function (array) {
+    var length = array && _.max(array, getLength).length || 0;var result = Array(length);for (var index = 0; index < length; index++) {
+      result[index] = _.pluck(array, index);
+    }return result;
+  };_.zip = restArgs(_.unzip);_.object = function (list, values) {
+    var result = {};for (var i = 0, length = getLength(list); i < length; i++) {
+      if (values) {
+        result[list[i]] = values[i];
+      } else {
+        result[list[i][0]] = list[i][1];
+      }
+    }return result;
+  };var createPredicateIndexFinder = function (dir) {
+    return function (array, predicate, context) {
+      predicate = cb(predicate, context);var length = getLength(array);var index = dir > 0 ? 0 : length - 1;for (; index >= 0 && index < length; index += dir) {
+        if (predicate(array[index], index, array)) return index;
+      }return -1;
+    };
+  };_.findIndex = createPredicateIndexFinder(1);_.findLastIndex = createPredicateIndexFinder(-1);_.sortedIndex = function (array, obj, iteratee, context) {
+    iteratee = cb(iteratee, context, 1);var value = iteratee(obj);var low = 0,
+        high = getLength(array);while (low < high) {
+      var mid = Math.floor((low + high) / 2);if (iteratee(array[mid]) < value) low = mid + 1;else high = mid;
+    }return low;
+  };var createIndexFinder = function (dir, predicateFind, sortedIndex) {
+    return function (array, item, idx) {
+      var i = 0,
+          length = getLength(array);if (typeof idx == "number") {
+        if (dir > 0) {
+          i = idx >= 0 ? idx : Math.max(idx + length, i);
+        } else {
+          length = idx >= 0 ? Math.min(idx + 1, length) : idx + length + 1;
+        }
+      } else if (sortedIndex && idx && length) {
+        idx = sortedIndex(array, item);return array[idx] === item ? idx : -1;
+      }if (item !== item) {
+        idx = predicateFind(slice.call(array, i, length), _.isNaN);return idx >= 0 ? idx + i : -1;
+      }for (idx = dir > 0 ? i : length - 1; idx >= 0 && idx < length; idx += dir) {
+        if (array[idx] === item) return idx;
+      }return -1;
+    };
+  };_.indexOf = createIndexFinder(1, _.findIndex, _.sortedIndex);_.lastIndexOf = createIndexFinder(-1, _.findLastIndex);_.range = function (start, stop, step) {
+    if (stop == null) {
+      stop = start || 0;start = 0;
+    }if (!step) {
+      step = stop < start ? -1 : 1;
+    }var length = Math.max(Math.ceil((stop - start) / step), 0);var range = Array(length);for (var idx = 0; idx < length; idx++, start += step) {
+      range[idx] = start;
+    }return range;
+  };_.chunk = function (array, count) {
+    if (count == null || count < 1) return [];var result = [];var i = 0,
+        length = array.length;while (i < length) {
+      result.push(slice.call(array, i, i += count));
+    }return result;
+  };var executeBound = function (sourceFunc, boundFunc, context, callingContext, args) {
+    if (!(callingContext instanceof boundFunc)) return sourceFunc.apply(context, args);var self = baseCreate(sourceFunc.prototype);var result = sourceFunc.apply(self, args);if (_.isObject(result)) return result;return self;
+  };_.bind = restArgs(function (func, context, args) {
+    if (!_.isFunction(func)) throw new TypeError("Bind must be called on a function");var bound = restArgs(function (callArgs) {
+      return executeBound(func, bound, context, this, args.concat(callArgs));
+    });return bound;
+  });_.partial = restArgs(function (func, boundArgs) {
+    var placeholder = _.partial.placeholder;var bound = function () {
+      var position = 0,
+          length = boundArgs.length;var args = Array(length);for (var i = 0; i < length; i++) {
+        args[i] = boundArgs[i] === placeholder ? arguments[position++] : boundArgs[i];
+      }while (position < arguments.length) args.push(arguments[position++]);return executeBound(func, bound, this, this, args);
+    };return bound;
+  });_.partial.placeholder = _;_.bindAll = restArgs(function (obj, keys) {
+    keys = flatten(keys, false, false);var index = keys.length;if (index < 1) throw new Error("bindAll must be passed function names");while (index--) {
+      var key = keys[index];obj[key] = _.bind(obj[key], obj);
+    }
+  });_.memoize = function (func, hasher) {
+    var memoize = function (key) {
+      var cache = memoize.cache;var address = "" + (hasher ? hasher.apply(this, arguments) : key);if (!_.has(cache, address)) cache[address] = func.apply(this, arguments);return cache[address];
+    };memoize.cache = {};return memoize;
+  };_.delay = restArgs(function (func, wait, args) {
+    return setTimeout(function () {
+      return func.apply(null, args);
+    }, wait);
+  });_.defer = _.partial(_.delay, _, 1);_.throttle = function (func, wait, options) {
+    var timeout, context, args, result;var previous = 0;if (!options) options = {};var later = function () {
+      previous = options.leading === false ? 0 : _.now();timeout = null;result = func.apply(context, args);if (!timeout) context = args = null;
+    };var throttled = function () {
+      var now = _.now();if (!previous && options.leading === false) previous = now;var remaining = wait - (now - previous);context = this;args = arguments;if (remaining <= 0 || remaining > wait) {
+        if (timeout) {
+          clearTimeout(timeout);timeout = null;
+        }previous = now;result = func.apply(context, args);if (!timeout) context = args = null;
+      } else if (!timeout && options.trailing !== false) {
+        timeout = setTimeout(later, remaining);
+      }return result;
+    };throttled.cancel = function () {
+      clearTimeout(timeout);previous = 0;timeout = context = args = null;
+    };return throttled;
+  };_.debounce = function (func, wait, immediate) {
+    var timeout, result;var later = function (context, args) {
+      timeout = null;if (args) result = func.apply(context, args);
+    };var debounced = restArgs(function (args) {
+      if (timeout) clearTimeout(timeout);if (immediate) {
+        var callNow = !timeout;timeout = setTimeout(later, wait);if (callNow) result = func.apply(this, args);
+      } else {
+        timeout = _.delay(later, wait, this, args);
+      }return result;
+    });debounced.cancel = function () {
+      clearTimeout(timeout);timeout = null;
+    };return debounced;
+  };_.wrap = function (func, wrapper) {
+    return _.partial(wrapper, func);
+  };_.negate = function (predicate) {
+    return function () {
+      return !predicate.apply(this, arguments);
+    };
+  };_.compose = function () {
+    var args = arguments;var start = args.length - 1;return function () {
+      var i = start;var result = args[start].apply(this, arguments);while (i--) result = args[i].call(this, result);return result;
+    };
+  };_.after = function (times, func) {
+    return function () {
+      if (--times < 1) {
+        return func.apply(this, arguments);
+      }
+    };
+  };_.before = function (times, func) {
+    var memo;return function () {
+      if (--times > 0) {
+        memo = func.apply(this, arguments);
+      }if (times <= 1) func = null;return memo;
+    };
+  };_.once = _.partial(_.before, 2);_.restArgs = restArgs;var hasEnumBug = !{ toString: null }.propertyIsEnumerable("toString");var nonEnumerableProps = ["valueOf", "isPrototypeOf", "toString", "propertyIsEnumerable", "hasOwnProperty", "toLocaleString"];var collectNonEnumProps = function (obj, keys) {
+    var nonEnumIdx = nonEnumerableProps.length;var constructor = obj.constructor;var proto = _.isFunction(constructor) && constructor.prototype || ObjProto;var prop = "constructor";if (_.has(obj, prop) && !_.contains(keys, prop)) keys.push(prop);while (nonEnumIdx--) {
+      prop = nonEnumerableProps[nonEnumIdx];if (prop in obj && obj[prop] !== proto[prop] && !_.contains(keys, prop)) {
+        keys.push(prop);
+      }
+    }
+  };_.keys = function (obj) {
+    if (!_.isObject(obj)) return [];if (nativeKeys) return nativeKeys(obj);var keys = [];for (var key in obj) if (_.has(obj, key)) keys.push(key);if (hasEnumBug) collectNonEnumProps(obj, keys);return keys;
+  };_.allKeys = function (obj) {
+    if (!_.isObject(obj)) return [];var keys = [];for (var key in obj) keys.push(key);if (hasEnumBug) collectNonEnumProps(obj, keys);return keys;
+  };_.values = function (obj) {
+    var keys = _.keys(obj);var length = keys.length;var values = Array(length);for (var i = 0; i < length; i++) {
+      values[i] = obj[keys[i]];
+    }return values;
+  };_.mapObject = function (obj, iteratee, context) {
+    iteratee = cb(iteratee, context);var keys = _.keys(obj),
+        length = keys.length,
+        results = {};for (var index = 0; index < length; index++) {
+      var currentKey = keys[index];results[currentKey] = iteratee(obj[currentKey], currentKey, obj);
+    }return results;
+  };_.pairs = function (obj) {
+    var keys = _.keys(obj);var length = keys.length;var pairs = Array(length);for (var i = 0; i < length; i++) {
+      pairs[i] = [keys[i], obj[keys[i]]];
+    }return pairs;
+  };_.invert = function (obj) {
+    var result = {};var keys = _.keys(obj);for (var i = 0, length = keys.length; i < length; i++) {
+      result[obj[keys[i]]] = keys[i];
+    }return result;
+  };_.functions = _.methods = function (obj) {
+    var names = [];for (var key in obj) {
+      if (_.isFunction(obj[key])) names.push(key);
+    }return names.sort();
+  };var createAssigner = function (keysFunc, defaults) {
+    return function (obj) {
+      var length = arguments.length;if (defaults) obj = Object(obj);if (length < 2 || obj == null) return obj;for (var index = 1; index < length; index++) {
+        var source = arguments[index],
+            keys = keysFunc(source),
+            l = keys.length;for (var i = 0; i < l; i++) {
+          var key = keys[i];if (!defaults || obj[key] === void 0) obj[key] = source[key];
+        }
+      }return obj;
+    };
+  };_.extend = createAssigner(_.allKeys);_.extendOwn = _.assign = createAssigner(_.keys);_.findKey = function (obj, predicate, context) {
+    predicate = cb(predicate, context);var keys = _.keys(obj),
+        key;for (var i = 0, length = keys.length; i < length; i++) {
+      key = keys[i];if (predicate(obj[key], key, obj)) return key;
+    }
+  };var keyInObj = function (value, key, obj) {
+    return key in obj;
+  };_.pick = restArgs(function (obj, keys) {
+    var result = {},
+        iteratee = keys[0];if (obj == null) return result;if (_.isFunction(iteratee)) {
+      if (keys.length > 1) iteratee = optimizeCb(iteratee, keys[1]);keys = _.allKeys(obj);
+    } else {
+      iteratee = keyInObj;keys = flatten(keys, false, false);obj = Object(obj);
+    }for (var i = 0, length = keys.length; i < length; i++) {
+      var key = keys[i];var value = obj[key];if (iteratee(value, key, obj)) result[key] = value;
+    }return result;
+  });_.omit = restArgs(function (obj, keys) {
+    var iteratee = keys[0],
+        context;if (_.isFunction(iteratee)) {
+      iteratee = _.negate(iteratee);if (keys.length > 1) context = keys[1];
+    } else {
+      keys = _.map(flatten(keys, false, false), String);iteratee = function (value, key) {
+        return !_.contains(keys, key);
+      };
+    }return _.pick(obj, iteratee, context);
+  });_.defaults = createAssigner(_.allKeys, true);_.create = function (prototype, props) {
+    var result = baseCreate(prototype);if (props) _.extendOwn(result, props);return result;
+  };_.clone = function (obj) {
+    if (!_.isObject(obj)) return obj;return _.isArray(obj) ? obj.slice() : _.extend({}, obj);
+  };_.tap = function (obj, interceptor) {
+    interceptor(obj);return obj;
+  };_.isMatch = function (object, attrs) {
+    var keys = _.keys(attrs),
+        length = keys.length;if (object == null) return !length;var obj = Object(object);for (var i = 0; i < length; i++) {
+      var key = keys[i];if (attrs[key] !== obj[key] || !(key in obj)) return false;
+    }return true;
+  };var eq, deepEq;eq = function (a, b, aStack, bStack) {
+    if (a === b) return a !== 0 || 1 / a === 1 / b;if (a == null || b == null) return false;if (a !== a) return b !== b;var type = typeof a;if (type !== "function" && type !== "object" && typeof b != "object") return false;return deepEq(a, b, aStack, bStack);
+  };deepEq = function (a, b, aStack, bStack) {
+    if (a instanceof _) a = a._wrapped;if (b instanceof _) b = b._wrapped;var className = toString.call(a);if (className !== toString.call(b)) return false;switch (className) {case "[object RegExp]":case "[object String]":
+        return "" + a === "" + b;case "[object Number]":
+        if (+a !== +a) return +b !== +b;return +a === 0 ? 1 / +a === 1 / b : +a === +b;case "[object Date]":case "[object Boolean]":
+        return +a === +b;case "[object Symbol]":
+        return SymbolProto.valueOf.call(a) === SymbolProto.valueOf.call(b);}var areArrays = className === "[object Array]";if (!areArrays) {
+      if (typeof a != "object" || typeof b != "object") return false;var aCtor = a.constructor,
+          bCtor = b.constructor;if (aCtor !== bCtor && !(_.isFunction(aCtor) && aCtor instanceof aCtor && _.isFunction(bCtor) && bCtor instanceof bCtor) && "constructor" in a && "constructor" in b) {
+        return false;
+      }
+    }aStack = aStack || [];bStack = bStack || [];var length = aStack.length;while (length--) {
+      if (aStack[length] === a) return bStack[length] === b;
+    }aStack.push(a);bStack.push(b);if (areArrays) {
+      length = a.length;if (length !== b.length) return false;while (length--) {
+        if (!eq(a[length], b[length], aStack, bStack)) return false;
+      }
+    } else {
+      var keys = _.keys(a),
+          key;length = keys.length;if (_.keys(b).length !== length) return false;while (length--) {
+        key = keys[length];if (!(_.has(b, key) && eq(a[key], b[key], aStack, bStack))) return false;
+      }
+    }aStack.pop();bStack.pop();return true;
+  };_.isEqual = function (a, b) {
+    return eq(a, b);
+  };_.isEmpty = function (obj) {
+    if (obj == null) return true;if (isArrayLike(obj) && (_.isArray(obj) || _.isString(obj) || _.isArguments(obj))) return obj.length === 0;return _.keys(obj).length === 0;
+  };_.isElement = function (obj) {
+    return !!(obj && obj.nodeType === 1);
+  };_.isArray = nativeIsArray || function (obj) {
+    return toString.call(obj) === "[object Array]";
+  };_.isObject = function (obj) {
+    var type = typeof obj;return type === "function" || type === "object" && !!obj;
+  };_.each(["Arguments", "Function", "String", "Number", "Date", "RegExp", "Error", "Symbol", "Map", "WeakMap", "Set", "WeakSet"], function (name) {
+    _["is" + name] = function (obj) {
+      return toString.call(obj) === "[object " + name + "]";
+    };
+  });if (!_.isArguments(arguments)) {
+    _.isArguments = function (obj) {
+      return _.has(obj, "callee");
+    };
+  }var nodelist = root.document && root.document.childNodes;if (typeof /./ != "function" && typeof Int8Array != "object" && typeof nodelist != "function") {
+    _.isFunction = function (obj) {
+      return typeof obj == "function" || false;
+    };
+  }_.isFinite = function (obj) {
+    return !_.isSymbol(obj) && isFinite(obj) && !isNaN(parseFloat(obj));
+  };_.isNaN = function (obj) {
+    return _.isNumber(obj) && isNaN(obj);
+  };_.isBoolean = function (obj) {
+    return obj === true || obj === false || toString.call(obj) === "[object Boolean]";
+  };_.isNull = function (obj) {
+    return obj === null;
+  };_.isUndefined = function (obj) {
+    return obj === void 0;
+  };_.has = function (obj, path) {
+    if (!_.isArray(path)) {
+      return obj != null && hasOwnProperty.call(obj, path);
+    }var length = path.length;for (var i = 0; i < length; i++) {
+      var key = path[i];if (obj == null || !hasOwnProperty.call(obj, key)) {
+        return false;
+      }obj = obj[key];
+    }return !!length;
+  };_.noConflict = function () {
+    root._ = previousUnderscore;return this;
+  };_.identity = function (value) {
+    return value;
+  };_.constant = function (value) {
+    return function () {
+      return value;
+    };
+  };_.noop = function () {};_.property = function (path) {
+    if (!_.isArray(path)) {
+      return shallowProperty(path);
+    }return function (obj) {
+      return deepGet(obj, path);
+    };
+  };_.propertyOf = function (obj) {
+    if (obj == null) {
+      return function () {};
+    }return function (path) {
+      return !_.isArray(path) ? obj[path] : deepGet(obj, path);
+    };
+  };_.matcher = _.matches = function (attrs) {
+    attrs = _.extendOwn({}, attrs);return function (obj) {
+      return _.isMatch(obj, attrs);
+    };
+  };_.times = function (n, iteratee, context) {
+    var accum = Array(Math.max(0, n));iteratee = optimizeCb(iteratee, context, 1);for (var i = 0; i < n; i++) accum[i] = iteratee(i);return accum;
+  };_.random = function (min, max) {
+    if (max == null) {
+      max = min;min = 0;
+    }return min + Math.floor(Math.random() * (max - min + 1));
+  };_.now = Date.now || function () {
+    return new Date().getTime();
+  };var escapeMap = { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#x27;", "`": "&#x60;" };var unescapeMap = _.invert(escapeMap);var createEscaper = function (map) {
+    var escaper = function (match) {
+      return map[match];
+    };var source = "(?:" + _.keys(map).join("|") + ")";var testRegexp = RegExp(source);var replaceRegexp = RegExp(source, "g");return function (string) {
+      string = string == null ? "" : "" + string;return testRegexp.test(string) ? string.replace(replaceRegexp, escaper) : string;
+    };
+  };_.escape = createEscaper(escapeMap);_.unescape = createEscaper(unescapeMap);_.result = function (obj, path, fallback) {
+    if (!_.isArray(path)) path = [path];var length = path.length;if (!length) {
+      return _.isFunction(fallback) ? fallback.call(obj) : fallback;
+    }for (var i = 0; i < length; i++) {
+      var prop = obj == null ? void 0 : obj[path[i]];if (prop === void 0) {
+        prop = fallback;i = length;
+      }obj = _.isFunction(prop) ? prop.call(obj) : prop;
+    }return obj;
+  };var idCounter = 0;_.uniqueId = function (prefix) {
+    var id = ++idCounter + "";return prefix ? prefix + id : id;
+  };_.templateSettings = { evaluate: /<%([\s\S]+?)%>/g, interpolate: /<%=([\s\S]+?)%>/g, escape: /<%-([\s\S]+?)%>/g };var noMatch = /(.)^/;var escapes = { "'": "'", "\\": "\\", "\r": "r", "\n": "n", "\u2028": "u2028", "\u2029": "u2029" };var escapeRegExp = /\\|'|\r|\n|\u2028|\u2029/g;var escapeChar = function (match) {
+    return "\\" + escapes[match];
+  };_.template = function (text, settings, oldSettings) {
+    if (!settings && oldSettings) settings = oldSettings;settings = _.defaults({}, settings, _.templateSettings);var matcher = RegExp([(settings.escape || noMatch).source, (settings.interpolate || noMatch).source, (settings.evaluate || noMatch).source].join("|") + "|$", "g");var index = 0;var source = "__p+='";text.replace(matcher, function (match, escape, interpolate, evaluate, offset) {
+      source += text.slice(index, offset).replace(escapeRegExp, escapeChar);index = offset + match.length;if (escape) {
+        source += "'+\n((__t=(" + escape + "))==null?'':_.escape(__t))+\n'";
+      } else if (interpolate) {
+        source += "'+\n((__t=(" + interpolate + "))==null?'':__t)+\n'";
+      } else if (evaluate) {
+        source += "';\n" + evaluate + "\n__p+='";
+      }return match;
+    });source += "';\n";if (!settings.variable) source = "with(obj||{}){\n" + source + "}\n";source = "var __t,__p='',__j=Array.prototype.join," + "print=function(){__p+=__j.call(arguments,'');};\n" + source + "return __p;\n";var render;try {
+      render = new Function(settings.variable || "obj", "_", source);
+    } catch (e) {
+      e.source = source;throw e;
+    }var template = function (data) {
+      return render.call(this, data, _);
+    };var argument = settings.variable || "obj";template.source = "function(" + argument + "){\n" + source + "}";return template;
+  };_.chain = function (obj) {
+    var instance = _(obj);instance._chain = true;return instance;
+  };var chainResult = function (instance, obj) {
+    return instance._chain ? _(obj).chain() : obj;
+  };_.mixin = function (obj) {
+    _.each(_.functions(obj), function (name) {
+      var func = _[name] = obj[name];_.prototype[name] = function () {
+        var args = [this._wrapped];push.apply(args, arguments);return chainResult(this, func.apply(_, args));
+      };
+    });return _;
+  };_.mixin(_);_.each(["pop", "push", "reverse", "shift", "sort", "splice", "unshift"], function (name) {
+    var method = ArrayProto[name];_.prototype[name] = function () {
+      var obj = this._wrapped;method.apply(obj, arguments);if ((name === "shift" || name === "splice") && obj.length === 0) delete obj[0];return chainResult(this, obj);
+    };
+  });_.each(["concat", "join", "slice"], function (name) {
+    var method = ArrayProto[name];_.prototype[name] = function () {
+      return chainResult(this, method.apply(this._wrapped, arguments));
+    };
+  });_.prototype.value = function () {
+    return this._wrapped;
+  };_.prototype.valueOf = _.prototype.toJSON = _.prototype.value;_.prototype.toString = function () {
+    return String(this._wrapped);
+  };if (typeof define == "function" && define.amd) {
+    define("underscore", [], function () {
+      return _;
+    });
+  }
+})();this.createjs = this.createjs || {};createjs.extend = function (subclass, superclass) {
   "use strict";
   function o() {
     this.constructor = subclass;
@@ -3104,614 +4020,6 @@ const kIdPrefix = "inkstone-stroke-order-animation";const kWidth = 128;const add
 })();this.createjs = this.createjs || {};(function () {
   "use strict";
   var s = createjs.TweenJS = createjs.TweenJS || {};s.version = "0.6.2";s.buildDate = "Thu, 26 Nov 2015 20:44:31 GMT";
-})();(function () {
-  var root = typeof self == "object" && self.self === self && self || typeof global == "object" && global.global === global && global || this || {};var previousUnderscore = root._;var ArrayProto = Array.prototype,
-      ObjProto = Object.prototype;var SymbolProto = typeof Symbol !== "undefined" ? Symbol.prototype : null;var push = ArrayProto.push,
-      slice = ArrayProto.slice,
-      toString = ObjProto.toString,
-      hasOwnProperty = ObjProto.hasOwnProperty;var nativeIsArray = Array.isArray,
-      nativeKeys = Object.keys,
-      nativeCreate = Object.create;var Ctor = function () {};var _ = function (obj) {
-    if (obj instanceof _) return obj;if (!(this instanceof _)) return new _(obj);this._wrapped = obj;
-  };if (typeof exports != "undefined" && !exports.nodeType) {
-    if (typeof module != "undefined" && !module.nodeType && module.exports) {
-      exports = module.exports = _;
-    }exports._ = _;
-  } else {
-    root._ = _;
-  }_.VERSION = "1.8.3";var optimizeCb = function (func, context, argCount) {
-    if (context === void 0) return func;switch (argCount) {case 1:
-        return function (value) {
-          return func.call(context, value);
-        };case null:case 3:
-        return function (value, index, collection) {
-          return func.call(context, value, index, collection);
-        };case 4:
-        return function (accumulator, value, index, collection) {
-          return func.call(context, accumulator, value, index, collection);
-        };}return function () {
-      return func.apply(context, arguments);
-    };
-  };var builtinIteratee;var cb = function (value, context, argCount) {
-    if (_.iteratee !== builtinIteratee) return _.iteratee(value, context);if (value == null) return _.identity;if (_.isFunction(value)) return optimizeCb(value, context, argCount);if (_.isObject(value) && !_.isArray(value)) return _.matcher(value);return _.property(value);
-  };_.iteratee = builtinIteratee = function (value, context) {
-    return cb(value, context, Infinity);
-  };var restArgs = function (func, startIndex) {
-    startIndex = startIndex == null ? func.length - 1 : +startIndex;return function () {
-      var length = Math.max(arguments.length - startIndex, 0),
-          rest = Array(length),
-          index = 0;for (; index < length; index++) {
-        rest[index] = arguments[index + startIndex];
-      }switch (startIndex) {case 0:
-          return func.call(this, rest);case 1:
-          return func.call(this, arguments[0], rest);case 2:
-          return func.call(this, arguments[0], arguments[1], rest);}var args = Array(startIndex + 1);for (index = 0; index < startIndex; index++) {
-        args[index] = arguments[index];
-      }args[startIndex] = rest;return func.apply(this, args);
-    };
-  };var baseCreate = function (prototype) {
-    if (!_.isObject(prototype)) return {};if (nativeCreate) return nativeCreate(prototype);Ctor.prototype = prototype;var result = new Ctor();Ctor.prototype = null;return result;
-  };var shallowProperty = function (key) {
-    return function (obj) {
-      return obj == null ? void 0 : obj[key];
-    };
-  };var deepGet = function (obj, path) {
-    var length = path.length;for (var i = 0; i < length; i++) {
-      if (obj == null) return void 0;obj = obj[path[i]];
-    }return length ? obj : void 0;
-  };var MAX_ARRAY_INDEX = Math.pow(2, 53) - 1;var getLength = shallowProperty("length");var isArrayLike = function (collection) {
-    var length = getLength(collection);return typeof length == "number" && length >= 0 && length <= MAX_ARRAY_INDEX;
-  };_.each = _.forEach = function (obj, iteratee, context) {
-    iteratee = optimizeCb(iteratee, context);var i, length;if (isArrayLike(obj)) {
-      for (i = 0, length = obj.length; i < length; i++) {
-        iteratee(obj[i], i, obj);
-      }
-    } else {
-      var keys = _.keys(obj);for (i = 0, length = keys.length; i < length; i++) {
-        iteratee(obj[keys[i]], keys[i], obj);
-      }
-    }return obj;
-  };_.map = _.collect = function (obj, iteratee, context) {
-    iteratee = cb(iteratee, context);var keys = !isArrayLike(obj) && _.keys(obj),
-        length = (keys || obj).length,
-        results = Array(length);for (var index = 0; index < length; index++) {
-      var currentKey = keys ? keys[index] : index;results[index] = iteratee(obj[currentKey], currentKey, obj);
-    }return results;
-  };var createReduce = function (dir) {
-    var reducer = function (obj, iteratee, memo, initial) {
-      var keys = !isArrayLike(obj) && _.keys(obj),
-          length = (keys || obj).length,
-          index = dir > 0 ? 0 : length - 1;if (!initial) {
-        memo = obj[keys ? keys[index] : index];index += dir;
-      }for (; index >= 0 && index < length; index += dir) {
-        var currentKey = keys ? keys[index] : index;memo = iteratee(memo, obj[currentKey], currentKey, obj);
-      }return memo;
-    };return function (obj, iteratee, memo, context) {
-      var initial = arguments.length >= 3;return reducer(obj, optimizeCb(iteratee, context, 4), memo, initial);
-    };
-  };_.reduce = _.foldl = _.inject = createReduce(1);_.reduceRight = _.foldr = createReduce(-1);_.find = _.detect = function (obj, predicate, context) {
-    var keyFinder = isArrayLike(obj) ? _.findIndex : _.findKey;var key = keyFinder(obj, predicate, context);if (key !== void 0 && key !== -1) return obj[key];
-  };_.filter = _.select = function (obj, predicate, context) {
-    var results = [];predicate = cb(predicate, context);_.each(obj, function (value, index, list) {
-      if (predicate(value, index, list)) results.push(value);
-    });return results;
-  };_.reject = function (obj, predicate, context) {
-    return _.filter(obj, _.negate(cb(predicate)), context);
-  };_.every = _.all = function (obj, predicate, context) {
-    predicate = cb(predicate, context);var keys = !isArrayLike(obj) && _.keys(obj),
-        length = (keys || obj).length;for (var index = 0; index < length; index++) {
-      var currentKey = keys ? keys[index] : index;if (!predicate(obj[currentKey], currentKey, obj)) return false;
-    }return true;
-  };_.some = _.any = function (obj, predicate, context) {
-    predicate = cb(predicate, context);var keys = !isArrayLike(obj) && _.keys(obj),
-        length = (keys || obj).length;for (var index = 0; index < length; index++) {
-      var currentKey = keys ? keys[index] : index;if (predicate(obj[currentKey], currentKey, obj)) return true;
-    }return false;
-  };_.contains = _.includes = _.include = function (obj, item, fromIndex, guard) {
-    if (!isArrayLike(obj)) obj = _.values(obj);if (typeof fromIndex != "number" || guard) fromIndex = 0;return _.indexOf(obj, item, fromIndex) >= 0;
-  };_.invoke = restArgs(function (obj, path, args) {
-    var contextPath, func;if (_.isFunction(path)) {
-      func = path;
-    } else if (_.isArray(path)) {
-      contextPath = path.slice(0, -1);path = path[path.length - 1];
-    }return _.map(obj, function (context) {
-      var method = func;if (!method) {
-        if (contextPath && contextPath.length) {
-          context = deepGet(context, contextPath);
-        }if (context == null) return void 0;method = context[path];
-      }return method == null ? method : method.apply(context, args);
-    });
-  });_.pluck = function (obj, key) {
-    return _.map(obj, _.property(key));
-  };_.where = function (obj, attrs) {
-    return _.filter(obj, _.matcher(attrs));
-  };_.findWhere = function (obj, attrs) {
-    return _.find(obj, _.matcher(attrs));
-  };_.max = function (obj, iteratee, context) {
-    var result = -Infinity,
-        lastComputed = -Infinity,
-        value,
-        computed;if (iteratee == null || typeof iteratee == "number" && typeof obj[0] != "object" && obj != null) {
-      obj = isArrayLike(obj) ? obj : _.values(obj);for (var i = 0, length = obj.length; i < length; i++) {
-        value = obj[i];if (value != null && value > result) {
-          result = value;
-        }
-      }
-    } else {
-      iteratee = cb(iteratee, context);_.each(obj, function (v, index, list) {
-        computed = iteratee(v, index, list);if (computed > lastComputed || computed === -Infinity && result === -Infinity) {
-          result = v;lastComputed = computed;
-        }
-      });
-    }return result;
-  };_.min = function (obj, iteratee, context) {
-    var result = Infinity,
-        lastComputed = Infinity,
-        value,
-        computed;if (iteratee == null || typeof iteratee == "number" && typeof obj[0] != "object" && obj != null) {
-      obj = isArrayLike(obj) ? obj : _.values(obj);for (var i = 0, length = obj.length; i < length; i++) {
-        value = obj[i];if (value != null && value < result) {
-          result = value;
-        }
-      }
-    } else {
-      iteratee = cb(iteratee, context);_.each(obj, function (v, index, list) {
-        computed = iteratee(v, index, list);if (computed < lastComputed || computed === Infinity && result === Infinity) {
-          result = v;lastComputed = computed;
-        }
-      });
-    }return result;
-  };_.shuffle = function (obj) {
-    return _.sample(obj, Infinity);
-  };_.sample = function (obj, n, guard) {
-    if (n == null || guard) {
-      if (!isArrayLike(obj)) obj = _.values(obj);return obj[_.random(obj.length - 1)];
-    }var sample = isArrayLike(obj) ? _.clone(obj) : _.values(obj);var length = getLength(sample);n = Math.max(Math.min(n, length), 0);var last = length - 1;for (var index = 0; index < n; index++) {
-      var rand = _.random(index, last);var temp = sample[index];sample[index] = sample[rand];sample[rand] = temp;
-    }return sample.slice(0, n);
-  };_.sortBy = function (obj, iteratee, context) {
-    var index = 0;iteratee = cb(iteratee, context);return _.pluck(_.map(obj, function (value, key, list) {
-      return { value: value, index: index++, criteria: iteratee(value, key, list) };
-    }).sort(function (left, right) {
-      var a = left.criteria;var b = right.criteria;if (a !== b) {
-        if (a > b || a === void 0) return 1;if (a < b || b === void 0) return -1;
-      }return left.index - right.index;
-    }), "value");
-  };var group = function (behavior, partition) {
-    return function (obj, iteratee, context) {
-      var result = partition ? [[], []] : {};iteratee = cb(iteratee, context);_.each(obj, function (value, index) {
-        var key = iteratee(value, index, obj);behavior(result, value, key);
-      });return result;
-    };
-  };_.groupBy = group(function (result, value, key) {
-    if (_.has(result, key)) result[key].push(value);else result[key] = [value];
-  });_.indexBy = group(function (result, value, key) {
-    result[key] = value;
-  });_.countBy = group(function (result, value, key) {
-    if (_.has(result, key)) result[key]++;else result[key] = 1;
-  });var reStrSymbol = /[^\ud800-\udfff]|[\ud800-\udbff][\udc00-\udfff]|[\ud800-\udfff]/g;_.toArray = function (obj) {
-    if (!obj) return [];if (_.isArray(obj)) return slice.call(obj);if (_.isString(obj)) {
-      return obj.match(reStrSymbol);
-    }if (isArrayLike(obj)) return _.map(obj, _.identity);return _.values(obj);
-  };_.size = function (obj) {
-    if (obj == null) return 0;return isArrayLike(obj) ? obj.length : _.keys(obj).length;
-  };_.partition = group(function (result, value, pass) {
-    result[pass ? 0 : 1].push(value);
-  }, true);_.first = _.head = _.take = function (array, n, guard) {
-    if (array == null || array.length < 1) return void 0;if (n == null || guard) return array[0];return _.initial(array, array.length - n);
-  };_.initial = function (array, n, guard) {
-    return slice.call(array, 0, Math.max(0, array.length - (n == null || guard ? 1 : n)));
-  };_.last = function (array, n, guard) {
-    if (array == null || array.length < 1) return void 0;if (n == null || guard) return array[array.length - 1];return _.rest(array, Math.max(0, array.length - n));
-  };_.rest = _.tail = _.drop = function (array, n, guard) {
-    return slice.call(array, n == null || guard ? 1 : n);
-  };_.compact = function (array) {
-    return _.filter(array, Boolean);
-  };var flatten = function (input, shallow, strict, output) {
-    output = output || [];var idx = output.length;for (var i = 0, length = getLength(input); i < length; i++) {
-      var value = input[i];if (isArrayLike(value) && (_.isArray(value) || _.isArguments(value))) {
-        if (shallow) {
-          var j = 0,
-              len = value.length;while (j < len) output[idx++] = value[j++];
-        } else {
-          flatten(value, shallow, strict, output);idx = output.length;
-        }
-      } else if (!strict) {
-        output[idx++] = value;
-      }
-    }return output;
-  };_.flatten = function (array, shallow) {
-    return flatten(array, shallow, false);
-  };_.without = restArgs(function (array, otherArrays) {
-    return _.difference(array, otherArrays);
-  });_.uniq = _.unique = function (array, isSorted, iteratee, context) {
-    if (!_.isBoolean(isSorted)) {
-      context = iteratee;iteratee = isSorted;isSorted = false;
-    }if (iteratee != null) iteratee = cb(iteratee, context);var result = [];var seen = [];for (var i = 0, length = getLength(array); i < length; i++) {
-      var value = array[i],
-          computed = iteratee ? iteratee(value, i, array) : value;if (isSorted) {
-        if (!i || seen !== computed) result.push(value);seen = computed;
-      } else if (iteratee) {
-        if (!_.contains(seen, computed)) {
-          seen.push(computed);result.push(value);
-        }
-      } else if (!_.contains(result, value)) {
-        result.push(value);
-      }
-    }return result;
-  };_.union = restArgs(function (arrays) {
-    return _.uniq(flatten(arrays, true, true));
-  });_.intersection = function (array) {
-    var result = [];var argsLength = arguments.length;for (var i = 0, length = getLength(array); i < length; i++) {
-      var item = array[i];if (_.contains(result, item)) continue;var j;for (j = 1; j < argsLength; j++) {
-        if (!_.contains(arguments[j], item)) break;
-      }if (j === argsLength) result.push(item);
-    }return result;
-  };_.difference = restArgs(function (array, rest) {
-    rest = flatten(rest, true, true);return _.filter(array, function (value) {
-      return !_.contains(rest, value);
-    });
-  });_.unzip = function (array) {
-    var length = array && _.max(array, getLength).length || 0;var result = Array(length);for (var index = 0; index < length; index++) {
-      result[index] = _.pluck(array, index);
-    }return result;
-  };_.zip = restArgs(_.unzip);_.object = function (list, values) {
-    var result = {};for (var i = 0, length = getLength(list); i < length; i++) {
-      if (values) {
-        result[list[i]] = values[i];
-      } else {
-        result[list[i][0]] = list[i][1];
-      }
-    }return result;
-  };var createPredicateIndexFinder = function (dir) {
-    return function (array, predicate, context) {
-      predicate = cb(predicate, context);var length = getLength(array);var index = dir > 0 ? 0 : length - 1;for (; index >= 0 && index < length; index += dir) {
-        if (predicate(array[index], index, array)) return index;
-      }return -1;
-    };
-  };_.findIndex = createPredicateIndexFinder(1);_.findLastIndex = createPredicateIndexFinder(-1);_.sortedIndex = function (array, obj, iteratee, context) {
-    iteratee = cb(iteratee, context, 1);var value = iteratee(obj);var low = 0,
-        high = getLength(array);while (low < high) {
-      var mid = Math.floor((low + high) / 2);if (iteratee(array[mid]) < value) low = mid + 1;else high = mid;
-    }return low;
-  };var createIndexFinder = function (dir, predicateFind, sortedIndex) {
-    return function (array, item, idx) {
-      var i = 0,
-          length = getLength(array);if (typeof idx == "number") {
-        if (dir > 0) {
-          i = idx >= 0 ? idx : Math.max(idx + length, i);
-        } else {
-          length = idx >= 0 ? Math.min(idx + 1, length) : idx + length + 1;
-        }
-      } else if (sortedIndex && idx && length) {
-        idx = sortedIndex(array, item);return array[idx] === item ? idx : -1;
-      }if (item !== item) {
-        idx = predicateFind(slice.call(array, i, length), _.isNaN);return idx >= 0 ? idx + i : -1;
-      }for (idx = dir > 0 ? i : length - 1; idx >= 0 && idx < length; idx += dir) {
-        if (array[idx] === item) return idx;
-      }return -1;
-    };
-  };_.indexOf = createIndexFinder(1, _.findIndex, _.sortedIndex);_.lastIndexOf = createIndexFinder(-1, _.findLastIndex);_.range = function (start, stop, step) {
-    if (stop == null) {
-      stop = start || 0;start = 0;
-    }if (!step) {
-      step = stop < start ? -1 : 1;
-    }var length = Math.max(Math.ceil((stop - start) / step), 0);var range = Array(length);for (var idx = 0; idx < length; idx++, start += step) {
-      range[idx] = start;
-    }return range;
-  };_.chunk = function (array, count) {
-    if (count == null || count < 1) return [];var result = [];var i = 0,
-        length = array.length;while (i < length) {
-      result.push(slice.call(array, i, i += count));
-    }return result;
-  };var executeBound = function (sourceFunc, boundFunc, context, callingContext, args) {
-    if (!(callingContext instanceof boundFunc)) return sourceFunc.apply(context, args);var self = baseCreate(sourceFunc.prototype);var result = sourceFunc.apply(self, args);if (_.isObject(result)) return result;return self;
-  };_.bind = restArgs(function (func, context, args) {
-    if (!_.isFunction(func)) throw new TypeError("Bind must be called on a function");var bound = restArgs(function (callArgs) {
-      return executeBound(func, bound, context, this, args.concat(callArgs));
-    });return bound;
-  });_.partial = restArgs(function (func, boundArgs) {
-    var placeholder = _.partial.placeholder;var bound = function () {
-      var position = 0,
-          length = boundArgs.length;var args = Array(length);for (var i = 0; i < length; i++) {
-        args[i] = boundArgs[i] === placeholder ? arguments[position++] : boundArgs[i];
-      }while (position < arguments.length) args.push(arguments[position++]);return executeBound(func, bound, this, this, args);
-    };return bound;
-  });_.partial.placeholder = _;_.bindAll = restArgs(function (obj, keys) {
-    keys = flatten(keys, false, false);var index = keys.length;if (index < 1) throw new Error("bindAll must be passed function names");while (index--) {
-      var key = keys[index];obj[key] = _.bind(obj[key], obj);
-    }
-  });_.memoize = function (func, hasher) {
-    var memoize = function (key) {
-      var cache = memoize.cache;var address = "" + (hasher ? hasher.apply(this, arguments) : key);if (!_.has(cache, address)) cache[address] = func.apply(this, arguments);return cache[address];
-    };memoize.cache = {};return memoize;
-  };_.delay = restArgs(function (func, wait, args) {
-    return setTimeout(function () {
-      return func.apply(null, args);
-    }, wait);
-  });_.defer = _.partial(_.delay, _, 1);_.throttle = function (func, wait, options) {
-    var timeout, context, args, result;var previous = 0;if (!options) options = {};var later = function () {
-      previous = options.leading === false ? 0 : _.now();timeout = null;result = func.apply(context, args);if (!timeout) context = args = null;
-    };var throttled = function () {
-      var now = _.now();if (!previous && options.leading === false) previous = now;var remaining = wait - (now - previous);context = this;args = arguments;if (remaining <= 0 || remaining > wait) {
-        if (timeout) {
-          clearTimeout(timeout);timeout = null;
-        }previous = now;result = func.apply(context, args);if (!timeout) context = args = null;
-      } else if (!timeout && options.trailing !== false) {
-        timeout = setTimeout(later, remaining);
-      }return result;
-    };throttled.cancel = function () {
-      clearTimeout(timeout);previous = 0;timeout = context = args = null;
-    };return throttled;
-  };_.debounce = function (func, wait, immediate) {
-    var timeout, result;var later = function (context, args) {
-      timeout = null;if (args) result = func.apply(context, args);
-    };var debounced = restArgs(function (args) {
-      if (timeout) clearTimeout(timeout);if (immediate) {
-        var callNow = !timeout;timeout = setTimeout(later, wait);if (callNow) result = func.apply(this, args);
-      } else {
-        timeout = _.delay(later, wait, this, args);
-      }return result;
-    });debounced.cancel = function () {
-      clearTimeout(timeout);timeout = null;
-    };return debounced;
-  };_.wrap = function (func, wrapper) {
-    return _.partial(wrapper, func);
-  };_.negate = function (predicate) {
-    return function () {
-      return !predicate.apply(this, arguments);
-    };
-  };_.compose = function () {
-    var args = arguments;var start = args.length - 1;return function () {
-      var i = start;var result = args[start].apply(this, arguments);while (i--) result = args[i].call(this, result);return result;
-    };
-  };_.after = function (times, func) {
-    return function () {
-      if (--times < 1) {
-        return func.apply(this, arguments);
-      }
-    };
-  };_.before = function (times, func) {
-    var memo;return function () {
-      if (--times > 0) {
-        memo = func.apply(this, arguments);
-      }if (times <= 1) func = null;return memo;
-    };
-  };_.once = _.partial(_.before, 2);_.restArgs = restArgs;var hasEnumBug = !{ toString: null }.propertyIsEnumerable("toString");var nonEnumerableProps = ["valueOf", "isPrototypeOf", "toString", "propertyIsEnumerable", "hasOwnProperty", "toLocaleString"];var collectNonEnumProps = function (obj, keys) {
-    var nonEnumIdx = nonEnumerableProps.length;var constructor = obj.constructor;var proto = _.isFunction(constructor) && constructor.prototype || ObjProto;var prop = "constructor";if (_.has(obj, prop) && !_.contains(keys, prop)) keys.push(prop);while (nonEnumIdx--) {
-      prop = nonEnumerableProps[nonEnumIdx];if (prop in obj && obj[prop] !== proto[prop] && !_.contains(keys, prop)) {
-        keys.push(prop);
-      }
-    }
-  };_.keys = function (obj) {
-    if (!_.isObject(obj)) return [];if (nativeKeys) return nativeKeys(obj);var keys = [];for (var key in obj) if (_.has(obj, key)) keys.push(key);if (hasEnumBug) collectNonEnumProps(obj, keys);return keys;
-  };_.allKeys = function (obj) {
-    if (!_.isObject(obj)) return [];var keys = [];for (var key in obj) keys.push(key);if (hasEnumBug) collectNonEnumProps(obj, keys);return keys;
-  };_.values = function (obj) {
-    var keys = _.keys(obj);var length = keys.length;var values = Array(length);for (var i = 0; i < length; i++) {
-      values[i] = obj[keys[i]];
-    }return values;
-  };_.mapObject = function (obj, iteratee, context) {
-    iteratee = cb(iteratee, context);var keys = _.keys(obj),
-        length = keys.length,
-        results = {};for (var index = 0; index < length; index++) {
-      var currentKey = keys[index];results[currentKey] = iteratee(obj[currentKey], currentKey, obj);
-    }return results;
-  };_.pairs = function (obj) {
-    var keys = _.keys(obj);var length = keys.length;var pairs = Array(length);for (var i = 0; i < length; i++) {
-      pairs[i] = [keys[i], obj[keys[i]]];
-    }return pairs;
-  };_.invert = function (obj) {
-    var result = {};var keys = _.keys(obj);for (var i = 0, length = keys.length; i < length; i++) {
-      result[obj[keys[i]]] = keys[i];
-    }return result;
-  };_.functions = _.methods = function (obj) {
-    var names = [];for (var key in obj) {
-      if (_.isFunction(obj[key])) names.push(key);
-    }return names.sort();
-  };var createAssigner = function (keysFunc, defaults) {
-    return function (obj) {
-      var length = arguments.length;if (defaults) obj = Object(obj);if (length < 2 || obj == null) return obj;for (var index = 1; index < length; index++) {
-        var source = arguments[index],
-            keys = keysFunc(source),
-            l = keys.length;for (var i = 0; i < l; i++) {
-          var key = keys[i];if (!defaults || obj[key] === void 0) obj[key] = source[key];
-        }
-      }return obj;
-    };
-  };_.extend = createAssigner(_.allKeys);_.extendOwn = _.assign = createAssigner(_.keys);_.findKey = function (obj, predicate, context) {
-    predicate = cb(predicate, context);var keys = _.keys(obj),
-        key;for (var i = 0, length = keys.length; i < length; i++) {
-      key = keys[i];if (predicate(obj[key], key, obj)) return key;
-    }
-  };var keyInObj = function (value, key, obj) {
-    return key in obj;
-  };_.pick = restArgs(function (obj, keys) {
-    var result = {},
-        iteratee = keys[0];if (obj == null) return result;if (_.isFunction(iteratee)) {
-      if (keys.length > 1) iteratee = optimizeCb(iteratee, keys[1]);keys = _.allKeys(obj);
-    } else {
-      iteratee = keyInObj;keys = flatten(keys, false, false);obj = Object(obj);
-    }for (var i = 0, length = keys.length; i < length; i++) {
-      var key = keys[i];var value = obj[key];if (iteratee(value, key, obj)) result[key] = value;
-    }return result;
-  });_.omit = restArgs(function (obj, keys) {
-    var iteratee = keys[0],
-        context;if (_.isFunction(iteratee)) {
-      iteratee = _.negate(iteratee);if (keys.length > 1) context = keys[1];
-    } else {
-      keys = _.map(flatten(keys, false, false), String);iteratee = function (value, key) {
-        return !_.contains(keys, key);
-      };
-    }return _.pick(obj, iteratee, context);
-  });_.defaults = createAssigner(_.allKeys, true);_.create = function (prototype, props) {
-    var result = baseCreate(prototype);if (props) _.extendOwn(result, props);return result;
-  };_.clone = function (obj) {
-    if (!_.isObject(obj)) return obj;return _.isArray(obj) ? obj.slice() : _.extend({}, obj);
-  };_.tap = function (obj, interceptor) {
-    interceptor(obj);return obj;
-  };_.isMatch = function (object, attrs) {
-    var keys = _.keys(attrs),
-        length = keys.length;if (object == null) return !length;var obj = Object(object);for (var i = 0; i < length; i++) {
-      var key = keys[i];if (attrs[key] !== obj[key] || !(key in obj)) return false;
-    }return true;
-  };var eq, deepEq;eq = function (a, b, aStack, bStack) {
-    if (a === b) return a !== 0 || 1 / a === 1 / b;if (a == null || b == null) return false;if (a !== a) return b !== b;var type = typeof a;if (type !== "function" && type !== "object" && typeof b != "object") return false;return deepEq(a, b, aStack, bStack);
-  };deepEq = function (a, b, aStack, bStack) {
-    if (a instanceof _) a = a._wrapped;if (b instanceof _) b = b._wrapped;var className = toString.call(a);if (className !== toString.call(b)) return false;switch (className) {case "[object RegExp]":case "[object String]":
-        return "" + a === "" + b;case "[object Number]":
-        if (+a !== +a) return +b !== +b;return +a === 0 ? 1 / +a === 1 / b : +a === +b;case "[object Date]":case "[object Boolean]":
-        return +a === +b;case "[object Symbol]":
-        return SymbolProto.valueOf.call(a) === SymbolProto.valueOf.call(b);}var areArrays = className === "[object Array]";if (!areArrays) {
-      if (typeof a != "object" || typeof b != "object") return false;var aCtor = a.constructor,
-          bCtor = b.constructor;if (aCtor !== bCtor && !(_.isFunction(aCtor) && aCtor instanceof aCtor && _.isFunction(bCtor) && bCtor instanceof bCtor) && "constructor" in a && "constructor" in b) {
-        return false;
-      }
-    }aStack = aStack || [];bStack = bStack || [];var length = aStack.length;while (length--) {
-      if (aStack[length] === a) return bStack[length] === b;
-    }aStack.push(a);bStack.push(b);if (areArrays) {
-      length = a.length;if (length !== b.length) return false;while (length--) {
-        if (!eq(a[length], b[length], aStack, bStack)) return false;
-      }
-    } else {
-      var keys = _.keys(a),
-          key;length = keys.length;if (_.keys(b).length !== length) return false;while (length--) {
-        key = keys[length];if (!(_.has(b, key) && eq(a[key], b[key], aStack, bStack))) return false;
-      }
-    }aStack.pop();bStack.pop();return true;
-  };_.isEqual = function (a, b) {
-    return eq(a, b);
-  };_.isEmpty = function (obj) {
-    if (obj == null) return true;if (isArrayLike(obj) && (_.isArray(obj) || _.isString(obj) || _.isArguments(obj))) return obj.length === 0;return _.keys(obj).length === 0;
-  };_.isElement = function (obj) {
-    return !!(obj && obj.nodeType === 1);
-  };_.isArray = nativeIsArray || function (obj) {
-    return toString.call(obj) === "[object Array]";
-  };_.isObject = function (obj) {
-    var type = typeof obj;return type === "function" || type === "object" && !!obj;
-  };_.each(["Arguments", "Function", "String", "Number", "Date", "RegExp", "Error", "Symbol", "Map", "WeakMap", "Set", "WeakSet"], function (name) {
-    _["is" + name] = function (obj) {
-      return toString.call(obj) === "[object " + name + "]";
-    };
-  });if (!_.isArguments(arguments)) {
-    _.isArguments = function (obj) {
-      return _.has(obj, "callee");
-    };
-  }var nodelist = root.document && root.document.childNodes;if (typeof /./ != "function" && typeof Int8Array != "object" && typeof nodelist != "function") {
-    _.isFunction = function (obj) {
-      return typeof obj == "function" || false;
-    };
-  }_.isFinite = function (obj) {
-    return !_.isSymbol(obj) && isFinite(obj) && !isNaN(parseFloat(obj));
-  };_.isNaN = function (obj) {
-    return _.isNumber(obj) && isNaN(obj);
-  };_.isBoolean = function (obj) {
-    return obj === true || obj === false || toString.call(obj) === "[object Boolean]";
-  };_.isNull = function (obj) {
-    return obj === null;
-  };_.isUndefined = function (obj) {
-    return obj === void 0;
-  };_.has = function (obj, path) {
-    if (!_.isArray(path)) {
-      return obj != null && hasOwnProperty.call(obj, path);
-    }var length = path.length;for (var i = 0; i < length; i++) {
-      var key = path[i];if (obj == null || !hasOwnProperty.call(obj, key)) {
-        return false;
-      }obj = obj[key];
-    }return !!length;
-  };_.noConflict = function () {
-    root._ = previousUnderscore;return this;
-  };_.identity = function (value) {
-    return value;
-  };_.constant = function (value) {
-    return function () {
-      return value;
-    };
-  };_.noop = function () {};_.property = function (path) {
-    if (!_.isArray(path)) {
-      return shallowProperty(path);
-    }return function (obj) {
-      return deepGet(obj, path);
-    };
-  };_.propertyOf = function (obj) {
-    if (obj == null) {
-      return function () {};
-    }return function (path) {
-      return !_.isArray(path) ? obj[path] : deepGet(obj, path);
-    };
-  };_.matcher = _.matches = function (attrs) {
-    attrs = _.extendOwn({}, attrs);return function (obj) {
-      return _.isMatch(obj, attrs);
-    };
-  };_.times = function (n, iteratee, context) {
-    var accum = Array(Math.max(0, n));iteratee = optimizeCb(iteratee, context, 1);for (var i = 0; i < n; i++) accum[i] = iteratee(i);return accum;
-  };_.random = function (min, max) {
-    if (max == null) {
-      max = min;min = 0;
-    }return min + Math.floor(Math.random() * (max - min + 1));
-  };_.now = Date.now || function () {
-    return new Date().getTime();
-  };var escapeMap = { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#x27;", "`": "&#x60;" };var unescapeMap = _.invert(escapeMap);var createEscaper = function (map) {
-    var escaper = function (match) {
-      return map[match];
-    };var source = "(?:" + _.keys(map).join("|") + ")";var testRegexp = RegExp(source);var replaceRegexp = RegExp(source, "g");return function (string) {
-      string = string == null ? "" : "" + string;return testRegexp.test(string) ? string.replace(replaceRegexp, escaper) : string;
-    };
-  };_.escape = createEscaper(escapeMap);_.unescape = createEscaper(unescapeMap);_.result = function (obj, path, fallback) {
-    if (!_.isArray(path)) path = [path];var length = path.length;if (!length) {
-      return _.isFunction(fallback) ? fallback.call(obj) : fallback;
-    }for (var i = 0; i < length; i++) {
-      var prop = obj == null ? void 0 : obj[path[i]];if (prop === void 0) {
-        prop = fallback;i = length;
-      }obj = _.isFunction(prop) ? prop.call(obj) : prop;
-    }return obj;
-  };var idCounter = 0;_.uniqueId = function (prefix) {
-    var id = ++idCounter + "";return prefix ? prefix + id : id;
-  };_.templateSettings = { evaluate: /<%([\s\S]+?)%>/g, interpolate: /<%=([\s\S]+?)%>/g, escape: /<%-([\s\S]+?)%>/g };var noMatch = /(.)^/;var escapes = { "'": "'", "\\": "\\", "\r": "r", "\n": "n", "\u2028": "u2028", "\u2029": "u2029" };var escapeRegExp = /\\|'|\r|\n|\u2028|\u2029/g;var escapeChar = function (match) {
-    return "\\" + escapes[match];
-  };_.template = function (text, settings, oldSettings) {
-    if (!settings && oldSettings) settings = oldSettings;settings = _.defaults({}, settings, _.templateSettings);var matcher = RegExp([(settings.escape || noMatch).source, (settings.interpolate || noMatch).source, (settings.evaluate || noMatch).source].join("|") + "|$", "g");var index = 0;var source = "__p+='";text.replace(matcher, function (match, escape, interpolate, evaluate, offset) {
-      source += text.slice(index, offset).replace(escapeRegExp, escapeChar);index = offset + match.length;if (escape) {
-        source += "'+\n((__t=(" + escape + "))==null?'':_.escape(__t))+\n'";
-      } else if (interpolate) {
-        source += "'+\n((__t=(" + interpolate + "))==null?'':__t)+\n'";
-      } else if (evaluate) {
-        source += "';\n" + evaluate + "\n__p+='";
-      }return match;
-    });source += "';\n";if (!settings.variable) source = "with(obj||{}){\n" + source + "}\n";source = "var __t,__p='',__j=Array.prototype.join," + "print=function(){__p+=__j.call(arguments,'');};\n" + source + "return __p;\n";var render;try {
-      render = new Function(settings.variable || "obj", "_", source);
-    } catch (e) {
-      e.source = source;throw e;
-    }var template = function (data) {
-      return render.call(this, data, _);
-    };var argument = settings.variable || "obj";template.source = "function(" + argument + "){\n" + source + "}";return template;
-  };_.chain = function (obj) {
-    var instance = _(obj);instance._chain = true;return instance;
-  };var chainResult = function (instance, obj) {
-    return instance._chain ? _(obj).chain() : obj;
-  };_.mixin = function (obj) {
-    _.each(_.functions(obj), function (name) {
-      var func = _[name] = obj[name];_.prototype[name] = function () {
-        var args = [this._wrapped];push.apply(args, arguments);return chainResult(this, func.apply(_, args));
-      };
-    });return _;
-  };_.mixin(_);_.each(["pop", "push", "reverse", "shift", "sort", "splice", "unshift"], function (name) {
-    var method = ArrayProto[name];_.prototype[name] = function () {
-      var obj = this._wrapped;method.apply(obj, arguments);if ((name === "shift" || name === "splice") && obj.length === 0) delete obj[0];return chainResult(this, obj);
-    };
-  });_.each(["concat", "join", "slice"], function (name) {
-    var method = ArrayProto[name];_.prototype[name] = function () {
-      return chainResult(this, method.apply(this._wrapped, arguments));
-    };
-  });_.prototype.value = function () {
-    return this._wrapped;
-  };_.prototype.valueOf = _.prototype.toJSON = _.prototype.value;_.prototype.toString = function () {
-    return String(this._wrapped);
-  };if (typeof define == "function" && define.amd) {
-    define("underscore", [], function () {
-      return _;
-    });
-  }
 })();class Shortstraw {
   constructor() {
     this.DIAGONAL_INTERVAL = 100;this.STRAW_WINDOW = 3;this.MEDIAN_THRESHOLD = .95;this.LINE_THRESHOLDS = [.95, .9, .8];
@@ -3790,345 +4098,39 @@ const kIdPrefix = "inkstone-stroke-order-animation";const kWidth = 128;const add
       }
     }resampled.push(points[points.length - 1]);return resampled;
   }
-}(function () {
-  const kCanvasSize = 512;const kCornerSize = 1 / 8;const kCrossWidth = 1 / 256;const kMinDistance = 1 / 32;const kStrokeWidth = 1 / 32;const kDoubleTapSpeed = 500;let ticker = null;const angle = xs => Math.atan2(xs[1][1] - xs[0][1], xs[1][0] - xs[0][0]);const animate = (shape, size, rotate, source, target) => {
-    shape.regX = size * (target[0][0] + target[1][0]) / 2;shape.regY = size * (target[0][1] + target[1][1]) / 2;shape.x = size * (source[0][0] + source[1][0]) / 2;shape.y = size * (source[0][1] + source[1][1]) / 2;const scale = distance(source) / (distance(target) + kMinDistance);shape.scaleX = scale;shape.scaleY = scale;if (rotate) {
-      const rotation = 180 / Math.PI * (angle(source) - angle(target));shape.rotation = (Math.round(rotation) + 540) % 360 - 180;
-    }return { rotation: 0, scaleX: 1, scaleY: 1, x: shape.regX, y: shape.regY };
-  };const convertShapeStyles = (shape, end) => {
-    if (!shape.graphics || !shape.graphics.instructions) {
-      return;
-    }let updated = false;for (let instruction of shape.graphics.instructions) {
-      if (instruction.style) {
-        instruction.style = end;updated = true;
-      }
-    }if (updated) shape.updateCache();
-  };const createCanvas = (element, handwriting) => {
-    const canvas = document.createElement("canvas");canvas.width = canvas.height = kCanvasSize;canvas.style.width = canvas.style.height = `${element.clientWidth}px`;element.appendChild(canvas);const touch_supported = "ontouchstart" in window;const zoom = kCanvasSize / element.clientWidth;const getPosition = event => {
-      if (touch_supported) event = event.touches[0];if (!event) return;const bound = canvas.getBoundingClientRect();const point = [event.clientX - bound.left, event.clientY - bound.top];return point.map(x => Math.round(zoom * x));
-    };let mousedown = false;const start_event = touch_supported ? "touchstart" : "mousedown";canvas.addEventListener(start_event, event => {
-      mousedown = true;if (event.cancelable) event.preventDefault();handwriting._pushPoint(getPosition(event));
-    });const move_event = touch_supported ? "touchmove" : "mousemove";canvas.addEventListener(move_event, event => {
-      if (!mousedown) return;handwriting._pushPoint(getPosition(event));
-    }, { passive: true });const end_event = touch_supported ? "touchend" : "mouseup";canvas.addEventListener(end_event, event => {
-      mousedown = false;handwriting._endStroke();
-    });return canvas;
-  };const distance = xs => {
-    const diff = [xs[1][0] - xs[0][0], xs[1][1] - xs[0][1]];return Math.sqrt(diff[0] * diff[0] + diff[1] * diff[1]);
-  };const dottedLine = (width, x1, y1, x2, y2) => {
-    const result = new createjs.Shape();result.graphics.setStrokeDash([width, width], 0);result.graphics.setStrokeStyle(width);result.graphics.beginStroke("#ccc");result.graphics.moveTo(x1, y1);result.graphics.lineTo(x2, y2);return result;
-  };const midpoint = (point1, point2) => {
-    return [(point1[0] + point2[0]) / 2, (point1[1] + point2[1]) / 2];
-  };const pathToShape = (path, size, color, uncached) => {
-    const scale = 1024 / size;const result = new createjs.Shape();const tokens = path.split(" ");let index = 0;const next = () => {
-      index += 2;let result = [tokens[index - 2], tokens[index - 1]];result = result.map(x => parseInt(x, 10));result[1] = 900 - result[1];return result.map(x => Math.round(x / scale));
-    };const arity = { L: 1, M: 1, Q: 2, Z: 0 };while (index < tokens.length) {
-      index += 1;const command = tokens[index - 1];const args = _.range(arity[command] || 0).map(next);if (command === "Z") {
-        result.graphics.closePath();
-      } else if (command === "M") {
-        result.graphics.beginFill(color);result.graphics.beginStroke(color);result.graphics.moveTo(args[0][0], args[0][1]);
-      } else if (command === "L") {
-        result.graphics.lineTo(args[0][0], args[0][1]);
-      } else if (command === "Q") {
-        result.graphics.curveTo(args[0][0], args[0][1], args[1][0], args[1][1]);
-      } else {
-        console.error(`Invalid command: ${command}`);
-      }
-    }if (!uncached) result.cache(0, 0, size, size);return result;
-  };const renderCross = (size, container) => {
-    const stroke = size * kCrossWidth;container.addChild(dottedLine(stroke, 0, 0, size, size));container.addChild(dottedLine(stroke, size, 0, 0, size));container.addChild(dottedLine(stroke, size / 2, 0, size / 2, size));container.addChild(dottedLine(stroke, 0, size / 2, size, size / 2));container.cache(0, 0, size, size);
-  };class BasicBrush {
-    constructor(container, point, options) {
-      options = options || {};this._color = options.color || "black";this._width = options.width || 1;this._shape = new createjs.Shape();this._endpoint = point;this._midpoint = null;container.addChild(this._shape);
-    }advance(point) {
-      const last_endpoint = this._endpoint;const last_midpoint = this._midpoint;this._endpoint = point;this._midpoint = midpoint(last_endpoint, this._endpoint);if (last_midpoint) {
-        this._draw(last_midpoint, this._midpoint, last_endpoint);
-      } else {
-        this._draw(last_endpoint, this._midpoint);
-      }
-    }_draw(point1, point2, control) {
-      const graphics = this._shape.graphics;graphics.setStrokeStyle(this._width, "round");graphics.beginStroke(this._color);graphics.moveTo(point1[0], point1[1]);if (control) {
-        graphics.curveTo(control[0], control[1], point2[0], point2[1]);
-      } else {
-        graphics.lineTo(point2[0], point2[1]);
-      }
-    }
-  }const Layer = { CROSS: 0, CORNER: 1, FADE: 2, WATERMARK: 3, HIGHLIGHT: 4, COMPLETE: 5, HINT: 6, STROKE: 7, WARNING: 8, ALL: 9 };class Handwriting {
-    constructor(element, handlers, options) {
-      this._onclick = handlers.onclick;this._ondouble = handlers.ondouble;this._onstroke = handlers.onstroke;this.options = options;const canvas = createCanvas(element, this);this._stage = new createjs.Stage(canvas);this._size = this._stage.canvas.width;this._layers = [];for (let i = 0; i < Layer.ALL; i++) {
-        const layer = new createjs.Container();this._layers.push(layer);this._stage.addChild(layer);
-      }renderCross(this._size, this._layers[Layer.CROSS]);createjs.Ticker.timingMode = createjs.Ticker.RAF;createjs.Ticker.removeEventListener("tick", ticker);ticker = createjs.Ticker.addEventListener("tick", this._tick.bind(this));this.clear();
-    }clear() {
-      createjs.Tween.removeAllTweens();for (let layer of this._layers) {
-        layer.removeAllChildren();
-      }this._corner_characters = 0;this._drawable = true;this._pending_animations = 0;this._running_animations = 0;this._reset();
-    }emplace(path, rotate, source, target) {
-      const child = pathToShape(path, this._size, this.options.stroke_color);const endpoint = animate(child, this._size, rotate, source, target);this._layers[Layer.STROKE].children.pop();this._layers[Layer.COMPLETE].addChild(child);this._animate(child, endpoint, 150);
-    }fadeCharacter() {
-      const children = this._layers[Layer.COMPLETE].children;while (children.length > 0) {
-        this._layers[Layer.WATERMARK].addChild(children.shift());
-      }this._fadeWatermark(150);this._drawable = true;
-    }fadeStroke() {
-      const stroke = this._layers[Layer.STROKE];const child = stroke.children[stroke.children.length - 1];this._animate(child, { alpha: 0 }, 150, () => child.parent.removeChild(child));
-    }flash(path) {
-      const child = pathToShape(path, this._size, this.options.hint_color);this._layers[Layer.HINT].addChild(child);this._animate(child, { alpha: 0 }, 750, () => child.parent.removeChild(child));
-    }glow(result) {
-      const color = this.options.result_colors[result];for (let child of this._layers[Layer.COMPLETE].children) {
-        convertShapeStyles(child, color);
-      }this._drawable = false;
-    }moveToCorner() {
-      const children = this._layers[Layer.COMPLETE].children.slice();const container = new createjs.Container();children.forEach(child => container.addChild(child));[Layer.WATERMARK, Layer.COMPLETE].forEach(layer => this._layers[layer].removeAllChildren());const endpoint = { scaleX: kCornerSize, scaleY: kCornerSize };endpoint.x = kCornerSize * this._size * this._corner_characters;this._layers[Layer.CORNER].addChild(container);this._corner_characters += 1;this._drawable = true;return new Promise((resolve, reject) => {
-        this._animate(container, endpoint, 150, resolve);
-      });
-    }reveal(paths) {
-      const layer = this._layers[Layer.WATERMARK];if (layer.children.length > 0) return;const container = new createjs.Container();for (let path of paths) {
-        const child = pathToShape(path, this._size, this.options.watermark_color, true);container.addChild(child);
-      }container.cache(0, 0, this._size, this._size);layer.addChild(container);
-    }undo() {
-      this._layers[Layer.STROKE].children.pop();this._reset();
-    }warn(warning) {
-      if (!warning) return;const font = `${this.options.font_size} Georgia`;const child = new createjs.Text(warning, font, this.options.font_color);const bounds = child.getBounds();child.x = (kCanvasSize - bounds.width) / 2;child.y = kCanvasSize - 2 * bounds.height;child.cache(0, 0, this._size, this._size);this._layers[Layer.WARNING].removeAllChildren();this._layers[Layer.WARNING].addChild(child);this._animate(child, { alpha: 0 }, 1500, () => child.parent && child.parent.removeChild(child));
-    }_animate(shape, target, duration, callback) {
-      this._running_animations += 1;createjs.Tween.get(shape).to(target, duration).call(() => {
-        this._pending_animations += 1;callback && callback();
-      });
-    }_click() {
-      const timestamp = new Date().getTime();const cutoff = (this._last_click_timestamp || 0) + kDoubleTapSpeed;const handler = timestamp < cutoff ? this._ondouble : this._onclick;this._last_click_timestamp = timestamp;handler && handler();
-    }_drawStroke() {
-      if (this._stroke.length < 2) {
-        return;
-      }this._fadeWatermark(1500);const n = this._stroke.length;if (!this._brush) {
-        const layer = this._layers[Layer.STROKE];const options = { color: this.options.drawing_color, width: this._size * kStrokeWidth };this._brush = new BasicBrush(layer, this._stroke[n - 2], options);
-      }this._brush.advance(this._stroke[n - 1]);this._stage.update();
-    }_endStroke() {
-      let handler = () => this._click();if (this._stroke.length >= 2) {
-        const layer = this._layers[Layer.STROKE];const stroke = this._stroke.map(x => x.map(y => y / this._size));const n = stroke.length;if (_.any(stroke, x => distance([stroke[n - 1], x]) > kMinDistance)) {
-          layer.children.forEach(x => x.cache(0, 0, this._size, this._size));handler = () => this._onstroke && this._onstroke(stroke);
-        } else {
-          layer.removeAllChildren();
-        }
-      }handler();this._reset();
-    }_fadeWatermark(delay) {
-      const children = this._layers[Layer.WATERMARK].children;while (children.length > 0) {
-        const child = children.pop();this._layers[Layer.FADE].addChild(child);this._animate(child, { alpha: 0 }, delay, () => child.parent && child.parent.removeChild(child));
-      }
-    }_pushPoint(point) {
-      if (point[0] != null && point[1] != null) {
-        this._stroke.push(point);if (this._drawable) this._drawStroke();
-      }
-    }_reset() {
-      this._brush = null;this._stroke = [];this._stage.update();
-    }_tick(event) {
-      if (this._running_animations) {
-        this._stage.update(event);this._running_animations -= this._pending_animations;this._pending_animations = 0;
-      }
-    }
-  }this.inkstone = this.inkstone || {};this.inkstone.Handwriting = Handwriting;
-})();(function () {
-  const kMinFirstSegmentFraction = .1;const kMinLastSegmentFraction = .05;const kFontSize = 1024;const kTruncation = 16;const kShuWanGouShapes = [[[4, 0], [0, 4], [4, 0], [0, -1]], [[0, 4], [4, 0], [0, -1]]];const fixMedianCoordinates = median => median.map(x => [x[0], 900 - x[1]]);const scale = (median, k) => median.map(point => point.map(x => k * x));const dropDanglingHooks = median => {
-    const n = median.length;if (n < 3) return median;const total = pathLength(median);const indices_to_drop = {};if (distance(median[0], median[1]) < kMinFirstSegmentFraction) {
-      indices_to_drop[1] = true;
-    }if (distance(median[n - 2], median[n - 1]) < kMinLastSegmentFraction) {
-      indices_to_drop[n - 2] = true;
-    }return median.filter((value, i) => !indices_to_drop[i]);
-  };const fixShuWanGou = median => {
-    if (median.length === 2) return median;const indices_to_drop = {};for (let shape of kShuWanGouShapes) {
-      if (inkstone.matcher.match(median, shape)) {
-        indices_to_drop[shape.length - 2] = true;
-      }
-    }return median.filter((value, i) => !indices_to_drop[i]);
-  };const distance = (point1, point2) => {
-    const diff = [point1[0] - point2[0], point1[1] - point2[1]];return Math.sqrt(diff[0] * diff[0] + diff[1] * diff[1]);
-  };const findCorners = medians => {
-    const shortstraw = new Shortstraw();return medians.map(fixMedianCoordinates).map(x => truncate(x, kTruncation)).map(x => scale(x, 1 / kFontSize)).map(shortstraw.run.bind(shortstraw)).map(dropDanglingHooks).map(fixShuWanGou);
-  };const pathLength = median => {
-    let total = 0;_.range(median.length - 1).map(i => total += distance(median[i], median[i + 1]));return total;
-  };const refine = (median, n) => {
-    const total = pathLength(median);const result = [];let index = 0;let position = median[0];let total_so_far = 0;for (let i of _.range(n - 1)) {
-      const target = i * total / (n - 1);while (total_so_far < target) {
-        const step = distance(position, median[index + 1]);if (total_so_far + step < target) {
-          index += 1;position = median[index];total_so_far += step;
-        } else {
-          const t = (target - total_so_far) / step;position = [(1 - t) * position[0] + t * median[index + 1][0], (1 - t) * position[1] + t * median[index + 1][1]];total_so_far = target;
-        }
-      }result.push([position[0], position[1]]);
-    }result.push(median[median.length - 1]);return result;
-  };const truncate = (median, truncation) => {
-    const n = 64;const length = pathLength(median);const index = Math.round(n * Math.min(truncation / length, .25));return refined = refine(median, n).slice(index, n - index);
-  };this.inkstone = this.inkstone || {};this.inkstone.matcher = this.inkstone.matcher || {};this.inkstone.matcher = this.inkstone.matcher || {};this.inkstone.matcher.findCorners = findCorners;
-})();(function () {
-  const viable = (indices, missing) => {
-    if (indices.length === 1) return true;const set = {};missing.forEach(x => set[x] = true);const remaining = indices.filter(x => set[x]).length;return remaining === 0 || remaining === indices.length;
-  };class Matcher {
-    constructor(character_data) {
-      this._medians = character_data.medians.map(x => inkstone.matcher.findCorners([x])[0]);this._shortcuts = inkstone.matcher.getShortcuts(character_data.components, this._medians);this._candidates = this._medians.map((x, i) => ({ indices: [i], median: x })).concat(this._shortcuts);
-    }match(stroke, missing) {
-      if (missing.length === 0) {
-        throw new Error("Must have at least one missing stroke!");
-      }stroke = new Shortstraw().run(stroke);let best_result = { indices: [], score: -Infinity };this._candidates.forEach((candidate, i) => {
-        if (!viable(candidate.indices, missing)) return;const first_index = _.min(candidate.indices);const offset = first_index - missing[0];const result = inkstone.matcher.recognize(stroke, candidate.median, offset);if (result.score > best_result.score) {
-          best_result = { indices: candidate.indices, penalties: result.penalties, score: result.score, source_segment: result.source, simplified_median: candidate.median, target_segment: result.target, warning: result.warning };
-        }
-      });return best_result;
-    }
-  }this.inkstone = this.inkstone || {};this.inkstone.Matcher = Matcher;
-})();(function () {
-  const kAngleThreshold = Math.PI / 5;const kDistanceThreshold = .3;const kLengthThreshold = 1.5;const kMaxMissedSegments = 1;const kMaxOutOfOrder = 2;const kMinDistance = 1 / 16;const kMissedSegmentPenalty = 1;const kOutOfOrderPenalty = 2;const kReversePenalty = 2;const kHookShapes = [[[1, 3], [-3, -1]], [[3, 3], [0, -1]]];const util = { distance2: (point1, point2) => util.norm2(util.subtract(point1, point2)), clone: point => [point[0], point[1]], norm2: point => point[0] * point[0] + point[1] * point[1], round: point => point.map(Math.round), subtract: (point1, point2) => [point1[0] - point2[0], point1[1] - point2[1]] };const angleDiff = (angle1, angle2) => {
-    const diff = Math.abs(angle1 - angle2);return Math.min(diff, 2 * Math.PI - diff);
-  };const getAngle = median => {
-    const diff = util.subtract(median[median.length - 1], median[0]);return Math.atan2(diff[1], diff[0]);
-  };const getBounds = median => {
-    const min = [Infinity, Infinity];const max = [-Infinity, -Infinity];median.map(point => {
-      min[0] = Math.min(min[0], point[0]);min[1] = Math.min(min[1], point[1]);max[0] = Math.max(max[0], point[0]);max[1] = Math.max(max[1], point[1]);
-    });return [min, max];
-  };const getMidpoint = median => {
-    const bounds = getBounds(median);return [(bounds[0][0] + bounds[1][0]) / 2, (bounds[0][1] + bounds[1][1]) / 2];
-  };const getMinimumLength = pair => Math.sqrt(util.distance2(pair[0], pair[1])) + kMinDistance;const hasHook = median => {
-    if (median.length < 3) return false;if (median.length > 3) return true;for (let shape of kHookShapes) {
-      if (match(median, shape)) return true;
-    }return false;
-  };const match = (median, shape) => {
-    if (median.length !== shape.length + 1) return false;for (let i = 0; i < shape.length; i++) {
-      const angle = angleDiff(getAngle(median.slice(i, i + 2)), getAngle([[0, 0], shape[i]]));if (angle >= kAngleThreshold) return false;
-    }return true;
-  };const performAlignment = (source, target) => {
-    source = source.map(util.clone);target = target.map(util.clone);const memo = [_.range(source.length).map(j => j > 0 ? -Infinity : 0)];for (let i = 1; i < target.length; i++) {
-      const row = [-Infinity];for (let j = 1; j < source.length; j++) {
-        let best_value = -Infinity;const start = Math.max(j - kMaxMissedSegments - 1, 0);for (let k = start; k < j; k++) {
-          if (memo[i - 1][k] === -Infinity) continue;const score = scorePairing([source[k], source[j]], [target[i - 1], target[i]], i === 1);const penalty = (j - k - 1) * kMissedSegmentPenalty;best_value = Math.max(best_value, score + memo[i - 1][k] - penalty);
-        }row.push(best_value);
-      }memo.push(row);
-    }const result = { score: -Infinity, source: null, target: null, warning: null };const min_matched = target.length - (hasHook(target) ? 1 : 0);for (let i = min_matched - 1; i < target.length; i++) {
-      const penalty = (target.length - i - 1) * kMissedSegmentPenalty;const score = memo[i][source.length - 1] - penalty;if (score > result.score) {
-        result.penalties = 0;result.score = score;result.source = [source[0], source[source.length - 1]];result.target = [target[0], target[i]];result.warning = i < target.length - 1 ? "should_hook" : null;
-      }
-    }return result;
-  };const recognize = (source, target, offset) => {
-    if (offset > kMaxOutOfOrder) return { score: -Infinity };let result = performAlignment(source, target);if (result.score === -Infinity) {
-      let alternative = performAlignment(source.slice().reverse(), target);if (!alternative.warning) {
-        result = alternative;result.penalties += 1;result.score -= kReversePenalty;result.warning = "stroke_backward";
-      }
-    }result.score -= Math.abs(offset) * kOutOfOrderPenalty;return result;
-  };const scorePairing = (source, target, is_initial_segment) => {
-    const angle = angleDiff(getAngle(source), getAngle(target));const distance = Math.sqrt(util.distance2(getMidpoint(source), getMidpoint(target)));const length = Math.abs(Math.log(getMinimumLength(source) / getMinimumLength(target)));if (angle > (is_initial_segment ? 1 : 2) * kAngleThreshold || distance > kDistanceThreshold || length > kLengthThreshold) {
-      return -Infinity;
-    }return -(angle + distance + length);
-  };this.inkstone = this.inkstone || {};this.inkstone.matcher = this.inkstone.matcher || {};this.inkstone.matcher.match = match;this.inkstone.matcher.recognize = recognize;
-})();(function () {
-  const path_radical_callback = rects => {
-    const output = [rects[0].tl, rects[0].tr];output.push([rects[0].l, .5 * rects[0].t + .5 * rects[0].b]);output.push([rects[0].r, .5 * rects[0].t + .5 * rects[0].b]);output.push(rects[0].bl);return [output, output.slice(0, 3).concat(output.slice(4)), output.slice(0, 2).concat(output.slice(4))];
-  };const kShortcuts = [{ targets: [[["女", 1], ["女", 2]]], callback: rects => {
-      if (rects[0].r < rects[1].r) return [];return [[rects[1].bl, [rects[0].r, rects[1].t], rects[0].bl]];
-    } }, { targets: [[["了", 0], ["了", 1]], [["孑", 0], ["孑", 1]]], callback: rects => {
-      const output = [rects[0].tl, rects[0].tr, rects[1].tr, rects[1].br];output.push([rects[1].l, rects[1].b + rects[1].l - rects[1].r]);return [output, output.slice(0, 2).concat(output.slice(3))];
-    } }, { targets: [[["纟", 0], ["纟", 1]], [["幺", 0], ["幺", 1]]], callback: rects => {
-      const output = [rects[0].tr, rects[0].bl, rects[1].tr, rects[1].bl];output.push([rects[1].r, .25 * rects[1].t + .75 * rects[1].b]);return [output];
-    } }, { targets: [[["廴", 0]], [["辶", 1]]], callback: path_radical_callback }, { targets: [[["廴", 0], ["廴", 1]], [["辶", 1], ["辶", 2]]], callback: rects => {
-      const options = path_radical_callback([rects[0]]);return options.map(x => x.concat([rects[1].br]));
-    } }];const componentsMatch = (components, target) => {
-    if (components.length < target.length) return false;for (let i = 0; i < target.length; i++) {
-      if (components[i][target[i][0]] !== target[i][1]) return false;
-    }return true;
-  };const computeBounds = median => {
-    const xs = median.map(point => point[0]);const ys = median.map(point => point[1]);const result = { l: _.min(xs), r: _.max(xs), t: _.min(ys), b: _.max(ys) };result.tl = [result.l, result.t];result.tr = [result.r, result.t];result.bl = [result.l, result.b];result.br = [result.r, result.b];return result;
-  };const getShortcuts = (components, medians) => {
-    if (components.length !== medians.length) {
-      console.error("Components:", components);console.error("Medians:", medians);throw new Error("Mismatched components and medians!");
-    }const result = [];for (let i = 0; i < components.length; i++) {
-      for (let shortcut of kShortcuts) {
-        const remainder = components.slice(i);if (_.any(shortcut.targets, x => componentsMatch(remainder, x))) {
-          const n = shortcut.targets[0].length;const bounds = medians.slice(i, i + n).map(computeBounds);const indices = _.range(i, i + n);for (let median of shortcut.callback(bounds)) {
-            result.push({ indices: indices, median: median });
-          }
-        }
-      }
-    }return result;
-  };this.inkstone = this.inkstone || {};this.inkstone.matcher = this.inkstone.matcher || {};this.inkstone.matcher.getShortcuts = getShortcuts;
-})();(function () {
-  const kMaxAttempts = 3;const kMaxMistakes = 4;const delay = duration => new Promise((resolve, reject) => {
-    setTimeout(resolve, duration);
-  });const getResult = x => Math.min(Math.floor(2 * x / kMaxMistakes), 2);class Character {
-    constructor(data, handwriting, ondone, options) {
-      this.attempts = 0;this.data = data;this.handwriting = handwriting;this.matcher = new inkstone.Matcher(data);this.missing = _.range(data.strokes.length);this.mistakes = 0;this.ondone = ondone;this.options = options;
-    }onClick() {
-      this.mistakes += 2;this.handwriting.flash(this.data.strokes[this.missing[0]]);
-    }onDouble() {
-      if (this.mistakes === 0) return;this.mistakes += 4;this.handwriting.reveal(this.data.strokes);
-    }onStroke(stroke) {
-      const result = this.matcher.match(stroke, this.missing);if (result.indices.length === 0) {
-        this.attempts += 1;this.handwriting.fadeStroke();if (this.attempts >= kMaxAttempts) {
-          this.mistakes += 1;this.handwriting.flash(this.data.strokes[this.missing[0]]);
-        }return;
-      }const path = result.indices.map(x => this.data.strokes[x]).join(" ");const missing = this.missing.filter(x => result.indices.indexOf(x) < 0);if (missing.length === this.missing.length) {
-        this.mistakes += 1;this.handwriting.undo();this.handwriting.flash(path);return;
-      }this.missing = missing;const rotate = result.simplified_median.length === 2;this.handwriting.emplace(path, rotate, result.source_segment, result.target_segment);if (result.warning) {
-        this.mistakes += 1;this.handwriting.warn(this.options.messages[result.warning]);
-      }const index = _.min(result.indices);if (this.missing.length === 0) {
-        this.handwriting.glow(getResult(this.mistakes));this.ondone(this.mistakes);
-      } else if (this.missing[0] < index) {
-        this.mistakes += 2 * (index - this.missing[0]);this.handwriting.flash(this.data.strokes[this.missing[0]]);
-      } else {
-        this.attempts = 0;
-      }
-    }
-  }class Cursor {
-    constructor() {
-      this.reset();
-    }nextCharacter() {
-      this.reset({ character: this.character + 1 });
-    }nextMode() {
-      this.reset({ character: this.character, mode: this.mode + 1 });
-    }nextRepetition() {
-      this.repetition += 1;
-    }reset(values) {
-      this.character = 0;this.mode = 0;this.repetition = 0;this.num_single_taps = 0;this.num_double_taps = 0;this.num_mistakes = 0;if (values) {
-        for (const key in values) {
-          this[key] = values[key];
-        }
-      }
-    }
-  }class Teach {
-    constructor(data, element, options) {
-      const handlers = { onclick: this.onClick.bind(this), ondouble: this.onDouble.bind(this), onstroke: this.onStroke.bind(this) };const inner = document.createElement("div");inner.style.position = "relative";inner.style.width = inner.style.height = "100%";element.appendChild(inner);this.animating = false;this.character = null;this.cursor = new Cursor();this.data = data;this.done = false;this.element = inner;this.handwriting = new inkstone.Handwriting(inner, handlers, options.display);this.options = options;this.nextCharacter();
-    }maybeAdvance() {
-      if (this.animating || this.character) return;const mode = this.options.modes[this.cursor.mode];if (this.cursor.mode + 1 < this.options.modes.length && this.cursor.num_mistakes >= mode.max_mistakes) {
-        this.recordStep();this.cursor.nextMode();this.nextMode();
-      } else if (this.cursor.repetition + 1 < mode.repeat) {
-        this.handwriting.warn(this.options.messages.again);this.cursor.nextRepetition();this.nextRepetition();
-      } else if (this.cursor.character + 1 < this.data.length) {
-        this.recordStep();this.cursor.nextCharacter();this.nextCharacter();
-      } else if (!this.done) {
-        this.recordStep();this.options.listener({ type: "done" });this.done = true;
-      }
-    }nextCharacter() {
-      this.animating = true;const animation = this.cursor.character > 0 ? this.handwriting.moveToCorner().then(() => delay(150)) : Promise.resolve();animation.then(() => {
-        this.animating = false;this.nextRepetition();
-      });
-    }nextMode() {
-      this.nextRepetition();
-    }nextRepetition() {
-      const data = this.data[this.cursor.character];const mode = this.options.modes[this.cursor.mode];this.animating = true;this.handwriting.fadeCharacter();const animation = this.cursor.repetition < mode.demo ? inkstone.animate(data, this.element, this.options.display) : Promise.resolve();animation.then(() => {
-        this.animating = false;Array.from(this.element.getElementsByTagName("svg")).map(x => this.element.removeChild(x));const ondone = this.onCharacterDone.bind(this);this.character = new Character(data, this.handwriting, ondone, this.options);if (this.cursor.repetition < mode.watermark) {
-          this.handwriting.reveal(data.strokes);this.handwriting._stage.update();
-        }
-      });
-    }onCharacterDone(mistakes) {
-      this.character = null;this.cursor.num_mistakes += mistakes;
-    }onClick() {
-      if (!this.character) return this.maybeAdvance();const mode = this.options.modes[this.cursor.mode];if (this.cursor.num_single_taps < mode.single_tap) {
-        this.cursor.num_single_taps += 1;this.character.onClick();
-      }
-    }onDouble() {
-      if (!this.character) return this.maybeAdvance();const mode = this.options.modes[this.cursor.mode];if (this.cursor.num_double_taps < mode.double_tap) {
-        this.cursor.num_double_taps += 1;this.character.onDouble();
-      }
-    }onStroke(stroke) {
-      if (!this.character) return this.maybeAdvance();this.character.onStroke(stroke);
-    }recordStep() {
-      this.options.listener && this.options.listener({ type: "step", character: this.data[this.cursor.character].character, mistakes: this.cursor.num_mistakes, mode: this.cursor.mode });
-    }
-  }this.inkstone = this.inkstone || {};this.inkstone.Teach = Teach;
-})();
+}const kIdPrefix = "inkstone-stroke-order-animation";const kWidth = 128;const addGlobalStyleForAnimations = (animations, options) => {
+  const rules = [];for (const animation of animations) {
+    rules.push(`\n      @keyframes ${animation.keyframes} {\n        from {\n          stroke: ${options.animation_color};\n          stroke-dashoffset: ${animation.offset};\n          stroke-width: ${animation.width};\n        }\n        ${animation.fraction} {\n          animation-timing-function: step-end;\n          stroke: ${options.animation_color};\n          stroke-dashoffset: 0;\n          stroke-width: ${animation.width};\n        }\n        to {\n          stroke: ${options.stroke_color};\n          stroke-width: 1024;\n        }\n      }\n      #${animation.animation_id} {\n        animation: ${animation.keyframes} ${animation.duration} both;\n        animation-delay: ${animation.delay};\n        animation-timing-function: linear;\n      }\n    `);
+  }const head = document.getElementsByTagName("head")[0];if (!head) throw new Error("Unable to locate <head> element!");const global_style_id = `${kIdPrefix}-global-style`;const previous = document.getElementById(global_style_id);if (previous) head.removeChild(previous);const style = document.createElement("style");style.id = global_style_id;style.innerHTML = rules.join("");style.type = "text/css";head.appendChild(style);
+};const counter = (() => {
+  let x = 0;return () => x++;
+})();const createSVGNode = (type, attributes) => {
+  const node = document.createElementNS("http://www.w3.org/2000/svg", type);for (const attribute in attributes) {
+    if (!attributes.hasOwnProperty(attribute)) continue;node.setAttribute(attribute, attributes[attribute]);
+  }return node;
+};const distance2 = (point1, point2) => {
+  const diff = [point1[0] - point2[0], point1[1] - point2[1]];return diff[0] * diff[0] + diff[1] * diff[1];
+};const getMedianLength = median => {
+  let result = 0;for (let i = 0; i < median.length - 1; i++) {
+    result += Math.sqrt(distance2(median[i], median[i + 1]));
+  }return result;
+};const getMedianPath = median => {
+  const result = [];for (let point of median) {
+    result.push(result.length === 0 ? "M" : "L");result.push("" + point[0]);result.push("" + point[1]);
+  }return result.join(" ");
+};const getAnimationData = (strokes, medians, options) => {
+  options = options || {};const initial_delay = 1024 * (options.initial_delay || .9);const per_stroke_delay = 1024 * (options.per_stroke_delay || .3);const prefix = options.prefix || kIdPrefix;const speed = 1024 * (options.speed || .03);const lengths = medians.map(x => getMedianLength(x) + kWidth).map(Math.round);const paths = medians.map(getMedianPath);const animations = [];let total_duration = initial_delay / speed / 60;for (let i = 0; i < strokes.length; i++) {
+    const offset = lengths[i] + kWidth;const duration = (per_stroke_delay + offset) / speed / 60;const fraction = Math.round(100 * offset / (per_stroke_delay + offset));animations.push({ animation_id: `${prefix}-animation-${i}`, clip_id: `${prefix}-clip-${i}`, d: paths[i], delay: `${total_duration}s`, duration: `${duration}s`, fraction: `${fraction}%`, keyframes: `keyframes${i}`, length: lengths[i], offset: offset, spacing: 2 * lengths[i], stroke: strokes[i], width: kWidth });total_duration += duration;
+  }return { animations: animations, strokes: strokes };
+};const animate = (character, element, options) => {
+  const prefix = `${kIdPrefix}-${counter()}`;const data = getAnimationData(character.strokes, character.medians, { initial_delay: .9 / options.animation_speed, per_stroke_delay: .3 / options.animation_speed, prefix: prefix, speed: options.animation_speed * .03 });addGlobalStyleForAnimations(data.animations, options);const svg = createSVGNode("svg", { height: element.clientWidth, version: "1.1", viewBox: "0 0 1024 1024", width: element.clientWidth });svg.style.position = "absolute";svg.style.left = svg.style.top = 0;const g = createSVGNode("g", { transform: "scale(1, -1) translate(0, -900)" });for (const stroke of data.strokes) {
+    g.appendChild(createSVGNode("path", { d: stroke, fill: options.watermark_color }));
+  }let last_animation = null;for (const animation of data.animations) {
+    const clipPath = createSVGNode("clipPath", { id: animation.clip_id });clipPath.appendChild(createSVGNode("path", { d: animation.stroke }));g.appendChild(clipPath);const path = createSVGNode("path", { "clip-path": `url(#${animation.clip_id})`, d: animation.d, fill: "none", id: animation.animation_id, "stroke-dasharray": `${animation.length} ${animation.spacing}`, "stroke-linecap": "round" });last_animation = path;g.appendChild(path);
+  }svg.appendChild(g);element.appendChild(svg);if (!last_animation) return new Promise.resolve();return new Promise((resolve, reject) => {
+    last_animation.addEventListener("animationend", resolve);
+  });
+};this.inkstone = this.inkstone || {};this.inkstone.animate = animate;
 var _extends = Object.assign || function (target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i]; for (var key in source) { if (Object.prototype.hasOwnProperty.call(source, key)) { target[key] = source[key]; } } } return target; };
 
 const kOptions = {
@@ -4163,7 +4165,7 @@ const kOptions = {
 // asset-loading mechanisms in real deployments of this library.
 const getCharacterData = character => {
   const index = Math.floor(character.charCodeAt(0) / 256);
-  const asset = `assets/characters/${index}`;
+  const asset = `assets/characters_v2/${index}`;
   return getUrl(asset).then(data => {
     for (const line of data.trim().split('\n')) {
       const row = JSON.parse(line);

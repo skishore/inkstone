@@ -30,7 +30,7 @@ const kOptions = {
 // asset-loading mechanisms in real deployments of this library.
 const getCharacterData = (character) => {
   const index = Math.floor(character.charCodeAt(0) / 256);
-  const asset = `assets/characters/${index}`;
+  const asset = `assets/characters_v2/${index}`;
   return getUrl(asset).then((data) => {
     for (const line of data.trim().split('\n')) {
       const row = JSON.parse(line);
