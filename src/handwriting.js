@@ -123,7 +123,7 @@ const pathToShape = (path, size, color, uncached) => {
     result[1] = 900 - result[1];
     return result.map((x) => Math.round(x / scale));
   }
-  const arity = {L: 1, M: 1, Q: 2, Z: 0};
+  const arity = {C: 3, L: 1, M: 1, Q: 2, Z: 0};
   while (index < tokens.length) {
     index += 1;
     const command = tokens[index - 1];
@@ -138,6 +138,12 @@ const pathToShape = (path, size, color, uncached) => {
       result.graphics.lineTo(args[0][0], args[0][1]);
     } else if (command === 'Q') {
       result.graphics.curveTo(args[0][0], args[0][1], args[1][0], args[1][1]);
+    } else if (command === 'C') {
+      result.graphics.bezierCurveTo(
+        args[0][0], args[0][1],
+        args[1][0], args[1][1],
+        args[2][0], args[2][1],
+      );
     } else {
       console.error(`Invalid command: ${command}`);
     }
