@@ -40,10 +40,10 @@ nav.navbar {
   position: relative;
 }
 
-#header > .header-text > .vertical-align > .call-to-action > a.link > img {
+#header > .header-text > .vertical-align > .call-to-action > a.link > img,
+#header > .header-text > .vertical-align > .call-to-action > a.link.imagelike {
   background-color: black;
   border-radius: 0.6rem;
-  border: 0.03rem solid white;
   color: white;
   height: 4rem;
   display: inline-block;
@@ -51,10 +51,15 @@ nav.navbar {
   width: 13.5rem;
 }
 
+#header > .header-text > .vertical-align > .call-to-action > a.link.imagelike {
+  border: 0.03rem solid white;
+  margin: 1rem;
+}
+
 #header > .header-text > .vertical-align > .call-to-action > a.link > div {
   position: absolute;
   bottom: 0;
-  top: 0;
+  top: 1.25rem;
 }
 
 #header > .header-text > .vertical-align > .call-to-action > a.link > div.icon {
@@ -101,21 +106,15 @@ nav.navbar {
   width: 80%;
 }
 
-.mobile {
-  display: initial;
-}
-
-.desktop {
-  display: none;
+@media (max-width: 767px) {
+  .desktop {
+    display: none !important;
+  }
 }
 
 @media (min-width: 768px) {
   .mobile {
-    display: none;
-  }
-
-  .desktop {
-    display: initial;
+    display: none !important;
   }
 
   #header > .header-text {
