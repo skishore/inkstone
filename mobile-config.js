@@ -5,3 +5,7 @@ App.info({
   version: '0.1.4'
 });
 App.setPreference('orientation', 'portrait');
+App.appendToConfig(`
+  <platform name="android">
+    <hook src="hooks/copy-build-extras-gradle.js" type="before_build" />
+  </platform>`);

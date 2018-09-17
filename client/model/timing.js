@@ -145,13 +145,13 @@ const shuffle = () => {
   }
 }
 
-Meteor.autorun(() => {
+Tracker.autorun(() => {
   const value = mapDecks((k) => Settings.get(`max_${k}`));
   value.failures = Settings.get('revisit_failures') ? Infinity : 0;
   maxes.set(value);
 });
 
-Meteor.autorun(() => {
+Tracker.autorun(() => {
   const counts = timing.get();
   if (!counts || !maxes.get()) return;
   const value = mapDecks((k) => {
@@ -170,7 +170,7 @@ Meteor.autorun(() => {
   remainder.set(value);
 });
 
-Meteor.autorun(shuffle);
+Tracker.autorun(shuffle);
 
 // Timing state tier 3: code executed when a user completes a given flashcard.
 
