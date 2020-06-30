@@ -11,8 +11,8 @@ FROM ubuntu:20.04
 # ```
 # 
 # So far signing doesn't work, but you can confirm that the apk keys should appear in your home directory.
-
-Assumes your UID is 1000, which is default on Ubuntu.
+#
+# Assumes your UID is 1000, which is default on Ubuntu.
 
 RUN apt-get update && apt-get install -qqqy curl && curl -sL https://deb.nodesource.com/setup_14.x | bash -
 RUN apt-get update && apt-get install -qqqy openjdk-8-jdk wget unzip nodejs
