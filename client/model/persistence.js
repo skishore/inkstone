@@ -57,7 +57,7 @@ class PersistentDict {
     this._dirty = {};
     this._sentinel = new ReactiveDict();
     this._load();
-    Meteor.autorun(() => this._save());
+    Tracker.autorun(() => this._save());
     assert(!registry[name]);
     registry[name] = this;
   }
