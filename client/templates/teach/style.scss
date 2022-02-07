@@ -198,6 +198,10 @@
       vertical-align: top;
     }
 
+    > .ipa {
+      display: inline;
+    }
+
     > .character {
       font-family: arphic-gukai;
       font-size: 5 * $font-size / 4;
