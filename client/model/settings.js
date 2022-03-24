@@ -33,6 +33,7 @@ const defaults = {
   revisit_failures: true,
   show_regrading_icon: true,
   snap_strokes: true,
+  show_ipa: false,
 };
 
 class Settings {
